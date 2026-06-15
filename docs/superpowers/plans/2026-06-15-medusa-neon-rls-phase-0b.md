@@ -50,6 +50,7 @@ neondb_owner|false|true|true
 - Create: `apps/medusa/package.json`
 - Create: `apps/medusa/medusa-config.ts`
 - Create: `apps/medusa/.env.example`
+- Create: `apps/medusa/tsconfig.json`
 
 - [x] **Step 1: Create backend directory**
 
@@ -73,6 +74,7 @@ Run:
 
 ```sh
 pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+pnpm add -D typescript@5.7.3
 ```
 
 Expected:
@@ -110,12 +112,44 @@ JWT_SECRET=replace-with-32-plus-chars
 COOKIE_SECRET=replace-with-32-plus-chars
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Add TypeScript config**
+
+Create `apps/medusa/tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "esModuleInterop": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": ".medusa/server"
+  },
+  "include": [
+    "medusa-config.ts",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".medusa",
+    "dist",
+    "build"
+  ]
+}
+```
+
+- [x] **Step 6: Commit**
 
 Run:
 
 ```sh
-git add apps/medusa/package.json apps/medusa/pnpm-lock.yaml apps/medusa/.env.example
+git add apps/medusa/package.json apps/medusa/pnpm-lock.yaml apps/medusa/.env.example apps/medusa/medusa-config.ts apps/medusa/tsconfig.json
 git commit -m "chore: scaffold pinned Medusa backend"
 ```
 
@@ -134,8 +168,9 @@ commit created
 - Create: `apps/medusa/src/modules/tenant-context/store.ts`
 - Create: `apps/medusa/src/modules/tenant-context/middleware.ts`
 - Create: `apps/medusa/src/modules/tenant-context/index.ts`
+- Create: `apps/medusa/src/api/middlewares.ts`
 
-- [ ] **Step 1: Create tenant context store**
+- [x] **Step 1: Create tenant context store**
 
 Create `apps/medusa/src/modules/tenant-context/store.ts`:
 
@@ -171,7 +206,7 @@ export function requireTenantContext(): TenantContext {
 }
 ```
 
-- [ ] **Step 2: Add spike middleware**
+- [x] **Step 2: Add spike middleware**
 
 Create `apps/medusa/src/modules/tenant-context/middleware.ts`:
 
@@ -199,7 +234,7 @@ export function tenantContextMiddleware(
 }
 ```
 
-- [ ] **Step 3: Add module export**
+- [x] **Step 3: Add module export**
 
 Create `apps/medusa/src/modules/tenant-context/index.ts`:
 
@@ -208,12 +243,35 @@ export * from "./store"
 export * from "./middleware"
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Register middleware**
+
+Create `apps/medusa/src/api/middlewares.ts`:
+
+```ts
+import { defineMiddlewares } from "@medusajs/framework/http"
+
+import { tenantContextMiddleware } from "../modules/tenant-context"
+
+export default defineMiddlewares({
+  routes: [
+    {
+      matcher: "/store*",
+      middlewares: [tenantContextMiddleware],
+    },
+    {
+      matcher: "/admin*",
+      middlewares: [tenantContextMiddleware],
+    },
+  ],
+})
+```
+
+- [ ] **Step 5: Commit**
 
 Run:
 
 ```sh
-git add apps/medusa/src/modules/tenant-context
+git add apps/medusa/src/api/middlewares.ts apps/medusa/src/modules/tenant-context
 git commit -m "feat: add Medusa tenant context store"
 ```
 

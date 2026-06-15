@@ -263,6 +263,7 @@ PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app con
 - Create: `apps/medusa/package.json`
 - Create: `apps/medusa/medusa-config.ts`
 - Create: `apps/medusa/.env.example`
+- Create: `apps/medusa/tsconfig.json`
 
 **Requirements:**
 
@@ -278,6 +279,7 @@ mkdir -p apps/medusa
 cd apps/medusa
 npm init -y
 pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+pnpm add -D typescript@5.7.3
 ```
 
 **DoD:**
@@ -285,6 +287,7 @@ pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5
 - `pnpm list @medusajs/medusa --depth 0` returns `2.15.5`.
 - `pnpm-lock.yaml` is committed.
 - No Medusa package uses a loose semver range.
+- `DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/medusa_build_check' pnpm exec medusa build` compiles the scaffold.
 
 ### Task 0B.2 - Add Tenant Context Module
 
