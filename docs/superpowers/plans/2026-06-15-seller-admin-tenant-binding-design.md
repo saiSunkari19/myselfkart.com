@@ -202,6 +202,69 @@ the SQL level only, never through Medusa's read path.
 This reopens part of the Phase 0B conclusion: the DB-level gate still holds, but
 "Medusa preserves tenant context through its APIs" is NOT yet true for reads.
 
+## Read-path fix — spike results (2026-06-15)
+
+Spiked all three options on disposable Neon branch `phase1-readpath-spike`
+(migrated, seeded, two seller admins, deleted after). Key discovery from source:
+`@mikro-orm/knex` `AbstractSqlConnection.execute()` is the SINGLE choke point for
+every read and write, and it executes via `this.getKnex()` — which is Medusa's
+ALREADY-PATCHED knex (Medusa passes its connection to MikroORM via
+`driverOptions.context.client`). So routing a tenant-scoped read through
+`this.getKnex().transaction(...)` makes the existing Phase 0B hook set
+`app.current_tenant` automatically. Options 1 and 2 therefore share one patch
+point; they differ only in transaction granularity.
+
+**Option 2 — patch `execute` to wrap tenant-scoped reads in a transaction: PROVEN.**
+Prototyped by monkey-patching `AbstractSqlConnection.execute` (reverted after):
+when ALS tenant context is present and the query is not already in a transaction,
+run it via `getKnex().transaction(...)`. Result through the real admin HTTP API:
+
+```txt
+seller-a GET /admin/products -> exactly its 2 products
+seller-b GET /admin/products -> exactly its 2 products
+seller-a GET /admin/products/<tenant-B id> -> 404 (RLS hides it)
+unauthenticated /admin/products -> 401
+50/50 sequential reads returned the correct tenant-scoped count
+Perf: ~253ms avg/read (dominated by remote Neon RTT); the wrap adds a
+  BEGIN + set_config + COMMIT, i.e. ~2 extra round-trips PER QUERY.
+```
+
+**Option 1 — per-REQUEST transaction: same patch point, better perf, more work.**
+Instead of a transaction per query, open one transaction per `/admin*` request so
+`set_config` runs once and all the request's queries share it. A read-heavy admin
+page issues many queries, so this amortizes the BEGIN/COMMIT overhead that Option 2
+pays per query. Medusa does not expose a "transactional request" switch, so this
+needs binding the request's MikroORM EntityManager to one transaction for the
+request lifecycle (deeper integration; risk: a request holds a pooled connection
+for its whole duration → more pooler pressure under concurrency).
+
+**Option 3 — session-pinned connection: does NOT avoid the core requirement.**
+For RLS to see the GUC, the `SET` and the query must hit the same backend. On a
+transaction-mode pooler (Neon `-pooler`), only a transaction guarantees that.
+Neon's direct (session-mode) endpoint would allow a session `SET`, but knex does
+not pin a connection to a request outside a transaction, so you would still need
+per-request connection checkout — which in practice means a transaction anyway.
+Net: loses transaction-pooling/serverless benefits and Neon direct-connection
+limits apply, without removing the transaction need. Not recommended.
+
+### Comparison
+
+| Option | Correctness | Perf | Blast radius |
+|---|---|---|---|
+| 2 — per-query txn (patch `execute`) | Proven end-to-end | ~2 extra round-trips per query | Patches one MikroORM internal method; every query checks ALS |
+| 1 — per-request txn | Expected equal (same GUC mechanism) | Best: 1 BEGIN/COMMIT + 1 set_config per request | Changes request transaction semantics; longer connection hold |
+| 3 — session-pinned | Works only with per-request pinning (≈ a txn) | Avoids BEGIN/COMMIT but needs session-mode endpoint | Drops pooling; Neon direct-conn limits; biggest infra change |
+
+### Recommendation
+
+Ship **Option 2 now** (proven, smallest change, an extension of the existing
+`@medusajs/utils` patch pattern — formalize it as a pnpm patch on `@mikro-orm/knex`
+plus a startup guard like `assertTenantTransactionPatchApplied`). If admin/storefront
+read latency proves too high under real pages, **optimize to Option 1** (per-request
+transaction) using the same GUC mechanism. **Drop Option 3.** Add the read path to
+the isolation test suite and re-run the Phase 0B gate end-to-end through Medusa's
+HTTP API before onboarding.
+
 ## Suggested implementation order
 
 1. Spike the open question (above). Decide the `user` RLS approach.
