@@ -10,6 +10,83 @@
 
 ---
 
+## Implementation Progress / Handoff (updated 2026-06-15)
+
+> **New agent: start here.** This is the running state of the work. Branch:
+> `phase0b-medusa-rls` (not yet pushed; default branch is `master`). Neon project
+> `selfkart` / `jolly-rice-01919313`, Postgres 17. All validation is done on
+> disposable Neon branches (create → migrate as `neondb_owner` → test as
+> `medusa_app` pooled → delete). Backend lives in `apps/medusa/`; see its
+> `README.md` for how to run multiple sellers.
+
+### DONE and validated
+
+- **Phase 0A — DB RLS gate:** `phase0-rls-smoke/run.sh` passes at 500/conc-50.
+- **Phase 0B — Medusa shared-RLS gate: PASSED (GO).** Versions frozen
+  (Medusa 2.15.5 + Neon PG 17). Commerce tables (product/cart/customer/order +
+  children + link tables) are tenant-RLS'd via `SET LOCAL app.current_tenant` +
+  the `selfkart_set_tenant_id` trigger. Isolation suite under
+  `apps/medusa/tests/integration/rls/` covers products, cart/customer/order,
+  cross-tenant direct lookup, background jobs, concurrent pooler.
+- **Read-path RLS fix (was the key gap):** Medusa reads (`query.graph`) run
+  WITHOUT a transaction, so the tenant hook never fired and RLS returned 0 rows.
+  Fixed with a pnpm patch on `@mikro-orm/knex`
+  (`patches/@mikro-orm__knex@6.6.12.patch`) that wraps tenant-scoped reads in a
+  transaction; `assertTenantReadPathPatchApplied()` startup guard; regression
+  test `read-path-isolation.test.js`. Tenant context now holds on reads AND writes.
+- **Seller admin ↔ tenant binding (Phase 1, Task 1.A):**
+  - Concern 1 (resolve tenant from the logged-in admin): `/admin*` middleware
+    reads `req.auth_context.app_metadata.tenant_id` (carried in the JWT);
+    `Migration20260615000300` adds `user.tenant_id`; `create-seller-admin.ts`
+    creates the user + emailpass credential and stamps tenant on both. Test
+    header is gated behind `SELFKART_ALLOW_TEST_TENANT_HEADER=true`.
+  - Concern 2 (isolate identity tables): `Migration20260615000400` puts RLS on
+    `user` + `invite` (tenant-aware unique invite email);
+    `auth_identity`/`provider_identity` left un-RLS'd (login needs them
+    pre-tenant). `identity-isolation.test.js` regresses it.
+  - Validated live: each seller logs into `/app` and sees ONLY their own
+    products and admin users. Full RLS suite: **7 pass, 0 fail.**
+- **Docs:** `apps/medusa/README.md` (multi-seller setup + per-seller flow);
+  design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`.
+
+### KNOWN GAPS / SECURITY TODO (must address before onboarding)
+
+- **CRITICAL:** `medusa-config.ts` falls back to hardcoded `JWT_SECRET`/
+  `COOKIE_SECRET`. Tenant is derived from the signed JWT, so a known secret =
+  cross-tenant forgery. Make config throw if unset/default in production.
+- **HIGH:** `SELFKART_ALLOW_TEST_TENANT_HEADER=true` lets any client spoof a
+  tenant via header. Off by default; also hard-gate it to non-production.
+- **MEDIUM:** `api_key` is NOT tenant-scoped (Medusa creates a platform Default
+  Publishable API Key at boot with no tenant context). A seller can currently see
+  other sellers' API keys. Needs a tenant-nullable model.
+- **MEDIUM (functional):** invite RLS may break invite-acceptance (token lookup
+  before the invitee has tenant context). Not exercised in the pilot (sellers are
+  provisioned via `create-seller-admin`).
+
+### NEXT (recommended order)
+
+1. Apply the CRITICAL/HIGH secret + test-header hardening above.
+2. **Storefront / `/store*` domain tenant resolver** — the Phase 1 main task
+   (Section 7): Next.js storefront, tenant-from-domain, buyer browse → cart →
+   checkout → order, all RLS-scoped. This is the missing buyer-facing half.
+3. Optionally optimize the read path from per-query to per-request transaction
+   (same GUC mechanism) if admin/storefront read latency is too high.
+4. `api_key` tenant-nullable scoping; tenant registry (Phase 2) to allocate
+   tenant UUIDs instead of hand-picking them.
+
+### Session commit trail (branch `phase0b-medusa-rls`)
+
+```txt
+fc99dbec0 feat: tenant-isolate admin user/invite tables (Phase 1 Concern 2)
+b5b87a591 feat: apply tenant RLS on Medusa read path (Option 2 pnpm patch)
+c7d022092 feat: bind seller admin to tenant via session (Phase 1 Concern 1)
+1465b99b0 docs: record Phase 0B gate decision (GO, proceed to Phase 1)
+a8af62049 test: add commerce, cross-tenant, and background job isolation tests
++ docs commits (README, design, spike results)
+```
+
+---
+
 ## 0. Current Decision State
 
 ### Passed on 2026-06-15
@@ -1083,19 +1160,24 @@ For implementation execution:
 
 ## 24. Immediate Next Task
 
-Phase 0B is COMPLETE and PASSED (see section 0). Versions are frozen: Medusa
-`2.15.5` + Neon Postgres `17` through the 2-3 seller pilot.
+See **"Implementation Progress / Handoff"** at the top of this doc for the full
+running state. In short:
 
-Implement **Phase 1 - Stack Foundation** (section 7) next:
+- Phase 0B PASSED; Phase 1 seller-admin binding (Task 1.A, Concerns 1 + 2) is DONE
+  and validated. The admin side is tenant-isolated and the read path is fixed.
+- Admin tenant resolution is no longer a spike: it derives from the authenticated
+  admin's JWT (`app_metadata.tenant_id`). The test header is gated behind
+  `SELFKART_ALLOW_TEST_TENANT_HEADER`.
 
-- Scaffold the Next.js `16.2.9` storefront under `apps/storefront/`.
-- Add domain-level tenant routing via `proxy.ts` (Next 16 renamed middleware → proxy).
-- Call Medusa server-side (Route Handlers / Server Components); add a Medusa health endpoint.
-- Add R2 media config with tenant-prefixed object keys.
-- DoD: Tenant A storefront renders Tenant A product; Tenant B storefront does not.
+Do next, in order:
 
-Replace the spike tenant resolution before any real traffic: the current
-`tenantContextMiddleware` reads a test header (`x-selfkart-test-tenant-id`).
-Phase 1+ must derive tenant from domain (storefront) and from the authenticated
-admin user (admin), and bring admin identity tables under tenant control so a
-per-seller admin dashboard is possible.
+1. **Security hardening (do first):** make `medusa-config.ts` throw on missing/
+   default `JWT_SECRET`/`COOKIE_SECRET` in production, and hard-gate the test
+   header to non-production. (Tenant is derived from the signed JWT, so a default
+   secret = cross-tenant forgery.)
+2. **Phase 1 - Stack Foundation / storefront** (section 7): Next.js `16.2.9` under
+   `apps/storefront/`, domain-level tenant routing via `proxy.ts`, server-side
+   Medusa calls, R2 media with tenant-prefixed keys. Add the `/store*` domain
+   tenant resolver (the buyer-facing half; admin side already done).
+   DoD: Tenant A storefront renders Tenant A product; Tenant B does not.
+3. `api_key` tenant-nullable scoping; tenant registry (Phase 2).
