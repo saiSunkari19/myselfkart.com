@@ -625,6 +625,92 @@ commit created
 
 ---
 
+## Task 5A: Add Cart/Customer/Order, Cross-Tenant, and Background Job Isolation Tests
+
+**Status:** Completed and validated on 2026-06-15 (5 pass, 0 fail).
+
+**Why:** Task 5 only covered product list isolation and the concurrent pooler stress
+test. The gate (Task 6) requires cart/customer/order isolation, cross-tenant direct
+lookup, and background job isolation before the go/no-go decision.
+
+**Files:**
+
+- Create: `apps/medusa/tests/integration/rls/commerce-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/cross-tenant-lookup.test.js`
+- Create: `apps/medusa/tests/integration/rls/background-job-isolation.test.js`
+
+All three follow the proven `product-isolation.test.js` pattern: assert at the RLS
+layer through the pooled `medusa_app` role, seeding fixtures via
+`medusa exec ./src/scripts/seed-tenants.ts`.
+
+- [x] **Step 1: Add cart/customer/order list isolation test**
+
+Created `commerce-isolation.test.js`. Table-driven over `customer`, `cart`, `"order"`.
+Asserts:
+
+```txt
+Tenant A sees exactly its one seeded row per entity.
+Tenant B sees exactly its one seeded row per entity.
+No tenant context sees zero rows per entity.
+Each visible row carries the active tenant_id.
+```
+
+- [x] **Step 2: Add cross-tenant direct lookup test**
+
+Created `cross-tenant-lookup.test.js`. For product/cart/customer/order:
+
+```txt
+Positive control: each tenant fetches its own row by id (1 row).
+Foreign-id lookup under the other tenant returns 0 rows.
+Cross-tenant UPDATE of a foreign id matches 0 rows (RLS USING hides the target).
+```
+
+- [x] **Step 3: Add background job isolation test**
+
+Created `background-job-isolation.test.js`. Simulates the worker path that never
+passes through the HTTP tenant middleware:
+
+```txt
+A tenant-scoped job reuses pooled connections across tenants (A,B,A,B) and sees
+  only the active tenant's products each pass (count=2, wrong_tenant_count=0).
+A misconfigured job that skips set_config fails safe to zero rows, never all tenants.
+```
+
+- [x] **Step 4: Validate on a migrated branch**
+
+The working `.env` Neon branch is intentionally unmigrated; validation uses a
+disposable temp branch that is deleted after the run.
+
+Run:
+
+```sh
+# 1. create a fresh Neon branch, then migrate with the owner role
+DATABASE_URL='<neondb_owner direct url>' corepack pnpm exec medusa db:migrate
+# 2. run the full suite through the pooled medusa_app role
+APP_DATABASE_URL='<medusa_app pooled url>' ITERATIONS=500 CONCURRENCY=50 \
+  node --test --test-concurrency=1 tests/integration/rls/*.test.js
+```
+
+Result on 2026-06-15:
+
+```txt
+Temporary Neon branch: phase0b-isolation-tests-verify (br-autumn-union-ao5avi7s), deleted after run
+Migration with neondb_owner direct URL: passed (4 core tenant_id columns, 61 policies)
+Suite: tests 5, pass 5, fail 0
+Runtime role: medusa_app via pooled Neon URL, rolsuper=false, rolbypassrls=false
+```
+
+- [ ] **Step 5: Commit**
+
+Run:
+
+```sh
+git add apps/medusa/tests/integration/rls docs/superpowers/plans/2026-06-15-medusa-neon-rls-phase-0b.md "Medusa neon rls multitenant implementation plan · MD.md"
+git commit -m "test: add commerce, cross-tenant, and background job isolation tests"
+```
+
+---
+
 ## Task 6: Gate Decision
 
 - [ ] **Step 1: Run database-only gate**
@@ -646,12 +732,28 @@ PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app con
 
 - [ ] **Step 2: Run Medusa isolation suite**
 
-Run the Medusa integration test command defined by the scaffolded app.
+Run the Medusa integration test command defined by the scaffolded app:
+
+```sh
+APP_DATABASE_URL='<medusa_app pooled url>' ITERATIONS=500 CONCURRENCY=50 \
+  node --test --test-concurrency=1 tests/integration/rls/*.test.js
+```
+
+Suite (5 files, all written as of Task 5A):
+
+```txt
+product-isolation.test.js        product list isolation + no-context zero rows
+commerce-isolation.test.js       cart/customer/order list isolation
+cross-tenant-lookup.test.js      foreign-id lookup + cross-tenant update blocked
+background-job-isolation.test.js worker-path isolation + fail-safe on missing context
+concurrent-pooler.test.js        500 probes @ concurrency 50 + runtime role guard
+```
 
 Expected:
 
 ```txt
 All product, cart, customer, order, background job, and concurrent pooler isolation tests pass.
+5 pass, 0 fail.
 ```
 
 - [ ] **Step 3: Decide**

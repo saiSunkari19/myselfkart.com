@@ -492,11 +492,16 @@ Runtime role: medusa_app through pooled Neon URL
 **Files:**
 
 - Create: `apps/medusa/tests/integration/rls/product-isolation.test.js`
-- Create: `apps/medusa/tests/integration/rls/cart-isolation.test.js`
-- Create: `apps/medusa/tests/integration/rls/customer-isolation.test.js`
-- Create: `apps/medusa/tests/integration/rls/order-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/commerce-isolation.test.js` (cart + customer + order list isolation, one file)
+- Create: `apps/medusa/tests/integration/rls/cross-tenant-lookup.test.js` (direct foreign-id lookup + cross-tenant update for product/cart/customer/order)
 - Create: `apps/medusa/tests/integration/rls/concurrent-pooler.test.js`
 - Create: `apps/medusa/tests/integration/rls/background-job-isolation.test.js`
+
+> Note: cart/customer/order list isolation was consolidated into a single
+> `commerce-isolation.test.js` (table-driven) instead of three separate files,
+> and cross-tenant direct-lookup assertions live in `cross-tenant-lookup.test.js`.
+> All tests assert at the RLS layer through the pooled `medusa_app` role,
+> matching the proven `product-isolation.test.js` pattern.
 
 **Required assertions:**
 
@@ -527,7 +532,25 @@ Implemented: apps/medusa/tests/integration/rls/concurrent-pooler.test.js
 Command: APP_DATABASE_URL=<medusa_app pooled url> ITERATIONS=500 CONCURRENCY=50 node --test --test-concurrency=1 tests/integration/rls/*.test.js
 Result: 2 pass, 0 fail
 Coverage added: runtime role guard plus 500 tenant probes at concurrency 50 through the Neon pooler
-Remaining: direct lookup, cart/customer/order API tests, and background job tests
+```
+
+**Additional isolation tests added and validated on 2026-06-15:**
+
+```txt
+Implemented: apps/medusa/tests/integration/rls/commerce-isolation.test.js
+  Coverage: cart/customer/order seeded-row list isolation per tenant + no-context zero-row assertion (table-driven over all three entities)
+Implemented: apps/medusa/tests/integration/rls/cross-tenant-lookup.test.js
+  Coverage: positive own-id lookup, foreign-id lookup returns zero rows, and cross-tenant UPDATE matches zero rows for product/cart/customer/order
+Implemented: apps/medusa/tests/integration/rls/background-job-isolation.test.js
+  Coverage: tenant-scoped job reuses pooled connections across tenants with no leakage; misconfigured job that skips set_config fails safe to zero rows
+
+Validation run on 2026-06-15:
+  Temporary Neon branch: phase0b-isolation-tests-verify (br-autumn-union-ao5avi7s), deleted after run
+  Migrated with neondb_owner direct URL: passed (4 core tenant_id columns, 61 policies)
+  Suite command: APP_DATABASE_URL=<medusa_app pooled url> ITERATIONS=500 CONCURRENCY=50 \
+    node --test --test-concurrency=1 tests/integration/rls/*.test.js
+  Result: tests 5, pass 5, fail 0 (full suite: product, commerce, cross-tenant, background-job, concurrent-pooler)
+  Runtime role: medusa_app through pooled Neon URL, rolsuper=false, rolbypassrls=false
 ```
 
 ---
