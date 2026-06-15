@@ -26,7 +26,10 @@ function normalizeUuid(value: unknown): string | undefined {
  * a tenant via this header.
  */
 function resolveTestTenant(req: MedusaRequest): string | undefined {
-  if (process.env.SELFKART_ALLOW_TEST_TENANT_HEADER !== "true") {
+  if (
+    process.env.SELFKART_ALLOW_TEST_TENANT_HEADER !== "true" ||
+    process.env.NODE_ENV === "production"
+  ) {
     return undefined
   }
   return normalizeUuid(req.headers["x-selfkart-test-tenant-id"])
