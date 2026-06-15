@@ -12,6 +12,9 @@ type TenantSeed = {
     id: string
     title: string
     handle: string
+    variantId: string
+    inventoryItemId: string
+    sku: string
   }[]
   customer: {
     id: string
@@ -39,11 +42,17 @@ const TENANT_SEEDS: TenantSeed[] = [
         id: "prod_selfkart_rls_a_shared",
         title: "Selfkart RLS Shared Product A",
         handle: "selfkart-rls-shared",
+        variantId: "variant_selfkart_rls_a_shared",
+        inventoryItemId: "iitem_selfkart_rls_a_shared",
+        sku: "selfkart-rls-a-shared",
       },
       {
         id: "prod_selfkart_rls_a_only",
         title: "Selfkart RLS Tenant A Product",
         handle: "selfkart-rls-tenant-a-only",
+        variantId: "variant_selfkart_rls_a_only",
+        inventoryItemId: "iitem_selfkart_rls_a_only",
+        sku: "selfkart-rls-a-only",
       },
     ],
     customer: {
@@ -70,11 +79,17 @@ const TENANT_SEEDS: TenantSeed[] = [
         id: "prod_selfkart_rls_b_shared",
         title: "Selfkart RLS Shared Product B",
         handle: "selfkart-rls-shared",
+        variantId: "variant_selfkart_rls_b_shared",
+        inventoryItemId: "iitem_selfkart_rls_b_shared",
+        sku: "selfkart-rls-b-shared",
       },
       {
         id: "prod_selfkart_rls_b_only",
         title: "Selfkart RLS Tenant B Product",
         handle: "selfkart-rls-tenant-b-only",
+        variantId: "variant_selfkart_rls_b_only",
+        inventoryItemId: "iitem_selfkart_rls_b_only",
+        sku: "selfkart-rls-b-only",
       },
     ],
     customer: {
@@ -109,6 +124,25 @@ async function upsertRecord(
     })
 }
 
+async function upsertVariantInventoryLink(
+  trx: Knex.Transaction,
+  record: {
+    id: string
+    variant_id: string
+    inventory_item_id: string
+    required_quantity: number
+  }
+) {
+  await trx("product_variant_inventory_item")
+    .insert(record)
+    .onConflict(["variant_id", "inventory_item_id"])
+    .merge({
+      id: record.id,
+      required_quantity: record.required_quantity,
+      updated_at: trx.fn.now(),
+    })
+}
+
 async function seedTenant(trx: Knex.Transaction, seed: TenantSeed) {
   await trx.raw("select set_config('app.current_tenant', ?, true)", [seed.tenantId])
 
@@ -126,6 +160,41 @@ async function seedTenant(trx: Knex.Transaction, seed: TenantSeed) {
         fixture: "phase0b-rls",
         tenant: seed.id,
       }),
+    })
+
+    await upsertRecord(trx, "product_variant", {
+      id: product.variantId,
+      title: `${product.title} Default Variant`,
+      sku: product.sku,
+      barcode: null,
+      ean: null,
+      upc: null,
+      allow_backorder: false,
+      manage_inventory: true,
+      product_id: product.id,
+      metadata: JSON.stringify({
+        fixture: "phase0b-rls",
+        tenant: seed.id,
+      }),
+    })
+
+    await upsertRecord(trx, "inventory_item", {
+      id: product.inventoryItemId,
+      sku: product.sku,
+      requires_shipping: true,
+      title: `${product.title} Inventory`,
+      description: `Phase 0B RLS inventory fixture for tenant ${seed.id.toUpperCase()}`,
+      metadata: JSON.stringify({
+        fixture: "phase0b-rls",
+        tenant: seed.id,
+      }),
+    })
+
+    await upsertVariantInventoryLink(trx, {
+      id: `pvii_selfkart_rls_${seed.id}_${product.inventoryItemId.replace(/^iitem_selfkart_rls_/, "")}`,
+      variant_id: product.variantId,
+      inventory_item_id: product.inventoryItemId,
+      required_quantity: 1,
     })
   }
 

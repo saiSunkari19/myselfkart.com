@@ -136,6 +136,30 @@ Because of RLS, a product created by Seller A is invisible to Seller B even if
 they share the same product handle or SKU (handles/SKUs are unique **per tenant**,
 not globally).
 
+### Seller inventory setup
+
+Each seller must have tenant-owned inventory resources:
+
+- one sales channel
+- one stock location
+- one sales-channel → stock-location link
+- one inventory level per managed inventory item
+
+After importing products for a seller, run:
+
+```sh
+SELLER_ADMIN_TENANT_ID=<tenant-uuid> \
+SELLER_NAME="Acme Clothing" \
+STOCKED_QUANTITY=100 \
+DATABASE_URL="$APP_DATABASE_URL" \
+corepack pnpm exec medusa exec ./src/scripts/seed-tenant-inventory-resources.ts
+```
+
+The script is idempotent. It creates or reuses the seller sales channel and
+stock location, links visible tenant products to that sales channel, links the
+sales channel to the stock location, and creates positive inventory levels at
+the seller stock location.
+
 ### Buyer storefront (not yet wired)
 
 The buyer-facing storefront and `/store*` domain routing are the next Phase 1
@@ -150,7 +174,8 @@ buyer browse → cart → checkout → order flow will be RLS-scoped the same wa
 Run the RLS integration suite against a **migrated** branch through the pooled
 role (it seeds fixtures, creates two seller admins, and asserts no cross-tenant
 leakage on products, carts, customers, orders, the admin user table, the read
-path, and under concurrency):
+path, inventory items, inventory levels, stock locations, sales channels, and
+under concurrency):
 
 ```sh
 APP_DATABASE_URL="$APP_DATABASE_URL" ITERATIONS=500 CONCURRENCY=50 \

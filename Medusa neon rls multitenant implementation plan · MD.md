@@ -45,17 +45,22 @@
     `auth_identity`/`provider_identity` left un-RLS'd (login needs them
     pre-tenant). `identity-isolation.test.js` regresses it.
   - Validated live: each seller logs into `/app` and sees ONLY their own
-    products and admin users. Full RLS suite: **7 pass, 0 fail.**
+    products and admin users.
+- **Tenant resource isolation wrapper for Medusa modules:** inventory items,
+  inventory levels, stock locations, sales channels, and stock/sales/product
+  link tables are now covered by reusable tenant-resource SQL helpers and
+  `20260615000500-protect-inventory-stock-sales.ts`. Sales channels use a
+  tenant-nullable policy so Medusa can keep its platform Default Sales Channel
+  hidden from sellers while each seller sees only their own channels. Full RLS
+  suite on disposable Neon branch `br-morning-surf-aoslb6jh`: **9 pass, 0 fail.**
+- **Production hardening:** production now throws if `JWT_SECRET` or
+  `COOKIE_SECRET` are unset/default, and the test tenant header is disabled in
+  production even if `SELFKART_ALLOW_TEST_TENANT_HEADER=true`.
 - **Docs:** `apps/medusa/README.md` (multi-seller setup + per-seller flow);
   design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`.
 
 ### KNOWN GAPS / SECURITY TODO (must address before onboarding)
 
-- **CRITICAL:** `medusa-config.ts` falls back to hardcoded `JWT_SECRET`/
-  `COOKIE_SECRET`. Tenant is derived from the signed JWT, so a known secret =
-  cross-tenant forgery. Make config throw if unset/default in production.
-- **HIGH:** `SELFKART_ALLOW_TEST_TENANT_HEADER=true` lets any client spoof a
-  tenant via header. Off by default; also hard-gate it to non-production.
 - **MEDIUM:** `api_key` is NOT tenant-scoped (Medusa creates a platform Default
   Publishable API Key at boot with no tenant context). A seller can currently see
   other sellers' API keys. Needs a tenant-nullable model.
@@ -65,14 +70,13 @@
 
 ### NEXT (recommended order)
 
-1. Apply the CRITICAL/HIGH secret + test-header hardening above.
-2. **Storefront / `/store*` domain tenant resolver** — the Phase 1 main task
+1. **Storefront / `/store*` domain tenant resolver** — the Phase 1 main task
    (Section 7): Next.js storefront, tenant-from-domain, buyer browse → cart →
    checkout → order, all RLS-scoped. This is the missing buyer-facing half.
+2. `api_key` tenant-nullable scoping; tenant registry (Phase 2) to allocate
+   tenant UUIDs instead of hand-picking them.
 3. Optionally optimize the read path from per-query to per-request transaction
    (same GUC mechanism) if admin/storefront read latency is too high.
-4. `api_key` tenant-nullable scoping; tenant registry (Phase 2) to allocate
-   tenant UUIDs instead of hand-picking them.
 
 ### Session commit trail (branch `phase0b-medusa-rls`)
 
@@ -561,7 +565,46 @@ Runtime medusa_app link smoke: tenant link visible, no-context hidden, wrong-ten
 
 **Remaining validation risk for API tests:**
 
-Payment, fulfillment, inventory, stock-location, sales-channel, and pricing tables are not fully tenantized by this step. They are only protected when reached through one of the tenant-owned link tables above. The Medusa API leak suite must prove tenant-facing workflows do not expose those shared module rows directly.
+Payment, fulfillment, and pricing tables are not fully tenantized by this step.
+Inventory, stock-location, and sales-channel isolation was completed later in
+Task 0B.4B. The Medusa API leak suite must continue proving tenant-facing
+workflows do not expose remaining shared module rows directly.
+
+### Task 0B.4B - Add Tenant Resource Isolation for Inventory, Stock, and Sales Modules
+
+**Status:** Completed on 2026-06-15.
+
+**Goal:** Make the module rows that caused shared seller inventory/admin views
+tenant-scoped in a reusable way, so future Shiprocket and Razorpay tables can use
+the same wrapper pattern.
+
+**Implementation:**
+
+- Added `apps/medusa/src/modules/tenant-context/tenant-resource-sql.ts`.
+- Added `apps/medusa/src/migration-scripts/20260615000500-protect-inventory-stock-sales.ts`.
+- `inventory_item`, `stock_location`, `stock_location_address`, and seller
+  `sales_channel` rows are tenant-owned.
+- `inventory_level`, `reservation_item`, `product_sales_channel`,
+  `product_variant_inventory_item`, and `sales_channel_stock_location` derive
+  ownership from both sides of their relationships where applicable.
+- `sales_channel` supports hidden platform-null rows for Medusa bootstrap while
+  tenant contexts see only tenant-owned sales channels.
+- Added `seed-tenant-inventory-resources.ts` to create/reuse seller sales
+  channel, stock location, sales-channel stock-location link, product sales
+  channel links, and positive inventory levels after product import.
+
+**Verification result on 2026-06-15:**
+
+```txt
+Temporary Neon branch: codex-tenant-resource-isolation-20260615d (br-morning-surf-aoslb6jh)
+Medusa db:migrate with neondb_owner: passed
+Schema check: inventory_item, inventory_level, reservation_item, stock_location,
+  stock_location_address, sales_channel, product_sales_channel,
+  product_variant_inventory_item, sales_channel_stock_location all have forced RLS
+Suite command: APP_DATABASE_URL=<medusa_app pooled url> ITERATIONS=500 CONCURRENCY=50 \
+  corepack pnpm test:rls
+Result: 9 pass, 0 fail
+```
 
 ### Task 0B.5 - Seed Two Tenants
 
@@ -722,7 +765,11 @@ DONE - Concern 2: RLS on user + invite (Migration20260615000400) reusing the
        unique; auth_identity/provider_identity left un-RLS'd (login needs them).
        create-seller-admin provisions the user inside a tenant context so the RLS
        WITH CHECK passes. Validated live: seller-a /admin/users shows only seller-a,
-       seller-b only seller-b; full suite 7 pass, 0 fail.
+       seller-b only seller-b.
+DONE - Tenant resource isolation: inventory_item, inventory_level,
+       reservation_item, stock_location, stock_location_address, sales_channel,
+       product_sales_channel, product_variant_inventory_item, and
+       sales_channel_stock_location are RLS-protected. Full suite 9 pass, 0 fail.
 DEFER - api_key RLS: Medusa creates a platform "Default Publishable API Key" at
        boot with no tenant context; needs a tenant-nullable model. Tracked.
 TODO  - /store* domain tenant resolver (storefront, Phase 1 main task).
