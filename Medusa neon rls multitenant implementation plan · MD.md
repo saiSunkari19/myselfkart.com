@@ -352,7 +352,10 @@ Rules:
 
 **Files:**
 
-- Create: `apps/medusa/src/migrations/Migration20260615000100.ts`
+- Create: `apps/medusa/src/modules/tenant-context/migrations/Migration20260615000100.ts`
+- Create: `apps/medusa/src/modules/tenant-context/service.ts`
+- Modify: `apps/medusa/src/modules/tenant-context/index.ts`
+- Modify: `apps/medusa/medusa-config.ts`
 
 **Initial tenant-scoped tables:**
 
@@ -361,23 +364,16 @@ Rules:
 - customer tables
 - order tables
 
-**Required SQL pattern:**
+**Required behavior:**
 
-```sql
-alter table "<table_name>" add column if not exists tenant_id uuid;
-alter table "<table_name>" enable row level security;
-alter table "<table_name>" force row level security;
-
-create policy "<table_name>_tenant_isolation"
-on "<table_name>"
-for all
-using (
-  tenant_id = nullif(current_setting('app.current_tenant', true), '')::uuid
-)
-with check (
-  tenant_id = nullif(current_setting('app.current_tenant', true), '')::uuid
-);
-```
+- Register `tenant-context` as a minimal Medusa module so `medusa db:migrate` discovers its migrations.
+- Add `tenant_id uuid` to tenant-owned product/cart/customer/order tables and child tables.
+- Add a `BEFORE INSERT OR UPDATE OF tenant_id` trigger that stamps `tenant_id` from transaction-local `app.current_tenant`.
+- Enable and force RLS on tenant-owned tables.
+- Add `USING` and `WITH CHECK` policies based on `current_setting('app.current_tenant', true)`.
+- Grant runtime DML to `medusa_app`.
+- Grant runtime sequence usage to `medusa_app` for Medusa serial fields.
+- Replace obvious global unique indexes, such as product handles and variant SKUs, with tenant-aware unique indexes.
 
 **DoD:**
 
@@ -385,6 +381,46 @@ with check (
 - Runtime grants go to `medusa_app`.
 - `medusa_app` does not own the tables.
 - Migration runs through `MIGRATOR_DATABASE_URL`, not `APP_DATABASE_URL`.
+- Medusa inserts do not need application code to manually provide `tenant_id`; the database trigger stamps it from the active transaction context.
+
+**Verification result on 2026-06-15:**
+
+```txt
+Temporary Neon branch: phase0b-rls-migration-verify-2
+Medusa db:migrate: passed
+Tenant isolation policies created: 49
+Core table RLS forced: product, product_variant, cart, cart_line_item, customer, customer_address, order, order_line_item
+Runtime medusa_app smoke: tenant_id stamped, no-context read hidden, wrong-tenant read hidden
+```
+
+**Critical follow-up discovered during verification:**
+
+Medusa creates link tables after module migrations during `db:migrate`. These tables were created after `Migration20260615000100`, so they need a separate post-link RLS step before the Medusa API leak suite can pass.
+
+Examples:
+
+```txt
+product_sales_channel
+product_variant_inventory_item
+product_variant_price_set
+cart_payment_collection
+order_cart
+order_payment_collection
+```
+
+### Task 0B.4A - Add RLS for Medusa Link Tables
+
+**Status:** Required before seed and API leak tests.
+
+**Goal:** Cover Medusa-generated link tables that are created after module migrations.
+
+**Requirements:**
+
+- Use a post-migration script or other Medusa-supported post-link hook that runs after link sync.
+- Add tenant context to link tables that connect tenant-owned records.
+- Prefer deriving link-table tenant ownership from the tenant-owned side of the relationship where possible.
+- Verify link tables are hidden with no tenant context and wrong tenant context.
+- Do not move to Task 0B.5 until link tables are either covered or explicitly proven not reachable by tenant-facing APIs.
 
 ### Task 0B.5 - Seed Two Tenants
 

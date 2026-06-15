@@ -23,4 +23,9 @@ module.exports = defineConfig({
         process.env.COOKIE_SECRET || "phase0b-cookie-secret-change-before-production",
     },
   },
+  modules: [
+    {
+      resolve: "./src/modules/tenant-context",
+    },
+  ],
 })

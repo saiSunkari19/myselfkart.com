@@ -354,78 +354,87 @@ commit created
 
 **Files:**
 
-- Create: `apps/medusa/src/migrations/Migration20260615000100.ts`
+- Create: `apps/medusa/src/modules/tenant-context/migrations/Migration20260615000100.ts`
+- Create: `apps/medusa/src/modules/tenant-context/service.ts`
+- Modify: `apps/medusa/src/modules/tenant-context/index.ts`
+- Modify: `apps/medusa/medusa-config.ts`
 
-- [ ] **Step 1: Create migration**
+- [x] **Step 1: Register tenant-context as a Medusa module**
 
-Create `apps/medusa/src/migrations/Migration20260615000100.ts` using Medusa's MikroORM migration style:
+Use the Medusa module pattern confirmed through Context7:
 
 ```ts
-import { Migration } from "@medusajs/framework/mikro-orm/migrations"
+import { Module } from "@medusajs/framework/utils"
+import TenantContextModuleService from "./service"
 
-const TENANT_TABLES = [
-  "product",
-  "cart",
-  "customer",
-  "order",
-]
+export const TENANT_CONTEXT_MODULE = "tenantContext"
 
-export class Migration20260615000100 extends Migration {
-  async up(): Promise<void> {
-    for (const table of TENANT_TABLES) {
-      this.addSql(`alter table if exists "${table}" add column if not exists tenant_id uuid;`)
-      this.addSql(`create index if not exists "IDX_${table}_tenant_id" on "${table}" (tenant_id);`)
-      this.addSql(`alter table if exists "${table}" enable row level security;`)
-      this.addSql(`alter table if exists "${table}" force row level security;`)
-      this.addSql(`
-        create policy "${table}_tenant_isolation"
-        on "${table}"
-        for all
-        using (
-          tenant_id = nullif(current_setting('app.current_tenant', true), '')::uuid
-        )
-        with check (
-          tenant_id = nullif(current_setting('app.current_tenant', true), '')::uuid
-        );
-      `)
-      this.addSql(`grant select, insert, update, delete on "${table}" to medusa_app;`)
-    }
-  }
-
-  async down(): Promise<void> {
-    for (const table of TENANT_TABLES) {
-      this.addSql(`drop policy if exists "${table}_tenant_isolation" on "${table}";`)
-      this.addSql(`alter table if exists "${table}" disable row level security;`)
-      this.addSql(`drop index if exists "IDX_${table}_tenant_id";`)
-      this.addSql(`alter table if exists "${table}" drop column if exists tenant_id;`)
-    }
-  }
-}
+export default Module(TENANT_CONTEXT_MODULE, {
+  service: TenantContextModuleService,
+})
 ```
 
-- [ ] **Step 2: Verify table names after Medusa migration**
+- [x] **Step 2: Create migration**
 
-Run after stock Medusa migrations:
+Create `apps/medusa/src/modules/tenant-context/migrations/Migration20260615000100.ts` using Medusa's MikroORM migration style.
 
-```sql
-select table_schema, table_name
-from information_schema.tables
-where table_schema = 'public'
-order by table_name;
+The migration must:
+
+```txt
+Add tenant_id to tenant-owned product/cart/customer/order tables and child tables.
+Create tenant_id indexes.
+Create a trigger that stamps tenant_id from app.current_tenant on insert.
+Enable and force RLS.
+Create USING and WITH CHECK policies based on current_setting('app.current_tenant', true).
+Grant table DML and sequence usage to medusa_app.
+Replace global unique indexes for handles/SKUs/tags/types/categories with tenant-aware unique indexes.
+```
+
+- [x] **Step 3: Verify table names from Medusa 2.15.5 package migrations**
+
+Run against installed Medusa package migrations:
+
+```sh
+node -e "inspect @medusajs/product, @medusajs/cart, @medusajs/customer, and @medusajs/order migration files for create table statements"
 ```
 
 Expected:
 
 ```txt
-Confirm the exact Medusa table names before applying tenant migration.
+Tenant-owned child tables are included, not only product/cart/customer/order roots.
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 4: Verify migration on a temporary Neon branch**
 
 Run:
 
 ```sh
-git add apps/medusa/src/migrations/Migration20260615000100.ts
+DATABASE_URL='<direct-owner-url-for-temp-branch>' corepack pnpm exec medusa db:migrate
+```
+
+Expected:
+
+```txt
+MODULE: tenantContext
+  Migrated Migration20260615000100
+Migrations completed
+```
+
+Additional verification:
+
+```txt
+Temporary branch: phase0b-rls-migration-verify-2
+Tenant isolation policies created: 49
+Core table RLS forced: product, product_variant, cart, cart_line_item, customer, customer_address, order, order_line_item
+Restricted medusa_app smoke passed: tenant_id stamped, no-context hidden, wrong-tenant hidden
+```
+
+- [ ] **Step 5: Commit**
+
+Run:
+
+```sh
+git add apps/medusa/src/modules/tenant-context apps/medusa/medusa-config.ts
 git commit -m "feat: add phase 0 tenant RLS migration"
 ```
 
@@ -433,6 +442,46 @@ Expected:
 
 ```txt
 commit created
+```
+
+---
+
+## Task 4A: Add RLS for Medusa Link Tables
+
+**Status:** Required before Task 5.
+
+**Why:** During temp-branch verification, `medusa db:migrate` created link tables after module migrations. `Migration20260615000100` cannot cover tables that do not exist until link sync runs.
+
+**Examples:**
+
+```txt
+product_sales_channel
+product_variant_inventory_item
+product_variant_price_set
+cart_payment_collection
+order_cart
+order_payment_collection
+```
+
+- [ ] **Step 1: Confirm Medusa-supported post-link migration mechanism**
+
+Use Context7 and local package inspection to identify whether app-level migration scripts can run after link sync.
+
+- [ ] **Step 2: Add link-table tenant protection**
+
+Use the confirmed post-link mechanism to add tenant isolation to Medusa-generated link tables that connect tenant-owned records.
+
+- [ ] **Step 3: Verify on a fresh temporary Neon branch**
+
+Run full `corepack pnpm exec medusa db:migrate`, then assert link tables have tenant protection or are explicitly proven not tenant-facing.
+
+- [ ] **Step 4: Commit**
+
+Run:
+
+```sh
+git add apps/medusa docs/superpowers/plans/2026-06-15-medusa-neon-rls-phase-0b.md "Medusa neon rls multitenant implementation plan · MD.md"
+git commit -m "feat: protect Medusa link tables with tenant RLS"
 ```
 
 ---
