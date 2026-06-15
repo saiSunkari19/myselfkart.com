@@ -1,0 +1,180 @@
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import type { ExecArgs } from "@medusajs/framework/types"
+import type { Knex } from "knex"
+
+const TENANT_A = "00000000-0000-0000-0000-00000000000a"
+const TENANT_B = "00000000-0000-0000-0000-00000000000b"
+
+type TenantSeed = {
+  id: string
+  tenantId: string
+  products: {
+    id: string
+    title: string
+    handle: string
+  }[]
+  customer: {
+    id: string
+    email: string
+    firstName: string
+    lastName: string
+  }
+  cart: {
+    id: string
+    email: string
+  }
+  order: {
+    id: string
+    email: string
+    displayId: number
+  }
+}
+
+const TENANT_SEEDS: TenantSeed[] = [
+  {
+    id: "a",
+    tenantId: TENANT_A,
+    products: [
+      {
+        id: "prod_selfkart_rls_a_shared",
+        title: "Selfkart RLS Shared Product A",
+        handle: "selfkart-rls-shared",
+      },
+      {
+        id: "prod_selfkart_rls_a_only",
+        title: "Selfkart RLS Tenant A Product",
+        handle: "selfkart-rls-tenant-a-only",
+      },
+    ],
+    customer: {
+      id: "cus_selfkart_rls_a",
+      email: "tenant-a@example.selfkart.test",
+      firstName: "Tenant",
+      lastName: "A",
+    },
+    cart: {
+      id: "cart_selfkart_rls_a",
+      email: "tenant-a@example.selfkart.test",
+    },
+    order: {
+      id: "order_selfkart_rls_a",
+      email: "tenant-a@example.selfkart.test",
+      displayId: 990001,
+    },
+  },
+  {
+    id: "b",
+    tenantId: TENANT_B,
+    products: [
+      {
+        id: "prod_selfkart_rls_b_shared",
+        title: "Selfkart RLS Shared Product B",
+        handle: "selfkart-rls-shared",
+      },
+      {
+        id: "prod_selfkart_rls_b_only",
+        title: "Selfkart RLS Tenant B Product",
+        handle: "selfkart-rls-tenant-b-only",
+      },
+    ],
+    customer: {
+      id: "cus_selfkart_rls_b",
+      email: "tenant-b@example.selfkart.test",
+      firstName: "Tenant",
+      lastName: "B",
+    },
+    cart: {
+      id: "cart_selfkart_rls_b",
+      email: "tenant-b@example.selfkart.test",
+    },
+    order: {
+      id: "order_selfkart_rls_b",
+      email: "tenant-b@example.selfkart.test",
+      displayId: 990002,
+    },
+  },
+]
+
+async function upsertRecord(
+  trx: Knex.Transaction,
+  tableName: string,
+  record: Record<string, unknown>
+) {
+  await trx(tableName)
+    .insert(record)
+    .onConflict("id")
+    .merge({
+      ...record,
+      updated_at: trx.fn.now(),
+    })
+}
+
+async function seedTenant(trx: Knex.Transaction, seed: TenantSeed) {
+  await trx.raw("select set_config('app.current_tenant', ?, true)", [seed.tenantId])
+
+  for (const product of seed.products) {
+    await upsertRecord(trx, "product", {
+      id: product.id,
+      title: product.title,
+      handle: product.handle,
+      subtitle: null,
+      description: `Phase 0B RLS smoke fixture for tenant ${seed.id.toUpperCase()}`,
+      is_giftcard: false,
+      discountable: true,
+      status: "published",
+      metadata: JSON.stringify({
+        fixture: "phase0b-rls",
+        tenant: seed.id,
+      }),
+    })
+  }
+
+  await upsertRecord(trx, "customer", {
+    id: seed.customer.id,
+    company_name: null,
+    first_name: seed.customer.firstName,
+    last_name: seed.customer.lastName,
+    email: seed.customer.email,
+    phone: null,
+    has_account: false,
+    metadata: JSON.stringify({
+      fixture: "phase0b-rls",
+      tenant: seed.id,
+    }),
+  })
+
+  await upsertRecord(trx, "cart", {
+    id: seed.cart.id,
+    email: seed.cart.email,
+    currency_code: "usd",
+    metadata: JSON.stringify({
+      fixture: "phase0b-rls",
+      tenant: seed.id,
+    }),
+  })
+
+  await upsertRecord(trx, "order", {
+    id: seed.order.id,
+    display_id: seed.order.displayId,
+    email: seed.order.email,
+    currency_code: "usd",
+    status: "pending",
+    metadata: JSON.stringify({
+      fixture: "phase0b-rls",
+      tenant: seed.id,
+    }),
+  })
+}
+
+export default async function seedTenants({ container }: ExecArgs) {
+  const knex = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+
+  await knex.transaction(async (trx) => {
+    for (const seed of TENANT_SEEDS) {
+      await seedTenant(trx, seed)
+    }
+  })
+
+  logger.info("Seeded Phase 0B tenant RLS fixtures")
+}

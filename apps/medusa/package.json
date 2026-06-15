@@ -10,7 +10,9 @@
     "build": "medusa build",
     "start": "medusa start",
     "db:migrate": "medusa db:migrate",
-    "test": "echo \"Phase 0B integration tests are added in a later task\" && exit 0"
+    "seed:tenants": "medusa exec ./src/scripts/seed-tenants.ts",
+    "test": "node --test tests/integration/rls/*.test.js",
+    "test:rls": "node --test tests/integration/rls/*.test.js"
   },
   "keywords": [],
   "author": "",

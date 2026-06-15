@@ -474,19 +474,29 @@ Tenant B: 00000000-0000-0000-0000-00000000000b
 
 **DoD:**
 
-- Data is written with the correct `tenant_id`.
-- Tenant A and Tenant B have overlapping names/SKUs in test data to catch missing tenant scoping.
+- [x] Data is written with the correct `tenant_id`.
+- [x] Tenant A and Tenant B have overlapping names/SKUs in test data to catch missing tenant scoping.
+
+**Implementation result on 2026-06-15:**
+
+```txt
+Implemented: apps/medusa/src/scripts/seed-tenants.ts
+Tenant data: 2 products, 1 customer, 1 cart, 1 order per tenant
+Overlapping product handle: selfkart-rls-shared
+Validated on temporary Neon branch: phase0b-seed-rls-verify
+Runtime role: medusa_app through pooled Neon URL
+```
 
 ### Task 0B.6 - API and Workflow Isolation Tests
 
 **Files:**
 
-- Create: `apps/medusa/tests/integration/rls/product-isolation.test.ts`
-- Create: `apps/medusa/tests/integration/rls/cart-isolation.test.ts`
-- Create: `apps/medusa/tests/integration/rls/customer-isolation.test.ts`
-- Create: `apps/medusa/tests/integration/rls/order-isolation.test.ts`
-- Create: `apps/medusa/tests/integration/rls/concurrent-pooler.test.ts`
-- Create: `apps/medusa/tests/integration/rls/background-job-isolation.test.ts`
+- Create: `apps/medusa/tests/integration/rls/product-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/cart-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/customer-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/order-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/concurrent-pooler.test.js`
+- Create: `apps/medusa/tests/integration/rls/background-job-isolation.test.js`
 
 **Required assertions:**
 
@@ -505,6 +515,16 @@ Tenant B: 00000000-0000-0000-0000-00000000000b
 - Concurrent test uses the Neon pooled URL.
 - Tests fail if `APP_DATABASE_URL` uses `neondb_owner`.
 - Tests fail if `rolbypassrls = true`.
+
+**Current test result on 2026-06-15:**
+
+```txt
+Implemented: apps/medusa/tests/integration/rls/product-isolation.test.js
+Command: APP_DATABASE_URL=<medusa_app pooled url> node --test tests/integration/rls/product-isolation.test.js
+Result: 1 pass, 0 fail
+Coverage: seeded product list isolation plus no-context zero-row assertion
+Remaining: direct lookup, cart/customer/order, background job, role-guard, and concurrent pooler tests
+```
 
 ---
 

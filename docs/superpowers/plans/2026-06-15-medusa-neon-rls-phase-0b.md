@@ -534,10 +534,10 @@ git commit -m "feat: protect Medusa link tables with tenant RLS"
 **Files:**
 
 - Create: `apps/medusa/src/scripts/seed-tenants.ts`
-- Create: `apps/medusa/tests/integration/rls/product-isolation.test.ts`
-- Create: `apps/medusa/tests/integration/rls/concurrent-pooler.test.ts`
+- Create: `apps/medusa/tests/integration/rls/product-isolation.test.js`
+- Create: `apps/medusa/tests/integration/rls/concurrent-pooler.test.js`
 
-- [ ] **Step 1: Seed deterministic tenants**
+- [x] **Step 1: Seed deterministic tenants**
 
 Use these tenant ids:
 
@@ -555,7 +555,7 @@ Seed at least:
 1 order per tenant
 ```
 
-- [ ] **Step 2: Add product isolation test**
+- [x] **Step 2: Add product isolation test**
 
 Required assertions:
 
@@ -587,6 +587,25 @@ git commit -m "test: add Medusa tenant isolation tests"
 ```
 
 Expected:
+
+```txt
+On a fresh Neon branch:
+- medusa db:migrate passes with owner role
+- medusa_app can run src/scripts/seed-tenants.ts through medusa exec
+- Tenant A sees only Tenant A products
+- Tenant B sees only Tenant B products
+- No tenant context sees zero seeded products
+```
+
+**Verification result on 2026-06-15:**
+
+```txt
+Temporary Neon branch: phase0b-seed-rls-verify
+Medusa db:migrate with neondb_owner direct URL: passed
+Runtime test with medusa_app pooled URL: passed
+Command: APP_DATABASE_URL=<medusa_app pooled url> node --test tests/integration/rls/product-isolation.test.js
+Test result: 1 pass, 0 fail
+```
 
 ```txt
 commit created
