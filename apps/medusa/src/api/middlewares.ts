@@ -4,13 +4,16 @@ import { tenantContextMiddleware } from "../modules/tenant-context"
 
 export default defineMiddlewares({
   routes: [
-    {
-      matcher: "/store*",
-      middlewares: [tenantContextMiddleware],
-    },
+    // /admin* tenant is derived from the authenticated seller admin's session
+    // (auth_identity.app_metadata.tenant_id, carried in the JWT). The framework
+    // authenticate("user") middleware runs first, so req.auth_context is set.
     {
       matcher: "/admin*",
       middlewares: [tenantContextMiddleware],
     },
+    // NOTE: /store* tenant resolution comes from the request DOMAIN, not a
+    // session, and is added in Phase 1 (storefront). It is intentionally NOT
+    // wired here yet. Postgres RLS still fails closed for any /store* query that
+    // runs without tenant context (zero rows), so there is no leak in the gap.
   ],
 })

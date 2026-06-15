@@ -64,7 +64,21 @@ tables only. Admin identity tables (`user`, `auth_identity`, `provider_identity`
 per-seller admin dashboard requires an admin-user ↔ tenant binding and
 tenant-aware admin auth — track in Phase 1/Phase 5.
 
-Do not onboard sellers until Phase 1 tenant resolution and the admin binding land.
+> **CORRECTION (2026-06-15): the gate's scope was narrower than "the app works".**
+> The gate validated RLS + tenant context at the SQL level and on the WRITE path
+> (seeds/writes run in transactions, which are tenant-stamped). During Phase 1
+> seller-admin work, end-to-end HTTP testing revealed that Medusa's READ path
+> (`query.graph`, MikroORM `@InjectManager` finds) runs WITHOUT a transaction, so
+> the Phase 0B `set_config` hook never fires on reads and RLS fail-closes — a
+> logged-in seller sees ZERO rows. This is safe (no leak) but makes the app
+> unusable until the read path applies tenant context. "Medusa preserves tenant
+> context through its APIs" is therefore NOT yet proven for reads. See
+> `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`
+> (Validation results) for root cause and fix options. This must be resolved in
+> Phase 1 before any seller onboarding.
+
+Do not onboard sellers until Phase 1 tenant resolution, the admin binding, AND
+the read-path tenant-context fix land.
 
 ---
 
@@ -595,6 +609,31 @@ Validation run on 2026-06-15:
 - Tenant A storefront renders Tenant A product.
 - Tenant B storefront does not render Tenant A product.
 - Media loads from tenant-prefixed R2 path.
+
+### Task 1.A - Seller Admin ↔ Tenant Binding
+
+**Design:** `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`
+
+**Goal:** A seller logs into the Medusa Admin (`/app`) and sees only their own
+data. Split into two concerns: (1) resolve tenant from the authenticated admin
+session; (2) isolate the admin identity tables themselves.
+
+**Status (2026-06-15):**
+
+```txt
+DONE - Migration: add tenant_id to "user" (Migration20260615000300), index, no RLS yet.
+DONE - src/scripts/create-seller-admin.ts: creates user + emailpass identity and
+       stamps tenant_id into both user.tenant_id and auth_identity.app_metadata.
+DONE - src/api middleware: /admin* tenant resolved from req.auth_context.app_metadata
+       (test header kept behind SELFKART_ALLOW_TEST_TENANT_HEADER=true only).
+DONE - Spike: authenticate() never reads "user"; /admin auth runs before custom
+       middleware; JWT carries app_metadata.tenant_id. Proven end to end.
+BLOCKED - "seller sees only their data" fails: Medusa READ path is non-transactional
+       so the Phase 0B set_config hook never fires on reads -> RLS returns 0 rows.
+       Fix options in the design doc (per-request txn / patch read path / session-pinned
+       connection). MUST fix before onboarding.
+TODO  - Concern 2: RLS/scoping on user/invite/api_key; leave auth_identity un-RLS'd.
+```
 
 ---
 
