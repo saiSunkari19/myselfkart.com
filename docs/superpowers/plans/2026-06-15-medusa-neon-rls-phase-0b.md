@@ -518,7 +518,7 @@ Script migration completed: 20260615000200-protect-link-tables.ts
 Restricted medusa_app link smoke passed: tenant link visible, no-context hidden, wrong-tenant hidden
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Run:
 
@@ -566,7 +566,7 @@ Tenant A direct lookup of Tenant B product returns 404 or forbidden.
 No tenant context returns 403 or zero rows.
 ```
 
-- [ ] **Step 3: Add concurrent pooled test**
+- [x] **Step 3: Add concurrent pooled test**
 
 Required load:
 
@@ -605,6 +605,18 @@ Medusa db:migrate with neondb_owner direct URL: passed
 Runtime test with medusa_app pooled URL: passed
 Command: APP_DATABASE_URL=<medusa_app pooled url> node --test tests/integration/rls/product-isolation.test.js
 Test result: 1 pass, 0 fail
+```
+
+**Concurrent verification result on 2026-06-15:**
+
+```txt
+Temporary Neon branch: phase0b-concurrent-rls-verify
+Medusa db:migrate with neondb_owner direct URL: passed
+Runtime suite with medusa_app pooled URL: passed
+Command: APP_DATABASE_URL=<medusa_app pooled url> ITERATIONS=500 CONCURRENCY=50 node --test --test-concurrency=1 tests/integration/rls/*.test.js
+Test result: 2 pass, 0 fail
+Role guard: current_user is not neondb_owner, rolsuper=false, rolbypassrls=false
+Concurrent load: 500 tenant probes at concurrency 50
 ```
 
 ```txt

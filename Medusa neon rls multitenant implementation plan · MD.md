@@ -523,7 +523,11 @@ Implemented: apps/medusa/tests/integration/rls/product-isolation.test.js
 Command: APP_DATABASE_URL=<medusa_app pooled url> node --test tests/integration/rls/product-isolation.test.js
 Result: 1 pass, 0 fail
 Coverage: seeded product list isolation plus no-context zero-row assertion
-Remaining: direct lookup, cart/customer/order, background job, role-guard, and concurrent pooler tests
+Implemented: apps/medusa/tests/integration/rls/concurrent-pooler.test.js
+Command: APP_DATABASE_URL=<medusa_app pooled url> ITERATIONS=500 CONCURRENCY=50 node --test --test-concurrency=1 tests/integration/rls/*.test.js
+Result: 2 pass, 0 fail
+Coverage added: runtime role guard plus 500 tenant probes at concurrency 50 through the Neon pooler
+Remaining: direct lookup, cart/customer/order API tests, and background job tests
 ```
 
 ---
