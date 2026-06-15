@@ -6,7 +6,7 @@
 
 **Architecture:** The database-only RLS gate has already passed. This plan adds Medusa, tenant context propagation, RLS migrations for the first commerce tables, two-tenant seed data, and API/workflow isolation tests.
 
-**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, runtime role `medusa_app`, migrator role `neondb_owner`, Node.js LTS, npm lockfile.
+**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, runtime role `medusa_app`, migrator role `neondb_owner`, Node.js LTS, pnpm lockfile.
 
 ---
 
@@ -51,14 +51,14 @@ neondb_owner|false|true|true
 - Create: `apps/medusa/medusa-config.ts`
 - Create: `apps/medusa/.env.example`
 
-- [ ] **Step 1: Create backend directory**
+- [x] **Step 1: Create backend directory**
 
 Run:
 
 ```sh
 mkdir -p apps/medusa
 cd apps/medusa
-npm init -y
+pnpm init
 ```
 
 Expected:
@@ -67,26 +67,26 @@ Expected:
 apps/medusa/package.json exists
 ```
 
-- [ ] **Step 2: Install exact Medusa versions**
+- [x] **Step 2: Install exact Medusa versions**
 
 Run:
 
 ```sh
-npm install @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
 ```
 
 Expected:
 
 ```txt
-package-lock.json created
+pnpm-lock.yaml created
 ```
 
-- [ ] **Step 3: Verify exact versions**
+- [x] **Step 3: Verify exact versions**
 
 Run:
 
 ```sh
-npm ls @medusajs/medusa @medusajs/framework @medusajs/js-sdk
+pnpm list @medusajs/medusa @medusajs/framework @medusajs/js-sdk --depth 0
 ```
 
 Expected:
@@ -97,7 +97,7 @@ Expected:
 @medusajs/js-sdk@2.15.5
 ```
 
-- [ ] **Step 4: Add env example**
+- [x] **Step 4: Add env example**
 
 Create `apps/medusa/.env.example`:
 
@@ -115,7 +115,7 @@ COOKIE_SECRET=replace-with-32-plus-chars
 Run:
 
 ```sh
-git add apps/medusa/package.json apps/medusa/package-lock.json apps/medusa/.env.example
+git add apps/medusa/package.json apps/medusa/pnpm-lock.yaml apps/medusa/.env.example
 git commit -m "chore: scaffold pinned Medusa backend"
 ```
 
@@ -279,7 +279,7 @@ Add a startup assertion that fails if the expected Medusa framework file or func
 Run:
 
 ```sh
-git add apps/medusa/src/modules/tenant-context apps/medusa/patches apps/medusa/package.json apps/medusa/package-lock.json
+git add apps/medusa/src/modules/tenant-context apps/medusa/patches apps/medusa/package.json apps/medusa/pnpm-lock.yaml
 git commit -m "feat: set tenant context inside Medusa transactions"
 ```
 

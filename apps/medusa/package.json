@@ -1,0 +1,26 @@
+{
+  "name": "@selfkart/medusa-backend",
+  "version": "0.1.0",
+  "description": "Selfkart Medusa backend for the Phase 0B Neon RLS isolation gate",
+  "private": true,
+  "packageManager": "pnpm@9.15.2",
+  "main": "medusa-config.ts",
+  "scripts": {
+    "dev": "medusa develop",
+    "build": "medusa build",
+    "start": "medusa start",
+    "db:migrate": "medusa db:migrate",
+    "test": "echo \"Phase 0B integration tests are added in a later task\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "@medusajs/admin-sdk": "2.15.5",
+    "@medusajs/cli": "2.15.5",
+    "@medusajs/framework": "2.15.5",
+    "@medusajs/js-sdk": "2.15.5",
+    "@medusajs/medusa": "2.15.5"
+  }
+}

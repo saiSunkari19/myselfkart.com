@@ -6,7 +6,7 @@
 **Updated:** 2026-06-15  
 **Goal:** Build a multi-tenant ecommerce SaaS where one Medusa backend, one Next.js storefront, and one Neon Postgres database safely serve many independent sellers.  
 **Architecture:** Shared Medusa v2 backend plus Neon Postgres 17 RLS. Tenant context is derived server-side, set with `SET LOCAL app.current_tenant` inside the same transaction as tenant-scoped queries, and enforced by Postgres RLS.  
-**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, Next.js `16.2.9`, Cloudflare R2, Redis, Razorpay per tenant, Shiprocket per tenant.
+**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, Next.js `16.2.9`, pnpm, Cloudflare R2, Redis, Razorpay per tenant, Shiprocket per tenant.
 
 ---
 
@@ -277,13 +277,13 @@ PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app con
 mkdir -p apps/medusa
 cd apps/medusa
 npm init -y
-npm install @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
 ```
 
 **DoD:**
 
-- `npm ls @medusajs/medusa` returns `2.15.5`.
-- `package-lock.json` is committed.
+- `pnpm list @medusajs/medusa --depth 0` returns `2.15.5`.
+- `pnpm-lock.yaml` is committed.
 - No Medusa package uses a loose semver range.
 
 ### Task 0B.2 - Add Tenant Context Module
