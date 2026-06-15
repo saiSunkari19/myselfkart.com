@@ -1,0 +1,61 @@
+diff --git a/dist/modules-sdk/create-pg-connection.js b/dist/modules-sdk/create-pg-connection.js
+index 8df7d15f911e15825bbaed1d74184d4869dc1ef7..e67a83fb7847e4b558e636acb3251d1a9663c291 100644
+--- a/dist/modules-sdk/create-pg-connection.js
++++ b/dist/modules-sdk/create-pg-connection.js
+@@ -19,7 +19,7 @@ function createPgConnection(options) {
+         driverOptions?.connection?.keepAliveInitialDelayMillis ??
+         10000;
+     const keepAlive = driverOptions?.keepAlive ?? driverOptions?.connection?.keepAlive ?? true;
+-    return (0, postgresql_1.knex)({
++    const pgConnection = (0, postgresql_1.knex)({
+         client: "pg",
+         searchPath: schema,
+         connection: {
+@@ -38,6 +38,47 @@ function createPgConnection(options) {
+             ...(pool ?? {}),
+         },
+     });
++    installSelfkartTenantTransactionHook(pgConnection);
++    return pgConnection;
+ }
+ exports.isSharedConnectionSymbol = Symbol.for("isSharedConnection");
++const selfkartTenantContextStorageSymbol = Symbol.for("selfkart.tenant-context-storage");
++const selfkartTenantHookInstalledSymbol = Symbol.for("selfkart.tenant-transaction-hook-installed");
++function getSelfkartTenantContext() {
++    const storage = globalThis[selfkartTenantContextStorageSymbol];
++    return storage?.getStore?.();
++}
++async function setSelfkartTenantContext(transaction, tenantId) {
++    await transaction.raw("select set_config('app.current_tenant', ?, true)", [tenantId]);
++}
++function installSelfkartTenantTransactionHook(pgConnection) {
++    if (pgConnection[selfkartTenantHookInstalledSymbol]) {
++        return;
++    }
++    const originalTransaction = pgConnection.transaction.bind(pgConnection);
++    Object.defineProperty(pgConnection, "transaction", {
++        configurable: true,
++        enumerable: false,
++        value: function selfkartTenantAwareTransaction(handlerOrConfig, maybeConfig) {
++            const context = getSelfkartTenantContext();
++            if (!context?.tenantId) {
++                return originalTransaction(handlerOrConfig, maybeConfig);
++            }
++            if (typeof handlerOrConfig === "function") {
++                return originalTransaction(async (trx) => {
++                    await setSelfkartTenantContext(trx, context.tenantId);
++                    return handlerOrConfig(trx);
++                }, maybeConfig);
++            }
++            return Promise.resolve(originalTransaction(handlerOrConfig)).then(async (trx) => {
++                await setSelfkartTenantContext(trx, context.tenantId);
++                return trx;
++            });
++        },
++    });
++    Object.defineProperty(pgConnection, selfkartTenantHookInstalledSymbol, {
++        value: true,
++        enumerable: false,
++    });
++}
+ //# sourceMappingURL=create-pg-connection.js.map

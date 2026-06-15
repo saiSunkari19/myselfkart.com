@@ -1,6 +1,9 @@
 import { defineConfig, loadEnv } from "@medusajs/utils"
 
+import { assertTenantTransactionPatchApplied } from "./src/modules/tenant-context"
+
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
+assertTenantTransactionPatchApplied()
 
 const databaseUrl = process.env.DATABASE_URL || process.env.APP_DATABASE_URL
 

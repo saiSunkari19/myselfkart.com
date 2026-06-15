@@ -21,9 +21,15 @@
     "@medusajs/cli": "2.15.5",
     "@medusajs/framework": "2.15.5",
     "@medusajs/js-sdk": "2.15.5",
-    "@medusajs/medusa": "2.15.5"
+    "@medusajs/medusa": "2.15.5",
+    "@medusajs/utils": "2.15.5"
   },
   "devDependencies": {
     "typescript": "5.7.3"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@medusajs/utils@2.15.5": "patches/@medusajs__utils@2.15.5.patch"
+    }
   }
 }

@@ -6,7 +6,7 @@
 **Updated:** 2026-06-15  
 **Goal:** Build a multi-tenant ecommerce SaaS where one Medusa backend, one Next.js storefront, and one Neon Postgres database safely serve many independent sellers.  
 **Architecture:** Shared Medusa v2 backend plus Neon Postgres 17 RLS. Tenant context is derived server-side, set with `SET LOCAL app.current_tenant` inside the same transaction as tenant-scoped queries, and enforced by Postgres RLS.  
-**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, Next.js `16.2.9`, pnpm, Cloudflare R2, Redis, Razorpay per tenant, Shiprocket per tenant.
+**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, Next.js `16.2.9`, pnpm via Corepack, Cloudflare R2, Redis, Razorpay per tenant, Shiprocket per tenant.
 
 ---
 
@@ -81,6 +81,13 @@ Pinned package versions:
 @medusajs/js-sdk: 2.15.5
 ```
 
+Package manager rule:
+
+```txt
+Use pnpm for Medusa work. Prefer `corepack pnpm` so the repo's pinned `packageManager` version is used.
+Do not add npm/yarn lockfiles.
+```
+
 ### Neon
 
 Context7 library: `/websites/neon`
@@ -107,7 +114,7 @@ Context7 library: `/vercel/next.js`
 
 Relevant current-doc findings:
 
-- Current Next.js version from npm: `16.2.9`.
+- Current Next.js version from the package registry: `16.2.9`.
 - Next.js 16 renames `middleware` to `proxy` for network-boundary routing.
 - Route Handlers can be used as a backend-for-frontend layer before proxying to Medusa.
 - Server Components can fetch backend data server-side without exposing trusted tenant context to the browser.
@@ -269,6 +276,7 @@ PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app con
 
 - Pin every Medusa package exactly to `2.15.5`.
 - Do not use `^` or `~` ranges for Medusa packages.
+- Use pnpm and commit `pnpm-lock.yaml`; do not commit `package-lock.json` or `yarn.lock`.
 - Use `MIGRATOR_DATABASE_URL` only for migrations.
 - Use `APP_DATABASE_URL` only for runtime.
 
@@ -277,17 +285,17 @@ PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app con
 ```sh
 mkdir -p apps/medusa
 cd apps/medusa
-npm init -y
-pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
-pnpm add -D typescript@5.7.3
+corepack pnpm init
+corepack pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+corepack pnpm add -D typescript@5.7.3
 ```
 
 **DoD:**
 
-- `pnpm list @medusajs/medusa --depth 0` returns `2.15.5`.
+- `corepack pnpm list @medusajs/medusa --depth 0` returns `2.15.5`.
 - `pnpm-lock.yaml` is committed.
 - No Medusa package uses a loose semver range.
-- `DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/medusa_build_check' pnpm exec medusa build` compiles the scaffold.
+- `DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/medusa_build_check' corepack pnpm exec medusa build` compiles the scaffold.
 
 ### Task 0B.2 - Add Tenant Context Module
 
@@ -318,7 +326,7 @@ pnpm add -D typescript@5.7.3
 
 - Create: `apps/medusa/src/modules/tenant-context/db-context.ts`
 - Create: `apps/medusa/patches/`
-- Modify only the minimum Medusa framework file needed to set transaction context.
+- Modify only the minimum Medusa package needed to set transaction context. In the validated scaffold this is `@medusajs/utils@2.15.5` `ModulesSdkUtils.createPgConnection`, tracked through pnpm `patchedDependencies`.
 
 **Required behavior:**
 
@@ -336,7 +344,7 @@ Rules:
 
 **DoD:**
 
-- A startup check verifies the patch is applied to Medusa `2.15.5`.
+- A startup check verifies the transaction patch is applied to Medusa utility package `2.15.5`.
 - If the patch target file changes, startup fails loudly.
 - A unit/integration test proves `current_setting('app.current_tenant', true)` is set only inside the transaction.
 

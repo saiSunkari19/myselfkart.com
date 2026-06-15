@@ -6,7 +6,7 @@
 
 **Architecture:** The database-only RLS gate has already passed. This plan adds Medusa, tenant context propagation, RLS migrations for the first commerce tables, two-tenant seed data, and API/workflow isolation tests.
 
-**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, runtime role `medusa_app`, migrator role `neondb_owner`, Node.js LTS, pnpm lockfile.
+**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, runtime role `medusa_app`, migrator role `neondb_owner`, Node.js LTS, pnpm lockfile through Corepack.
 
 ---
 
@@ -59,7 +59,7 @@ Run:
 ```sh
 mkdir -p apps/medusa
 cd apps/medusa
-pnpm init
+corepack pnpm init
 ```
 
 Expected:
@@ -73,8 +73,8 @@ apps/medusa/package.json exists
 Run:
 
 ```sh
-pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
-pnpm add -D typescript@5.7.3
+corepack pnpm add @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+corepack pnpm add -D typescript@5.7.3
 ```
 
 Expected:
@@ -88,7 +88,7 @@ pnpm-lock.yaml created
 Run:
 
 ```sh
-pnpm list @medusajs/medusa @medusajs/framework @medusajs/js-sdk --depth 0
+corepack pnpm list @medusajs/medusa @medusajs/framework @medusajs/js-sdk --depth 0
 ```
 
 Expected:
@@ -288,9 +288,10 @@ commit created
 **Files:**
 
 - Create: `apps/medusa/src/modules/tenant-context/db-context.ts`
-- Modify: Medusa database connection hook or patch target discovered from `@medusajs/framework@2.15.5`
+- Create: `apps/medusa/src/modules/tenant-context/patch-guard.ts`
+- Modify: `apps/medusa/patches/@medusajs__utils@2.15.5.patch`
 
-- [ ] **Step 1: Add SQL helper**
+- [x] **Step 1: Add SQL helper**
 
 Create `apps/medusa/src/modules/tenant-context/db-context.ts`:
 
@@ -304,23 +305,23 @@ export function getSetLocalTenantSql(): [string, string[]] {
 }
 ```
 
-- [ ] **Step 2: Inspect Medusa framework connection loader**
+- [x] **Step 2: Inspect Medusa connection factory**
 
 Run:
 
 ```sh
-rg -n "pg-connection|connection.*loader|set_config|transaction" apps/medusa/node_modules/@medusajs/framework
+rg -n "createPgConnection|pg-connection|set_config|transaction" apps/medusa/node_modules/@medusajs
 ```
 
 Expected:
 
 ```txt
-The exact connection/transaction integration point is identified for @medusajs/framework@2.15.5.
+The exact connection/transaction integration point is identified as @medusajs/utils@2.15.5 ModulesSdkUtils.createPgConnection.
 ```
 
-- [ ] **Step 3: Apply the minimum patch**
+- [x] **Step 3: Apply the minimum patch**
 
-Patch the identified Medusa framework integration point so tenant-scoped transactions execute:
+Patch `@medusajs/utils@2.15.5` through pnpm patched dependencies so tenant-scoped transactions execute:
 
 ```sql
 select set_config('app.current_tenant', '<tenant-id>', true);
@@ -328,7 +329,7 @@ select set_config('app.current_tenant', '<tenant-id>', true);
 
 The third argument must be `true`, which makes the setting local to the current transaction.
 
-- [ ] **Step 4: Add startup guard**
+- [x] **Step 4: Add startup guard**
 
 Add a startup assertion that fails if the expected Medusa framework file or function signature is missing.
 
@@ -337,7 +338,7 @@ Add a startup assertion that fails if the expected Medusa framework file or func
 Run:
 
 ```sh
-git add apps/medusa/src/modules/tenant-context apps/medusa/patches apps/medusa/package.json apps/medusa/pnpm-lock.yaml
+git add apps/medusa/src/modules/tenant-context apps/medusa/patches apps/medusa/package.json apps/medusa/pnpm-lock.yaml apps/medusa/medusa-config.ts
 git commit -m "feat: set tenant context inside Medusa transactions"
 ```
 

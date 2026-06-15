@@ -5,7 +5,15 @@ export type TenantContext = {
   source: "domain" | "session" | "test"
 }
 
-const storage = new AsyncLocalStorage<TenantContext>()
+const storageSymbol = Symbol.for("selfkart.tenant-context-storage")
+const globalStorage = globalThis as typeof globalThis & {
+  [storageSymbol]?: AsyncLocalStorage<TenantContext>
+}
+
+const storage =
+  globalStorage[storageSymbol] ?? new AsyncLocalStorage<TenantContext>()
+
+globalStorage[storageSymbol] = storage
 
 export function runWithTenantContext<T>(
   context: TenantContext,

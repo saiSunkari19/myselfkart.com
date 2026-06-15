@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@medusajs/utils@2.15.5':
+    hash: vhijve6mwx2g3hhiyqpk54vsxe
+    path: patches/@medusajs__utils@2.15.5.patch
+
 importers:
 
   .:
@@ -23,6 +28,9 @@ importers:
       '@medusajs/medusa':
         specifier: 2.15.5
         version: 2.15.5(@medusajs/admin-sdk@2.15.5)(@medusajs/cli@2.15.5(@types/node@25.9.3))(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))(@medusajs/icons@2.15.5(react@18.3.1))(@medusajs/ui@4.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(@types/node@25.9.3)(awilix@8.0.1)(picomatch@4.0.4)(posthog-node@5.37.0(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+      '@medusajs/utils':
+        specifier: 2.15.5
+        version: 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
     devDependencies:
       typescript:
         specifier: 5.7.3
@@ -5749,14 +5757,14 @@ snapshots:
   '@graphql-tools/optimize@2.0.0(graphql@16.14.2)':
     dependencies:
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   '@graphql-tools/relay-operation-optimizer@7.1.4(graphql@16.14.2)':
     dependencies:
       '@ardatan/relay-compiler': 13.0.1(graphql@16.14.2)
       '@graphql-tools/utils': 11.1.0(graphql@16.14.2)
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   '@graphql-tools/schema@10.0.33(graphql@16.14.2)':
     dependencies:
@@ -5771,7 +5779,7 @@ snapshots:
       '@whatwg-node/promise-helpers': 1.3.2
       cross-inspect: 1.0.1
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   '@graphql-tools/utils@11.1.0(graphql@16.14.2)':
     dependencies:
@@ -6049,7 +6057,7 @@ snapshots:
     dependencies:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
       '@medusajs/telemetry': 2.15.5
-      '@medusajs/utils': 2.15.5(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
       '@types/express': 4.17.25
       chalk: 4.1.2
       configstore: 5.0.1
@@ -6242,7 +6250,7 @@ snapshots:
       '@medusajs/orchestration': 2.15.5(@types/node@25.9.3)(express@4.22.2)
       '@medusajs/telemetry': 2.15.5
       '@medusajs/types': 2.15.5(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))
-      '@medusajs/utils': 2.15.5(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
       '@medusajs/workflows-sdk': 2.15.5(@types/node@25.9.3)(express@4.22.2)
       '@types/express': 4.17.25
       chokidar: 4.0.3
@@ -6429,7 +6437,7 @@ snapshots:
     dependencies:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
       '@medusajs/orchestration': 2.15.5(@types/node@25.9.3)(express@4.22.2)
-      '@medusajs/utils': 2.15.5(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
     transitivePeerDependencies:
       - '@types/node'
       - better-sqlite3
@@ -6463,7 +6471,7 @@ snapshots:
   '@medusajs/orchestration@2.15.5(@types/node@25.9.3)(express@4.22.2)':
     dependencies:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
-      '@medusajs/utils': 2.15.5(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
       ulid: 2.4.0
     transitivePeerDependencies:
       - '@types/node'
@@ -6594,7 +6602,7 @@ snapshots:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
       jsonwebtoken: 9.0.3
 
-  '@medusajs/utils@2.15.5(@types/node@25.9.3)(express@4.22.2)':
+  '@medusajs/utils@2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)':
     dependencies:
       '@graphql-codegen/core': 4.0.2(graphql@16.14.2)
       '@graphql-codegen/typescript': 4.1.6(graphql@16.14.2)
@@ -6644,7 +6652,7 @@ snapshots:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
       '@medusajs/modules-sdk': 2.15.5(@types/node@25.9.3)(express@4.22.2)
       '@medusajs/orchestration': 2.15.5(@types/node@25.9.3)(express@4.22.2)
-      '@medusajs/utils': 2.15.5(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
       ulid: 2.4.0
     transitivePeerDependencies:
       - '@types/node'
@@ -8508,7 +8516,7 @@ snapshots:
   capital-case@1.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case-first: 2.0.2
 
   cardinal@2.1.1:
@@ -8547,7 +8555,7 @@ snapshots:
       path-case: 3.0.4
       sentence-case: 3.0.4
       snake-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   chardet@2.1.1: {}
 
@@ -8730,7 +8738,7 @@ snapshots:
   constant-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case: 2.0.2
 
   content-disposition@0.5.4:
@@ -8851,7 +8859,7 @@ snapshots:
   dot-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   dot-prop@5.3.0:
     dependencies:
@@ -9192,7 +9200,7 @@ snapshots:
   graphql-tag@2.12.6(graphql@16.14.2):
     dependencies:
       graphql: 16.14.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   graphql@16.14.2: {}
 
@@ -9211,7 +9219,7 @@ snapshots:
   header-case@2.0.4:
     dependencies:
       capital-case: 1.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   hosted-git-info@4.1.0:
     dependencies:
@@ -9362,7 +9370,7 @@ snapshots:
 
   is-lower-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   is-number@7.0.0: {}
 
@@ -9386,7 +9394,7 @@ snapshots:
 
   is-upper-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   is-valid-path@0.1.1:
     dependencies:
@@ -9560,11 +9568,11 @@ snapshots:
 
   lower-case-first@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   lower-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   lru-cache@11.5.1: {}
 
@@ -9796,7 +9804,7 @@ snapshots:
   param-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   parent-require@1.0.0: {}
 
@@ -9821,7 +9829,7 @@ snapshots:
   path-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   path-exists@4.0.0: {}
 
@@ -10372,7 +10380,7 @@ snapshots:
   sentence-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case-first: 2.0.2
 
   serve-static@1.16.3:
@@ -10439,7 +10447,7 @@ snapshots:
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   sonner@1.7.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -10454,7 +10462,7 @@ snapshots:
 
   sponge-case@1.0.1:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   sprintf-js@1.0.3: {}
 
@@ -10535,7 +10543,7 @@ snapshots:
 
   swap-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   tailwind-merge@2.6.1: {}
 
@@ -10590,7 +10598,7 @@ snapshots:
 
   title-case@3.0.3:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   to-fast-properties@2.0.0: {}
 
@@ -10679,11 +10687,11 @@ snapshots:
 
   upper-case-first@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   upper-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   uri-js@4.4.1:
     dependencies:
