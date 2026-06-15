@@ -393,7 +393,7 @@ Core table RLS forced: product, product_variant, cart, cart_line_item, customer,
 Runtime medusa_app smoke: tenant_id stamped, no-context read hidden, wrong-tenant read hidden
 ```
 
-**Critical follow-up discovered during verification:**
+**Critical follow-up discovered during verification and completed in Task 0B.4A:**
 
 Medusa creates link tables after module migrations during `db:migrate`. These tables were created after `Migration20260615000100`, so they need a separate post-link RLS step before the Medusa API leak suite can pass.
 
@@ -410,17 +410,49 @@ order_payment_collection
 
 ### Task 0B.4A - Add RLS for Medusa Link Tables
 
-**Status:** Required before seed and API leak tests.
+**Status:** Completed on 2026-06-15.
 
 **Goal:** Cover Medusa-generated link tables that are created after module migrations.
 
-**Requirements:**
+**Implementation:**
 
-- Use a post-migration script or other Medusa-supported post-link hook that runs after link sync.
-- Add tenant context to link tables that connect tenant-owned records.
-- Prefer deriving link-table tenant ownership from the tenant-owned side of the relationship where possible.
-- Verify link tables are hidden with no tenant context and wrong tenant context.
-- Do not move to Task 0B.5 until link tables are either covered or explicitly proven not reachable by tenant-facing APIs.
+- Added `apps/medusa/src/migration-scripts/20260615000200-protect-link-tables.ts`.
+- Uses Medusa's `src/migration-scripts` mechanism, which runs after module migrations and link sync during `db:migrate`.
+- Enables and forces RLS on generated link tables that connect to tenant-owned records.
+- Uses join-based policies that derive ownership from the tenant-scoped side of the link instead of adding a duplicate `tenant_id` column.
+- Re-grants table DML and sequence privileges to `medusa_app` after link tables are created.
+
+**Covered link tables:**
+
+```txt
+cart_payment_collection
+cart_promotion
+customer_account_holder
+order_cart
+order_fulfillment
+order_payment_collection
+order_promotion
+return_fulfillment
+product_sales_channel
+product_shipping_profile
+product_variant_inventory_item
+product_variant_price_set
+```
+
+**Verification result on 2026-06-15:**
+
+```txt
+Temporary Neon branch: phase0b-link-rls-verify
+Medusa db:migrate: passed
+Link-table tenant isolation policies created: 12
+All 12 scoped link tables have RLS enabled and forced
+Script migration row completed: 20260615000200-protect-link-tables.ts
+Runtime medusa_app link smoke: tenant link visible, no-context hidden, wrong-tenant hidden
+```
+
+**Remaining validation risk for API tests:**
+
+Payment, fulfillment, inventory, stock-location, sales-channel, and pricing tables are not fully tenantized by this step. They are only protected when reached through one of the tenant-owned link tables above. The Medusa API leak suite must prove tenant-facing workflows do not expose those shared module rows directly.
 
 ### Task 0B.5 - Seed Two Tenants
 

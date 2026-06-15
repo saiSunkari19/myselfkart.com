@@ -448,7 +448,7 @@ commit created
 
 ## Task 4A: Add RLS for Medusa Link Tables
 
-**Status:** Required before Task 5.
+**Status:** Completed.
 
 **Why:** During temp-branch verification, `medusa db:migrate` created link tables after module migrations. `Migration20260615000100` cannot cover tables that do not exist until link sync runs.
 
@@ -463,17 +463,60 @@ order_cart
 order_payment_collection
 ```
 
-- [ ] **Step 1: Confirm Medusa-supported post-link migration mechanism**
+- [x] **Step 1: Confirm Medusa-supported post-link migration mechanism**
 
 Use Context7 and local package inspection to identify whether app-level migration scripts can run after link sync.
 
-- [ ] **Step 2: Add link-table tenant protection**
+Result:
 
-Use the confirmed post-link mechanism to add tenant isolation to Medusa-generated link tables that connect tenant-owned records.
+```txt
+Medusa `db:migrate` runs module migrations, syncs links, then runs `src/migration-scripts`.
+Script signature: default async function receiving `{ container }`.
+DB access: container.resolve(ContainerRegistrationKeys.PG_CONNECTION).
+Tracking table: script_migrations.
+```
 
-- [ ] **Step 3: Verify on a fresh temporary Neon branch**
+- [x] **Step 2: Add link-table tenant protection**
+
+Created:
+
+```txt
+apps/medusa/src/migration-scripts/20260615000200-protect-link-tables.ts
+```
+
+Covered link tables:
+
+```txt
+cart_payment_collection
+cart_promotion
+customer_account_holder
+order_cart
+order_fulfillment
+order_payment_collection
+order_promotion
+return_fulfillment
+product_sales_channel
+product_shipping_profile
+product_variant_inventory_item
+product_variant_price_set
+```
+
+The script enables and forces RLS, creates join-based policies that derive ownership from tenant-owned records, and re-grants runtime privileges to `medusa_app`.
+
+- [x] **Step 3: Verify on a fresh temporary Neon branch**
 
 Run full `corepack pnpm exec medusa db:migrate`, then assert link tables have tenant protection or are explicitly proven not tenant-facing.
+
+Result:
+
+```txt
+Temporary branch: phase0b-link-rls-verify
+Medusa db:migrate: passed from empty branch
+Link-table tenant isolation policies created: 12
+All scoped link tables have RLS enabled and forced
+Script migration completed: 20260615000200-protect-link-tables.ts
+Restricted medusa_app link smoke passed: tenant link visible, no-context hidden, wrong-tenant hidden
+```
 
 - [ ] **Step 4: Commit**
 
