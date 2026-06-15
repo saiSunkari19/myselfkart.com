@@ -640,7 +640,14 @@ DONE - Read-path RLS fix (Option 2): pnpm patch on @mikro-orm/knex wraps
        startup guard + tests/integration/rls/read-path-isolation.test.js.
        Validated end to end: seller sees ONLY their data; full suite 6 pass, 0 fail.
        Optimize to per-request txn (Option 1) later if read latency demands.
-TODO  - Concern 2: RLS/scoping on user/invite/api_key; leave auth_identity un-RLS'd.
+DONE - Concern 2: RLS on user + invite (Migration20260615000400) reusing the
+       selfkart_set_tenant_id trigger; invite global unique email -> tenant-aware
+       unique; auth_identity/provider_identity left un-RLS'd (login needs them).
+       create-seller-admin provisions the user inside a tenant context so the RLS
+       WITH CHECK passes. Validated live: seller-a /admin/users shows only seller-a,
+       seller-b only seller-b; full suite 7 pass, 0 fail.
+DEFER - api_key RLS: Medusa creates a platform "Default Publishable API Key" at
+       boot with no tenant context; needs a tenant-nullable model. Tracked.
 TODO  - /store* domain tenant resolver (storefront, Phase 1 main task).
 ```
 

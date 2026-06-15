@@ -2,6 +2,8 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import type { ExecArgs } from "@medusajs/framework/types"
 import type { Knex } from "knex"
 
+import { runWithTenantContext } from "../modules/tenant-context"
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -49,20 +51,27 @@ export default async function createSellerAdmin({ container }: ExecArgs) {
   const userService = container.resolve(Modules.USER)
   const workflowEngine = container.resolve(Modules.WORKFLOW_ENGINE)
 
-  // 1. Reuse an existing user with this email, otherwise create one.
-  const existingUsers = await userService.listUsers({ email })
-  let userId: string
+  // 1. Reuse an existing user with this email, otherwise create one. The "user"
+  // table is now tenant-RLS'd (Concern 2): both the lookup and the insert must
+  // run inside the tenant context so the lookup is scoped and the insert's
+  // tenant_id is stamped by the trigger and satisfies the RLS WITH CHECK.
+  const userId = await runWithTenantContext(
+    { tenantId, source: "session" },
+    async () => {
+      const existingUsers = await userService.listUsers({ email })
 
-  if (existingUsers.length > 0) {
-    userId = existingUsers[0].id
-    logger.info(`Reusing existing user ${userId} for ${email}`)
-  } else {
-    const { result: users } = await workflowEngine.run("create-users-workflow", {
-      input: { users: [{ email }] },
-    })
-    userId = users[0].id
-    logger.info(`Created user ${userId} for ${email}`)
-  }
+      if (existingUsers.length > 0) {
+        logger.info(`Reusing existing user ${existingUsers[0].id} for ${email}`)
+        return existingUsers[0].id
+      }
+
+      const { result: users } = await workflowEngine.run("create-users-workflow", {
+        input: { users: [{ email }] },
+      })
+      logger.info(`Created user ${users[0].id} for ${email}`)
+      return users[0].id
+    }
+  )
 
   // 2. Register the emailpass credential, or reuse it if already present.
   const { authIdentity, success, error } = await authService.register(PROVIDER, {
@@ -88,6 +97,8 @@ export default async function createSellerAdmin({ container }: ExecArgs) {
   }
 
   // 3. Link actor + tenant on the auth identity (this is what the JWT carries).
+  // auth_identity is intentionally NOT tenant-RLS'd (login resolves it before a
+  // tenant is known), so this runs without a tenant context.
   await authService.updateAuthIdentities({
     id: authIdentityId,
     app_metadata: {
@@ -96,8 +107,8 @@ export default async function createSellerAdmin({ container }: ExecArgs) {
     },
   })
 
-  // 4. Stamp the durable binding on the user row (source of truth for Concern 2).
-  await knex("user").where({ id: userId }).update({ tenant_id: tenantId })
+  // The user.tenant_id binding was stamped by the RLS trigger during creation
+  // (step 1, inside the tenant context) — no separate UPDATE is needed.
 
   logger.info(
     `Seller admin ready: email=${email} user_id=${userId} tenant_id=${tenantId}`
