@@ -1,0 +1,24 @@
+diff --git a/AbstractSqlConnection.js b/AbstractSqlConnection.js
+index e3a855871..00118e405 100644
+--- a/AbstractSqlConnection.js
++++ b/AbstractSqlConnection.js
+@@ -128,6 +128,19 @@ class AbstractSqlConnection extends core_1.Connection {
+     }
+     async execute(queryOrKnex, params = [], method = 'all', ctx, loggerContext) {
+         await this.ensureConnection();
++        // selfkart-tenant-read-rls: Medusa's read path (query.graph / @InjectManager
++        // finds) runs without a transaction, so the tenant set_config hook never
++        // fires and Postgres RLS fail-closes. When an ALS tenant context is active
++        // and we are not already inside a transaction, route the query through the
++        // (patched) knex transaction so app.current_tenant is set for this statement.
++        if (!ctx) {
++            const __skStore = globalThis[Symbol.for("selfkart.tenant-context-storage")];
++            const __sk = __skStore && __skStore.getStore ? __skStore.getStore() : undefined;
++            const __skTx = core_1.Utils.isObject(queryOrKnex) && queryOrKnex.client && queryOrKnex.client.transacting;
++            if (__sk && __sk.tenantId && !__skTx) {
++                return this.getKnex().transaction((trx) => this.execute(queryOrKnex, params, method, trx, loggerContext));
++            }
++        }
+         if (core_1.Utils.isObject(queryOrKnex)) {
+             ctx ??= (queryOrKnex.client.transacting ? queryOrKnex : null);
+             const q = queryOrKnex.toSQL();

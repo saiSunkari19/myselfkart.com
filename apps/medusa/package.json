@@ -31,7 +31,8 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "@medusajs/utils@2.15.5": "patches/@medusajs__utils@2.15.5.patch"
+      "@medusajs/utils@2.15.5": "patches/@medusajs__utils@2.15.5.patch",
+      "@mikro-orm/knex@6.6.12": "patches/@mikro-orm__knex@6.6.12.patch"
     }
   }
 }

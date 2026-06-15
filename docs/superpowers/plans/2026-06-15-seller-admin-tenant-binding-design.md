@@ -255,15 +255,40 @@ limits apply, without removing the transaction need. Not recommended.
 | 1 — per-request txn | Expected equal (same GUC mechanism) | Best: 1 BEGIN/COMMIT + 1 set_config per request | Changes request transaction semantics; longer connection hold |
 | 3 — session-pinned | Works only with per-request pinning (≈ a txn) | Avoids BEGIN/COMMIT but needs session-mode endpoint | Drops pooling; Neon direct-conn limits; biggest infra change |
 
-### Recommendation
+### Recommendation — Option 2 SHIPPED and validated (2026-06-15)
 
-Ship **Option 2 now** (proven, smallest change, an extension of the existing
-`@medusajs/utils` patch pattern — formalize it as a pnpm patch on `@mikro-orm/knex`
-plus a startup guard like `assertTenantTransactionPatchApplied`). If admin/storefront
-read latency proves too high under real pages, **optimize to Option 1** (per-request
-transaction) using the same GUC mechanism. **Drop Option 3.** Add the read path to
-the isolation test suite and re-run the Phase 0B gate end-to-end through Medusa's
-HTTP API before onboarding.
+Implemented Option 2 as a real pnpm patch:
+
+```txt
+patches/@mikro-orm__knex@6.6.12.patch
+  AbstractSqlConnection.execute: when an ALS tenant context is active and the
+  query is not already in a transaction, route it through getKnex().transaction(),
+  which the existing @medusajs/utils hook GUC-stamps. Marker: "selfkart-tenant-read-rls".
+package.json pnpm.patchedDependencies: + "@mikro-orm/knex@6.6.12".
+Startup guard: assertTenantReadPathPatchApplied() in medusa-config.ts. App-root
+  resolution sees the UNPATCHED hoisted knex, so the guard anchors resolution at
+  @medusajs/medusa -> @mikro-orm/postgresql -> @mikro-orm/knex (the patched variant
+  the ORM actually loads) and checks the marker.
+Read-path regression test: tests/integration/rls/read-path-isolation.test.js
+  drives query.graph (via src/scripts/assert-read-path-isolation.ts).
+```
+
+Validated on disposable Neon branch `phase1-patch-verify` (deleted after):
+
+```txt
+Running Medusa (pnpm patch active, NOT a manual edit):
+  seller-a GET /admin/products -> exactly its 2 products
+  seller-b GET /admin/products -> exactly its 2 products
+  seller-a GET /admin/products/<tenant-B id> -> 404
+Full RLS suite (6 files) through the pooled medusa_app role: 6 pass, 0 fail,
+  including "READ-PATH PASS: query.graph honored tenant RLS (A=2, B=2, no-context=0)".
+Startup guard passed on every medusa exec (loads medusa-config).
+```
+
+If admin/storefront read latency proves too high under real pages, **optimize to
+Option 1** (per-request transaction) using the same GUC mechanism. Option 3 dropped.
+Concern 2 (RLS on identity tables) and the storefront `/store*` domain resolver
+remain TODO; re-run the full Phase 0B gate end-to-end before onboarding.
 
 ## Suggested implementation order
 

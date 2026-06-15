@@ -76,9 +76,15 @@ tenant-aware admin auth — track in Phase 1/Phase 5.
 > `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`
 > (Validation results) for root cause and fix options. This must be resolved in
 > Phase 1 before any seller onboarding.
+>
+> **RESOLVED (2026-06-15):** the read-path gap is fixed (Option 2 — pnpm patch on
+> `@mikro-orm/knex` wraps tenant-scoped reads in a transaction). Validated end to
+> end: a logged-in seller sees ONLY their own products; full RLS suite 6 pass,
+> 0 fail including a `query.graph` read-path test. "Medusa preserves tenant
+> context through its APIs" now holds for reads AND writes. See Task 1.A.
 
-Do not onboard sellers until Phase 1 tenant resolution, the admin binding, AND
-the read-path tenant-context fix land.
+Do not onboard sellers until the admin binding's Concern 2 (RLS on identity
+tables) and the storefront `/store*` domain resolver also land.
 
 ---
 
@@ -628,11 +634,14 @@ DONE - src/api middleware: /admin* tenant resolved from req.auth_context.app_met
        (test header kept behind SELFKART_ALLOW_TEST_TENANT_HEADER=true only).
 DONE - Spike: authenticate() never reads "user"; /admin auth runs before custom
        middleware; JWT carries app_metadata.tenant_id. Proven end to end.
-BLOCKED - "seller sees only their data" fails: Medusa READ path is non-transactional
-       so the Phase 0B set_config hook never fires on reads -> RLS returns 0 rows.
-       Fix options in the design doc (per-request txn / patch read path / session-pinned
-       connection). MUST fix before onboarding.
+DONE - Read-path RLS fix (Option 2): pnpm patch on @mikro-orm/knex wraps
+       tenant-scoped reads in a transaction so the set_config hook fires on reads.
+       patches/@mikro-orm__knex@6.6.12.patch + assertTenantReadPathPatchApplied()
+       startup guard + tests/integration/rls/read-path-isolation.test.js.
+       Validated end to end: seller sees ONLY their data; full suite 6 pass, 0 fail.
+       Optimize to per-request txn (Option 1) later if read latency demands.
 TODO  - Concern 2: RLS/scoping on user/invite/api_key; leave auth_identity un-RLS'd.
+TODO  - /store* domain tenant resolver (storefront, Phase 1 main task).
 ```
 
 ---

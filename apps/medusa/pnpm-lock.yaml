@@ -8,6 +8,9 @@ patchedDependencies:
   '@medusajs/utils@2.15.5':
     hash: vhijve6mwx2g3hhiyqpk54vsxe
     path: patches/@medusajs__utils@2.15.5.patch
+  '@mikro-orm/knex@6.6.12':
+    hash: npkq4efdsmzavjzsw2tjbyxbum
+    path: patches/@mikro-orm__knex@6.6.12.patch
 
 importers:
 
@@ -6161,7 +6164,7 @@ snapshots:
     dependencies:
       '@mikro-orm/cli': 6.6.12(pg@8.21.0)
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(@mikro-orm/core@6.6.12)(pg@8.21.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=npkq4efdsmzavjzsw2tjbyxbum)(@mikro-orm/core@6.6.12)(pg@8.21.0)
       '@mikro-orm/migrations': 6.6.12(@mikro-orm/core@6.6.12)(@types/node@25.9.3)(pg@8.21.0)
       '@mikro-orm/postgresql': 6.6.12(@mikro-orm/core@6.6.12)
       '@opentelemetry/api': 1.9.1
@@ -6672,7 +6675,7 @@ snapshots:
     dependencies:
       '@jercle/yargonaut': 1.1.5
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(@mikro-orm/core@6.6.12)(pg@8.21.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=npkq4efdsmzavjzsw2tjbyxbum)(@mikro-orm/core@6.6.12)(pg@8.21.0)
       fs-extra: 11.3.3
       tsconfig-paths: 4.2.0
       yargs: 17.7.2
@@ -6699,7 +6702,7 @@ snapshots:
       mikro-orm: 6.6.12
       reflect-metadata: 0.2.2
 
-  '@mikro-orm/knex@6.6.12(@mikro-orm/core@6.6.12)(pg@8.20.0)':
+  '@mikro-orm/knex@6.6.12(patch_hash=npkq4efdsmzavjzsw2tjbyxbum)(@mikro-orm/core@6.6.12)(pg@8.20.0)':
     dependencies:
       '@mikro-orm/core': 6.6.12
       fs-extra: 11.3.3
@@ -6715,7 +6718,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/knex@6.6.12(@mikro-orm/core@6.6.12)(pg@8.21.0)':
+  '@mikro-orm/knex@6.6.12(patch_hash=npkq4efdsmzavjzsw2tjbyxbum)(@mikro-orm/core@6.6.12)(pg@8.21.0)':
     dependencies:
       '@mikro-orm/core': 6.6.12
       fs-extra: 11.3.3
@@ -6734,7 +6737,7 @@ snapshots:
   '@mikro-orm/migrations@6.6.12(@mikro-orm/core@6.6.12)(@types/node@25.9.3)(pg@8.21.0)':
     dependencies:
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(@mikro-orm/core@6.6.12)(pg@8.21.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=npkq4efdsmzavjzsw2tjbyxbum)(@mikro-orm/core@6.6.12)(pg@8.21.0)
       fs-extra: 11.3.3
       umzug: 3.8.2(@types/node@25.9.3)
     transitivePeerDependencies:
@@ -6754,7 +6757,7 @@ snapshots:
   '@mikro-orm/postgresql@6.6.12(@mikro-orm/core@6.6.12)':
     dependencies:
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(@mikro-orm/core@6.6.12)(pg@8.20.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=npkq4efdsmzavjzsw2tjbyxbum)(@mikro-orm/core@6.6.12)(pg@8.20.0)
       pg: 8.20.0
       postgres-array: 3.0.4
       postgres-date: 2.1.0
