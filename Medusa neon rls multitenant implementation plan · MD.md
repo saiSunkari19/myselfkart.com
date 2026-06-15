@@ -1,0 +1,899 @@
+# Medusa + Neon RLS Multi-Tenant Ecommerce SaaS Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. Use `context7-mcp` before writing Medusa, Next.js, Neon, or SDK-specific code. Use Neon MCP for database inspection and migrations where available.
+
+**Prepared for:** Sai Krishna Sunkari  
+**Updated:** 2026-06-15  
+**Goal:** Build a multi-tenant ecommerce SaaS where one Medusa backend, one Next.js storefront, and one Neon Postgres database safely serve many independent sellers.  
+**Architecture:** Shared Medusa v2 backend plus Neon Postgres 17 RLS. Tenant context is derived server-side, set with `SET LOCAL app.current_tenant` inside the same transaction as tenant-scoped queries, and enforced by Postgres RLS.  
+**Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, Next.js `16.2.9`, Cloudflare R2, Redis, Razorpay per tenant, Shiprocket per tenant.
+
+---
+
+## 0. Current Decision State
+
+### Passed on 2026-06-15
+
+- Neon project: `selfkart`
+- Neon project id: `jolly-rice-01919313`
+- Region: `aws-ap-southeast-1`
+- Postgres version: `17.10`
+- Runtime app role: `medusa_app`
+- Runtime role flags verified by Neon MCP:
+  - `rolsuper = false`
+  - `rolbypassrls = false`
+  - `rolcanlogin = true`
+- Migrator role: `neondb_owner`
+  - `rolbypassrls = true`
+  - Use only for migrations and schema ownership.
+- Database-only pooled RLS smoke test passed:
+
+```txt
+ITERATIONS=500
+CONCURRENCY=50
+Runtime role: medusa_app
+PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app connections
+```
+
+Smoke-test harness:
+
+```txt
+phase0-rls-smoke/run.sh
+phase0-rls-smoke/README.md
+```
+
+### Still Not Proven
+
+The database gate passed, but the architecture is not fully validated until Medusa itself passes the same isolation tests through its APIs and workflows.
+
+Pending gate:
+
+```txt
+Medusa 2.15.5 + Neon pooled APP_DATABASE_URL + tenant context hook + API/workflow leak tests
+```
+
+Do not onboard sellers until the Medusa-level gate passes.
+
+---
+
+## 1. Documentation Sources Checked
+
+Use these as the starting point for any implementation agent. Re-check with Context7 before coding because library behavior can change.
+
+### Medusa
+
+Context7 library: `/medusajs/medusa`
+
+Relevant current-doc findings:
+
+- Medusa v2 supports custom modules registered in `medusa-config.ts`.
+- Medusa migrations use MikroORM migration classes from `@medusajs/framework/mikro-orm/migrations`.
+- Medusa commerce capabilities are implemented through modules and workflows.
+- Redis workflow engine can be configured as a Medusa module when production workflows need Redis persistence.
+
+Pinned package versions:
+
+```txt
+@medusajs/medusa: 2.15.5
+@medusajs/framework: 2.15.5
+@medusajs/cli: 2.15.5
+@medusajs/admin-sdk: 2.15.5
+@medusajs/js-sdk: 2.15.5
+```
+
+### Neon
+
+Context7 library: `/websites/neon`
+
+Relevant current-doc findings:
+
+- Use a custom backend role for RLS.
+- The runtime role must have `LOGIN`.
+- The runtime role must not have `BYPASSRLS`.
+- Keep separate admin/migration and runtime connection strings.
+- Neon pooled URLs use PgBouncer and the `-pooler` hostname form.
+- Neon pooling is transaction-oriented, so tenant context must be transaction-local.
+
+Required connection split:
+
+```txt
+MIGRATOR_DATABASE_URL = direct Neon URL using neondb_owner
+APP_DATABASE_URL      = pooled Neon URL using medusa_app
+```
+
+### Next.js
+
+Context7 library: `/vercel/next.js`
+
+Relevant current-doc findings:
+
+- Current Next.js version from npm: `16.2.9`.
+- Next.js 16 renames `middleware` to `proxy` for network-boundary routing.
+- Route Handlers can be used as a backend-for-frontend layer before proxying to Medusa.
+- Server Components can fetch backend data server-side without exposing trusted tenant context to the browser.
+
+Storefront rule:
+
+```txt
+Browser never sends tenant_id.
+Next.js resolves tenant from Host.
+Next.js server-side code calls Medusa with trusted tenant context.
+```
+
+---
+
+## 2. Non-Negotiable Architecture Rules
+
+1. Use Neon as the database host for the shared-RLS path.
+2. Use Postgres RLS as the isolation boundary.
+3. Runtime Medusa must connect as `medusa_app`, not `neondb_owner`.
+4. `medusa_app` must never own tenant-scoped tables.
+5. `medusa_app` must never have `BYPASSRLS`.
+6. Tenant context must be set with `SET LOCAL app.current_tenant = '<uuid>'`.
+7. `SET LOCAL` must run inside the same transaction as all tenant-scoped queries.
+8. Tenant id must be derived server-side from domain/session, never from a browser-controlled header.
+9. Platform admin access must be explicit and audited, not accidental "no tenant context sees all".
+10. Every Medusa upgrade requires a table audit plus the full isolation suite.
+
+---
+
+## 3. Target Request Flow
+
+```txt
+Customer opens seller domain
+  -> Next.js proxy/Route Handler reads Host
+  -> tenant_domains lookup resolves tenant_id
+  -> unknown/draft/suspended tenant returns safe page
+  -> active tenant request continues
+  -> server-side storefront code calls Medusa
+  -> Medusa middleware derives tenant context from trusted source
+  -> Medusa DB hook opens transaction
+  -> hook runs SET LOCAL app.current_tenant = '<tenant_id>'
+  -> Medusa service/workflow queries run inside that transaction
+  -> Postgres RLS filters products/carts/orders/customers
+  -> R2 media paths use tenant prefix
+```
+
+---
+
+## 4. Proposed Repository Layout
+
+Create this layout when implementation starts:
+
+```txt
+selfkart.com/
+  apps/
+    medusa/
+      package.json
+      medusa-config.ts
+      src/
+        api/
+        jobs/
+        subscribers/
+        modules/
+          tenant/
+          tenant-context/
+        migrations/
+        workflows/
+      tests/
+        integration/
+          rls/
+          tenant-context/
+    storefront/
+      package.json
+      next.config.ts
+      proxy.ts
+      src/
+        app/
+        lib/
+          tenant/
+          medusa/
+        tests/
+  docs/
+    superpowers/
+      plans/
+  phase0-rls-smoke/
+    run.sh
+    README.md
+```
+
+---
+
+## 5. Phase 0A - Database RLS Gate
+
+**Status:** Passed.
+
+**Goal:** Prove Neon Postgres 17 can enforce tenant isolation through the pooled app role.
+
+**Files:**
+
+- Existing: `phase0-rls-smoke/run.sh`
+- Existing: `phase0-rls-smoke/README.md`
+- Existing local secret file: `.env`
+
+**Commands:**
+
+```sh
+set -a
+source .env
+set +a
+ITERATIONS=500 CONCURRENCY=50 bash phase0-rls-smoke/run.sh
+```
+
+**Expected output:**
+
+```txt
+Runtime role: medusa_app
+PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app connections
+```
+
+**DoD:**
+
+- Postgres version is 17.x.
+- App URL uses pooled Neon host.
+- Runtime role is `medusa_app`.
+- Runtime role has no `BYPASSRLS`.
+- No rows are visible with no tenant context.
+- Tenant A never sees Tenant B under concurrent load.
+- Tenant context clears after transaction commit.
+
+**Result:** Passed on 2026-06-15.
+
+---
+
+## 6. Phase 0B - Medusa Shared-RLS Gate
+
+**Status:** Next required work.
+
+**Goal:** Prove Medusa `2.15.5` can preserve tenant context for products, carts, customers, orders, and background jobs under pooled Neon connections.
+
+**Kill Criteria:**
+
+- Medusa queries escape the transaction that set `app.current_tenant`.
+- Medusa workflow/cart/order/payment paths bypass tenant context in a way that cannot be patched cleanly.
+- Required patch touches too much unstable framework internals.
+- A pooled concurrent test shows cross-tenant leakage.
+
+**Fallback if killed:** one Medusa instance/database per seller on Neon.
+
+### Task 0B.1 - Scaffold Medusa Backend
+
+**Files:**
+
+- Create: `apps/medusa/package.json`
+- Create: `apps/medusa/medusa-config.ts`
+- Create: `apps/medusa/.env.example`
+
+**Requirements:**
+
+- Pin every Medusa package exactly to `2.15.5`.
+- Do not use `^` or `~` ranges for Medusa packages.
+- Use `MIGRATOR_DATABASE_URL` only for migrations.
+- Use `APP_DATABASE_URL` only for runtime.
+
+**Commands:**
+
+```sh
+mkdir -p apps/medusa
+cd apps/medusa
+npm init -y
+npm install @medusajs/medusa@2.15.5 @medusajs/framework@2.15.5 @medusajs/cli@2.15.5 @medusajs/admin-sdk@2.15.5 @medusajs/js-sdk@2.15.5
+```
+
+**DoD:**
+
+- `npm ls @medusajs/medusa` returns `2.15.5`.
+- `package-lock.json` is committed.
+- No Medusa package uses a loose semver range.
+
+### Task 0B.2 - Add Tenant Context Module
+
+**Files:**
+
+- Create: `apps/medusa/src/modules/tenant-context/index.ts`
+- Create: `apps/medusa/src/modules/tenant-context/service.ts`
+- Create: `apps/medusa/src/modules/tenant-context/middleware.ts`
+- Modify: `apps/medusa/medusa-config.ts`
+
+**Behavior:**
+
+- Store `tenant_id` in `AsyncLocalStorage`.
+- Accept tenant id only from trusted server-side routes during the spike.
+- For production, replace trusted test header with domain/session derivation.
+- Reject tenant-scoped API requests without context.
+
+**Test Cases:**
+
+- Request with Tenant A context returns Tenant A rows only.
+- Request with Tenant B context returns Tenant B rows only.
+- Request with no context returns 403 or zero rows.
+- Request trying to override tenant through browser-controlled header fails.
+
+### Task 0B.3 - Patch or Hook Medusa DB Connection
+
+**Files:**
+
+- Create: `apps/medusa/src/modules/tenant-context/db-context.ts`
+- Create: `apps/medusa/patches/`
+- Modify only the minimum Medusa framework file needed to set transaction context.
+
+**Required behavior:**
+
+```sql
+SET LOCAL app.current_tenant = '<tenant_id>';
+```
+
+Rules:
+
+- Must run inside an open transaction.
+- Must run before tenant-scoped queries.
+- Must not use plain `SET`.
+- Must not use session-level `RESET` as the safety mechanism.
+- Must fail closed if tenant context is missing.
+
+**DoD:**
+
+- A startup check verifies the patch is applied to Medusa `2.15.5`.
+- If the patch target file changes, startup fails loudly.
+- A unit/integration test proves `current_setting('app.current_tenant', true)` is set only inside the transaction.
+
+### Task 0B.4 - Add Phase 0 RLS Migrations
+
+**Files:**
+
+- Create: `apps/medusa/src/migrations/Migration20260615000100.ts`
+
+**Initial tenant-scoped tables:**
+
+- product tables needed for product listing/detail
+- cart tables needed for checkout preparation
+- customer tables
+- order tables
+
+**Required SQL pattern:**
+
+```sql
+alter table "<table_name>" add column if not exists tenant_id uuid;
+alter table "<table_name>" enable row level security;
+alter table "<table_name>" force row level security;
+
+create policy "<table_name>_tenant_isolation"
+on "<table_name>"
+for all
+using (
+  tenant_id = nullif(current_setting('app.current_tenant', true), '')::uuid
+)
+with check (
+  tenant_id = nullif(current_setting('app.current_tenant', true), '')::uuid
+);
+```
+
+**DoD:**
+
+- No tenant-scoped table allows all rows when context is missing.
+- Runtime grants go to `medusa_app`.
+- `medusa_app` does not own the tables.
+- Migration runs through `MIGRATOR_DATABASE_URL`, not `APP_DATABASE_URL`.
+
+### Task 0B.5 - Seed Two Tenants
+
+**Files:**
+
+- Create: `apps/medusa/src/scripts/seed-tenants.ts`
+
+**Tenants:**
+
+```txt
+Tenant A: 00000000-0000-0000-0000-00000000000a
+Tenant B: 00000000-0000-0000-0000-00000000000b
+```
+
+**Seed data:**
+
+- Tenant A: 2 products, 1 customer, 1 cart, 1 order.
+- Tenant B: 2 products, 1 customer, 1 cart, 1 order.
+
+**DoD:**
+
+- Data is written with the correct `tenant_id`.
+- Tenant A and Tenant B have overlapping names/SKUs in test data to catch missing tenant scoping.
+
+### Task 0B.6 - API and Workflow Isolation Tests
+
+**Files:**
+
+- Create: `apps/medusa/tests/integration/rls/product-isolation.test.ts`
+- Create: `apps/medusa/tests/integration/rls/cart-isolation.test.ts`
+- Create: `apps/medusa/tests/integration/rls/customer-isolation.test.ts`
+- Create: `apps/medusa/tests/integration/rls/order-isolation.test.ts`
+- Create: `apps/medusa/tests/integration/rls/concurrent-pooler.test.ts`
+- Create: `apps/medusa/tests/integration/rls/background-job-isolation.test.ts`
+
+**Required assertions:**
+
+- Tenant A product list contains zero Tenant B rows.
+- Tenant B product list contains zero Tenant A rows.
+- Direct lookup of another tenant's product returns 404 or forbidden.
+- Carts cannot cross tenants.
+- Customers cannot cross tenants.
+- Orders cannot cross tenants.
+- Background jobs must either run tenant-scoped or explicitly platform-scoped.
+- 500 concurrent pooled requests show no cross-tenant rows.
+
+**DoD:**
+
+- At least 20 automated isolation tests pass.
+- Concurrent test uses the Neon pooled URL.
+- Tests fail if `APP_DATABASE_URL` uses `neondb_owner`.
+- Tests fail if `rolbypassrls = true`.
+
+---
+
+## 7. Phase 1 - Stack Foundation
+
+**Goal:** Get the production-like skeleton running after Phase 0B passes.
+
+**Files:**
+
+- Modify: `apps/medusa/medusa-config.ts`
+- Create: `apps/storefront/package.json`
+- Create: `apps/storefront/next.config.ts`
+- Create: `apps/storefront/proxy.ts`
+- Create: `apps/storefront/src/lib/tenant/resolve-tenant.ts`
+- Create: `apps/storefront/src/lib/medusa/client.ts`
+
+**Tasks:**
+
+- Create Next.js `16.2.9` storefront.
+- Use `proxy.ts` for domain-level routing because Next.js 16 renamed middleware to proxy.
+- Use Route Handlers or Server Components to call Medusa server-side.
+- Add Medusa health endpoint.
+- Add R2 media config with tenant-prefixed object keys.
+- Add Redis config for cache and workflow engine when required.
+
+**DoD:**
+
+- Product can be created in Medusa for Tenant A.
+- Tenant A storefront renders Tenant A product.
+- Tenant B storefront does not render Tenant A product.
+- Media loads from tenant-prefixed R2 path.
+
+---
+
+## 8. Phase 2 - Tenant Registry and Domain Routing
+
+**Goal:** One storefront deployment serves all seller domains safely.
+
+**Tables:**
+
+```sql
+create table if not exists tenants (
+  id uuid primary key,
+  name text not null,
+  slug text unique not null,
+  status text not null check (status in ('draft', 'active', 'suspended')),
+  plan text,
+  owner_user_id text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists tenant_domains (
+  id text primary key,
+  tenant_id uuid not null references tenants(id),
+  domain text unique not null,
+  type text not null check (type in ('subdomain', 'custom')),
+  is_primary boolean default false,
+  verification_status text not null default 'pending',
+  created_at timestamptz default now()
+);
+
+create table if not exists tenant_theme_config (
+  tenant_id uuid primary key references tenants(id),
+  template_id text not null,
+  logo_url text,
+  primary_color text,
+  secondary_color text,
+  font_family text,
+  homepage_sections jsonb not null default '[]'::jsonb,
+  seo jsonb not null default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
+
+**Routing states:**
+
+- `active`: render storefront.
+- `draft`: render coming-soon page.
+- `suspended`: render unavailable page.
+- unknown domain: render platform landing or 404 with no tenant data.
+
+**DoD:**
+
+- Add a subdomain without frontend redeploy.
+- Add a custom domain without frontend redeploy.
+- Unknown domain leaks no data.
+
+---
+
+## 9. Phase 3 - Full Medusa RLS Hardening
+
+**Goal:** Extend tenant isolation beyond the Phase 0 tables.
+
+**Tasks:**
+
+- Inventory every Medusa table after migrations.
+- Classify each table as `tenant-scoped`, `shared-reference`, or `platform-only`.
+- Add `tenant_id`, indexes, grants, and RLS policies to every tenant-scoped table.
+- Scope unique constraints by tenant where needed.
+- Add CI table-audit script.
+
+**High-risk tables to audit carefully:**
+
+- product and variant tables
+- price/listing tables
+- inventory and stock-location link tables
+- cart and line-item tables
+- order and payment tables
+- customer and address tables
+- promotion/discount tables
+- fulfillment/shipping tables
+- upload/media tables
+- link tables created by Medusa modules
+
+**DoD:**
+
+- Every tenant-scoped table has RLS enabled and forced.
+- Every tenant-scoped table has a `tenant_id` index.
+- CI fails if a new Medusa table is not classified.
+- CI fails if a tenant-scoped table lacks an RLS policy.
+
+---
+
+## 10. Phase 4 - Theme and Template System
+
+**Goal:** Customization without seller-specific code branches.
+
+**Allowed seller controls:**
+
+- logo
+- colors
+- font choice
+- hero content
+- section order
+- featured collections
+- WhatsApp/social links
+- about/policy pages
+- SEO metadata
+
+**Forbidden before 10 paying sellers:**
+
+- custom React per seller
+- custom checkout per seller
+- seller-specific frontend branches
+- seller-specific Medusa modules
+
+**DoD:**
+
+- Tenant A and Tenant B show different branding from database config.
+- Changing theme config requires no deploy.
+
+---
+
+## 11. Phase 5 - Seller Admin and RBAC
+
+**Goal:** Sellers manage only their own store.
+
+**Tables:**
+
+```sql
+create table if not exists tenant_users (
+  id text primary key,
+  tenant_id uuid not null references tenants(id),
+  user_id text not null,
+  role text not null check (role in ('tenant_admin', 'tenant_staff')),
+  status text not null default 'active',
+  created_at timestamptz default now(),
+  unique (tenant_id, user_id)
+);
+```
+
+**Rules:**
+
+- Tenant for seller admin comes from authenticated session.
+- Browser-sent tenant id is ignored.
+- Platform owner access is a separate audited path.
+
+**DoD:**
+
+- Tenant staff cannot access another tenant by changing URL, header, or request body.
+- Platform owner impersonation writes audit logs.
+
+---
+
+## 12. Phase 6 - CSV Catalog Import
+
+**Goal:** Avoid manual catalog entry.
+
+**Tasks:**
+
+- Define one CSV template.
+- Build parser and validation.
+- Show import preview before write.
+- Write imports inside tenant-scoped transaction.
+- Store import logs per tenant.
+- Throttle imports per tenant.
+
+**DoD:**
+
+- Failed import leaves no partial product data.
+- Import cannot write to the wrong tenant.
+- Duplicate SKUs are checked per tenant, not globally.
+
+---
+
+## 13. Phase 7 - Razorpay Per Tenant
+
+**Goal:** Seller money flows directly to each seller's Razorpay account.
+
+**Tables:**
+
+```sql
+create table if not exists tenant_integrations (
+  tenant_id uuid primary key references tenants(id),
+  razorpay_key_id text,
+  razorpay_key_secret_encrypted text,
+  razorpay_webhook_secret_encrypted text,
+  shiprocket_credentials_encrypted text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
+
+**Rules:**
+
+- Checkout loads Razorpay credentials from tenant context.
+- Webhook lookup uses `tenant_id + razorpay_order_id`.
+- Webhook secret is per tenant.
+- Idempotency key is per tenant and external id.
+
+**DoD:**
+
+- Tenant A checkout uses Tenant A Razorpay key.
+- Tenant B webhook cannot update Tenant A order.
+- Invalid webhook secret fails closed.
+
+---
+
+## 14. Phase 8 - Shiprocket Per Tenant
+
+**Goal:** Each seller ships from their own Shiprocket credentials.
+
+**Tasks:**
+
+- Store encrypted Shiprocket credentials per tenant.
+- Create shipment only for tenant-owned paid order.
+- Store shipment id with tenant id.
+- Verify tracking webhook by tenant and external id.
+- Add retry queue with tenant id in payload.
+
+**DoD:**
+
+- Tracking webhook cannot update another tenant's shipment.
+- Retry job preserves tenant context.
+
+---
+
+## 15. Phase 9 - Usage Tracking and Billing
+
+**Goal:** Know per-tenant usage before enforcing plans.
+
+**Tables:**
+
+```sql
+create table if not exists tenant_usage_monthly (
+  id text primary key,
+  tenant_id uuid not null references tenants(id),
+  month text not null,
+  visitors integer default 0,
+  orders integer default 0,
+  products integer default 0,
+  storage_gb numeric default 0,
+  api_calls integer default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (tenant_id, month)
+);
+```
+
+**DoD:**
+
+- Monthly usage dashboard shows each seller.
+- Near-limit seller is flagged.
+- No hard shutdown before manual review during pilot.
+
+---
+
+## 16. Phase 10 - Platform Admin
+
+**Goal:** Operate the SaaS in under one hour per day.
+
+**Dashboard must show:**
+
+- active/draft/suspended sellers
+- failed payments
+- failed shipments
+- failed webhooks
+- failed imports
+- near-limit tenants
+- high-traffic tenants
+- recent audit events
+
+**DoD:**
+
+- Normal support issues can be debugged without direct database access.
+
+---
+
+## 17. Phase 11 - Automated Onboarding
+
+**Goal:** Reduce manual seller setup time.
+
+**Flow:**
+
+```txt
+signup -> create tenant -> choose template -> brand -> upload CSV -> connect Razorpay -> connect Shiprocket -> add domain -> preview -> go live
+```
+
+**DoD:**
+
+- A seller with clean catalog data can self-serve most setup.
+- Your manual work is under 30 minutes per seller.
+
+---
+
+## 18. Phase 12 - Permanent Security and Reliability Suite
+
+**Goal:** Prevent regressions after the pilot.
+
+**Permanent CI tests:**
+
+- Tenant A cannot see Tenant B products.
+- Tenant A cannot see Tenant B carts.
+- Tenant A cannot see Tenant B customers.
+- Tenant A cannot see Tenant B orders.
+- Unknown domain leaks nothing.
+- Suspended tenant cannot accept orders.
+- Pooled concurrent leak test passes.
+- Background jobs preserve or explicitly declare tenant scope.
+- Runtime role is not owner/superuser/BYPASSRLS.
+- New table audit passes.
+
+**DoD:**
+
+- CI blocks deployment on any isolation regression.
+
+---
+
+## 19. Phase 13 - First Paid Pilot
+
+**Goal:** Validate with 2-3 real sellers.
+
+**Pilot requirements:**
+
+- Seller already has products.
+- Seller understands you do not bring traffic.
+- Seller accepts setup fee and monthly subscription.
+- Seller uses own Razorpay and Shiprocket.
+- Seller provides clean catalog data.
+
+**Freeze rule:**
+
+Do not upgrade Medusa during this phase unless a security issue forces it. Keep `2.15.5` until 2-3 sellers are live and stable.
+
+**DoD:**
+
+- 2-3 sellers live.
+- Real orders processed.
+- Zero tenant leakage.
+- Support load is manageable.
+
+---
+
+## 20. Phase 14 - Scale to 10
+
+**Goal:** Make onboarding repeatable.
+
+**Tasks:**
+
+- Polish CSV preview.
+- Polish seller admin.
+- Write seller docs.
+- Publish demo store.
+- Add pricing page.
+- Use pilot referrals.
+
+**DoD:**
+
+- 10 paying sellers.
+- Repeatable onboarding.
+- Less than one hour per day support.
+
+---
+
+## 21. Phase 15 - Scale to 50-100
+
+**Goal:** Keep shared infrastructure stable.
+
+**Tasks:**
+
+- Add per-tenant rate limits.
+- Add import throttling.
+- Add failed-job dashboard.
+- Add billing automation.
+- Add plan upgrade flow.
+- Add incident checklist.
+- Move heavy/noisy sellers to dedicated fallback.
+
+**DoD:**
+
+- 50+ sellers operate without daily manual debugging.
+- Heavy sellers are identified and isolated.
+
+---
+
+## 22. Upgrade Policy
+
+Until 2-3 pilot sellers are live and stable:
+
+- Freeze Medusa at `2.15.5`.
+- Freeze Medusa SDK packages at `2.15.5`.
+- Freeze Neon Postgres at `17`.
+- Do not upgrade Medusa reactively.
+- Do not change database host.
+- Do not expand product scope before Phase 0B passes.
+
+For every future Medusa upgrade:
+
+1. Create Neon staging branch.
+2. Run Medusa migrations as migrator role.
+3. Diff table list before/after.
+4. Classify any new tables.
+5. Add RLS policies to new tenant-scoped tables.
+6. Run full isolation suite.
+7. Run pooled concurrent leak test.
+8. Promote only after all tests pass.
+
+---
+
+## 23. Agent Handoff Protocol
+
+Every implementation agent must do this before coding:
+
+1. Read this file.
+2. Use `context7-mcp` for current docs of any library being touched.
+3. Use Neon MCP for database inspection, not ad hoc assumptions.
+4. Never print database URLs or passwords.
+5. Never use `neondb_owner` for runtime app tests.
+6. Run the relevant test before and after changes.
+7. Update this plan if a gate changes status.
+
+For implementation execution:
+
+- Recommended: use `superpowers:subagent-driven-development`.
+- Alternative: use `superpowers:executing-plans`.
+- Work phase by phase.
+- Do not start Phase 1 until Phase 0B passes.
+
+---
+
+## 24. Immediate Next Task
+
+Implement Phase 0B only.
+
+The next agent should scaffold Medusa `2.15.5`, connect it to Neon with `medusa_app`, add tenant context, add initial RLS migrations, seed two tenants, and prove through Medusa APIs that Tenant A never sees Tenant B under pooled concurrent load.
+
+If Phase 0B passes, freeze the versions and proceed to Phase 1.
+
+If Phase 0B fails, switch to the fallback: one stock Medusa instance/database per seller on Neon.
