@@ -713,7 +713,9 @@ git commit -m "test: add commerce, cross-tenant, and background job isolation te
 
 ## Task 6: Gate Decision
 
-- [ ] **Step 1: Run database-only gate**
+**Status:** PASSED on 2026-06-15. Gate decision: proceed to Phase 1.
+
+- [x] **Step 1: Run database-only gate**
 
 Run:
 
@@ -730,7 +732,18 @@ Expected:
 PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app connections
 ```
 
-- [ ] **Step 2: Run Medusa isolation suite**
+Result on 2026-06-15:
+
+```txt
+Temporary Neon branch: phase0b-db-gate-verify (br-sparkling-unit-aow0rqmz), deleted after run
+The smoke script builds and tears down its own phase0_rls_smoke schema, so it
+  needs only the owner + medusa_app roles (independent of the Medusa migration).
+Runtime role: medusa_app, rolsuper=false, rolbypassrls=false
+Load: ITERATIONS=500 CONCURRENCY=50
+Output: PASS: Postgres 17 RLS + SET LOCAL tenant isolation held under concurrent app connections
+```
+
+- [x] **Step 2: Run Medusa isolation suite**
 
 Run the Medusa integration test command defined by the scaffolded app:
 
@@ -756,18 +769,31 @@ All product, cart, customer, order, background job, and concurrent pooler isolat
 5 pass, 0 fail.
 ```
 
-- [ ] **Step 3: Decide**
+- [x] **Step 3: Decide**
 
-If all tests pass:
+**Decision recorded 2026-06-15: GO.** All gates passed:
+
+```txt
+Database-only gate (Step 1): PASS at 500 iterations, concurrency 50.
+Medusa isolation suite (Step 2): 5 pass, 0 fail through the pooled medusa_app role.
+Runtime role guard: rolsuper=false, rolbypassrls=false, not neondb_owner.
+```
+
+Action taken:
 
 ```txt
 Freeze Medusa 2.15.5 and Neon Postgres 17 through the 2-3 seller pilot.
-Proceed to Phase 1.
+Proceed to Phase 1 (Stack Foundation).
 ```
 
-If any test fails due unfixable tenant context leakage:
+**Carry-forward into Phase 1 (not covered by this gate):**
 
 ```txt
-Stop shared-RLS path.
-Switch to one Medusa instance/database per seller.
+RLS covers commerce tables only (product/cart/customer/order + children + link tables).
+Admin identity tables (user, auth_identity, provider_identity, invite, api_key) are
+  NOT tenant-scoped — admin users remain global. Per-seller admin requires an
+  admin-user <-> tenant binding and tenant-aware admin auth. Track in Phase 1/Phase 5.
 ```
+
+The fallback path was NOT triggered (would have been: stop shared-RLS, switch to
+one Medusa instance/database per seller).

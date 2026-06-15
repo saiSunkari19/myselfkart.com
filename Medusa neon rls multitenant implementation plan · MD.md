@@ -42,17 +42,29 @@ phase0-rls-smoke/run.sh
 phase0-rls-smoke/README.md
 ```
 
-### Still Not Proven
+### Phase 0B gate PASSED on 2026-06-15
 
-The database gate passed, but the architecture is not fully validated until Medusa itself passes the same isolation tests through its APIs and workflows.
-
-Pending gate:
+The Medusa-level gate is now proven. Decision: **GO — freeze Medusa `2.15.5` +
+Neon Postgres `17` through the 2-3 seller pilot and proceed to Phase 1.**
 
 ```txt
-Medusa 2.15.5 + Neon pooled APP_DATABASE_URL + tenant context hook + API/workflow leak tests
+Database-only gate: PASS at 500 iterations, concurrency 50 (re-run as regression).
+Medusa isolation suite (pooled medusa_app role): 5 pass, 0 fail.
+  product-isolation, commerce-isolation, cross-tenant-lookup,
+  background-job-isolation, concurrent-pooler.
+Runtime role guard: not neondb_owner, rolsuper=false, rolbypassrls=false.
+Validated on disposable Neon branches, deleted after each run.
 ```
 
-Do not onboard sellers until the Medusa-level gate passes.
+The fallback (one Medusa instance/database per seller) was NOT triggered.
+
+**Carry-forward into Phase 1 (out of scope for this gate):** RLS covers commerce
+tables only. Admin identity tables (`user`, `auth_identity`, `provider_identity`,
+`invite`, `api_key`) are NOT tenant-scoped, so admin users remain global. A
+per-seller admin dashboard requires an admin-user ↔ tenant binding and
+tenant-aware admin auth — track in Phase 1/Phase 5.
+
+Do not onboard sellers until Phase 1 tenant resolution and the admin binding land.
 
 ---
 
@@ -1016,10 +1028,19 @@ For implementation execution:
 
 ## 24. Immediate Next Task
 
-Implement Phase 0B only.
+Phase 0B is COMPLETE and PASSED (see section 0). Versions are frozen: Medusa
+`2.15.5` + Neon Postgres `17` through the 2-3 seller pilot.
 
-The next agent should scaffold Medusa `2.15.5`, connect it to Neon with `medusa_app`, add tenant context, add initial RLS migrations, seed two tenants, and prove through Medusa APIs that Tenant A never sees Tenant B under pooled concurrent load.
+Implement **Phase 1 - Stack Foundation** (section 7) next:
 
-If Phase 0B passes, freeze the versions and proceed to Phase 1.
+- Scaffold the Next.js `16.2.9` storefront under `apps/storefront/`.
+- Add domain-level tenant routing via `proxy.ts` (Next 16 renamed middleware → proxy).
+- Call Medusa server-side (Route Handlers / Server Components); add a Medusa health endpoint.
+- Add R2 media config with tenant-prefixed object keys.
+- DoD: Tenant A storefront renders Tenant A product; Tenant B storefront does not.
 
-If Phase 0B fails, switch to the fallback: one stock Medusa instance/database per seller on Neon.
+Replace the spike tenant resolution before any real traffic: the current
+`tenantContextMiddleware` reads a test header (`x-selfkart-test-tenant-id`).
+Phase 1+ must derive tenant from domain (storefront) and from the authenticated
+admin user (admin), and bring admin identity tables under tenant control so a
+per-seller admin dashboard is possible.
