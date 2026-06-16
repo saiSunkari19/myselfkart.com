@@ -9,6 +9,7 @@ export default Module(TENANT_CONTEXT_MODULE, {
 })
 
 export * from "./db-context"
+export * from "./domain-auth"
 export * from "./middleware"
 export * from "./patch-guard"
 export * from "./store"

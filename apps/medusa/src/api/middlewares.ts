@@ -1,6 +1,9 @@
 import { defineMiddlewares } from "@medusajs/framework/http"
 
-import { tenantContextMiddleware } from "../modules/tenant-context"
+import {
+  domainTenantContextMiddleware,
+  tenantContextMiddleware,
+} from "../modules/tenant-context"
 
 const multer = require("multer")
 const upload = multer({ storage: multer.memoryStorage() })
@@ -19,9 +22,13 @@ export default defineMiddlewares({
       matcher: "/admin/selfkart/product-imports/prepare",
       middlewares: [upload.single("file")],
     },
-    // NOTE: /store* tenant resolution comes from the request DOMAIN, not a
-    // session, and is added in Phase 1 (storefront). It is intentionally NOT
-    // wired here yet. Postgres RLS still fails closed for any /store* query that
-    // runs without tenant context (zero rows), so there is no leak in the gap.
+    // /store* tenant is derived from the request DOMAIN: the Next.js storefront
+    // resolves it from Host server-side and sends the tenant_id with an HMAC
+    // signature (SELFKART_STOREFRONT_SECRET). The browser cannot forge it, and
+    // Postgres RLS still fails closed if context is ever missing.
+    {
+      matcher: "/store*",
+      middlewares: [domainTenantContextMiddleware],
+    },
   ],
 })

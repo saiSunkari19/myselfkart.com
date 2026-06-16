@@ -10,7 +10,7 @@
 
 ---
 
-## Implementation Progress / Handoff (updated 2026-06-15)
+## Implementation Progress / Handoff (updated 2026-06-16)
 
 > **New agent: start here.** This is the running state of the work. Branch:
 > `phase0b-medusa-rls` (not yet pushed; default branch is `master`). Neon project
@@ -66,7 +66,31 @@
   for prepare/complete.
 - **Production hardening:** production now throws if `JWT_SECRET` or
   `COOKIE_SECRET` are unset/default, and the test tenant header is disabled in
-  production even if `SELFKART_ALLOW_TEST_TENANT_HEADER=true`.
+  production even if `SELFKART_ALLOW_TEST_TENANT_HEADER=true`. Production also
+  throws if `SELFKART_STOREFRONT_SECRET` is unset/default (the storefront tenant
+  is derived from this signed value, so a default secret = `/store*` forgery).
+- **Storefront `/store*` domain tenant resolver — backend half (Phase 1, NEXT
+  #1):** the buyer-facing tenant boundary on the Medusa side is built and
+  validated. `tenants` + `tenant_domains` platform registry
+  (`20260616000200-create-tenant-registry.ts`, deliberately NOT RLS'd — read
+  before any tenant context exists, owned by `neondb_owner`, DML-granted to
+  `medusa_app`). Server-to-server `/selfkart/resolve-domain` route maps an
+  incoming host -> `tenant_id` + `publishable_key`, guarded by an HMAC-SHA256
+  signature over the host (`domain-auth.ts`, `SELFKART_STOREFRONT_SECRET`) so
+  only the Next.js server can call it. `domainTenantContextMiddleware` scopes
+  `/store*` from a signed `x-selfkart-tenant-id` (browser cannot forge; RLS still
+  fails closed if context is ever missing). `provision-tenant-storefront.ts`
+  registers a tenant + domain and mints a publishable key linked to the tenant's
+  sales channel (`pnpm provision:storefront`). Regression test
+  `tests/integration/rls/domain-resolver-isolation.test.js` +
+  `src/scripts/assert-domain-resolver.ts` prove the HMAC boundary is forge
+  resistant and the registry resolves host->tenant, hides unknown hosts, and is
+  readable with no tenant context. Validated on disposable Neon branch
+  `domain-resolver-verify-20260616` (deleted after run): the new test passes
+  standalone AND in the full pooled `medusa_app` suite. **Still TODO: the Next.js
+  `apps/storefront/` app itself** (proxy host->tenant, server-side Medusa client,
+  product render) — the DoD "Tenant A storefront renders Tenant A product;
+  Tenant B does not" is not met until that lands.
 - **Docs:** `apps/medusa/README.md` (multi-seller setup + per-seller flow);
   design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`.
 
@@ -78,16 +102,31 @@
 - **MEDIUM (functional):** invite RLS may break invite-acceptance (token lookup
   before the invitee has tenant context). Not exercised in the pilot (sellers are
   provisioned via `create-seller-admin`).
+- **LOW (test infra, pre-existing):** `seed-tenant-inventory-resources.ts` is not
+  idempotent against pre-existing rows — it checks `sales_channel`/`stock_location`
+  existence by `name` (RLS-scoped) but inserts a deterministic id keyed only on
+  `tenant_id`, so re-seeding a tenant whose channel already exists (e.g. on a Neon
+  branch reset from a `production` parent that already holds seeded channels)
+  collides on `sales_channel_pkey`. Surfaces the `inventory-module-isolation` and
+  `sales-channel-stock-location-isolation` tests as failures on production-derived
+  branches; both pass on a pristine branch. Fix: `onConflict("id")` ignore/merge,
+  or look up by the deterministic id. NOT a tenant-isolation defect.
 
 ### NEXT (recommended order)
 
-1. **Storefront / `/store*` domain tenant resolver** — the Phase 1 main task
-   (Section 7): Next.js storefront, tenant-from-domain, buyer browse → cart →
-   checkout → order, all RLS-scoped. This is the missing buyer-facing half.
-2. `api_key` tenant-nullable scoping; tenant registry (Phase 2) to allocate
-   tenant UUIDs instead of hand-picking them.
-3. Optionally optimize the read path from per-query to per-request transaction
-   (same GUC mechanism) if admin/storefront read latency is too high.
+1. **Build the Next.js `apps/storefront/` app** — the Medusa backend half of the
+   `/store*` domain resolver is DONE and validated (registry, HMAC boundary,
+   resolve-domain route, `/store*` middleware, provision script). What remains is
+   the buyer-facing app: Next.js `16.2.9` under `apps/storefront/`, `proxy.ts`
+   resolving tenant from Host (calls `/selfkart/resolve-domain` with the HMAC host
+   signature), a server-side Medusa client that attaches the signed
+   `x-selfkart-tenant-id` + `x-publishable-api-key`, and product list/detail
+   pages. DoD: Tenant A storefront renders Tenant A product; Tenant B does not.
+2. `api_key` tenant-nullable scoping (still global — sellers can see each other's
+   keys). Phase 2 tenant registry hardening (status routing: draft/suspended).
+3. (Test infra) make `seed-tenant-inventory-resources.ts` idempotent — see KNOWN
+   GAPS. Optionally optimize the read path from per-query to per-request
+   transaction (same GUC mechanism) if admin/storefront read latency is too high.
 
 ### Session commit trail (branch `phase0b-medusa-rls`)
 
@@ -787,7 +826,14 @@ DONE - Admin notification isolation: notification now has nullable tenant_id,
        Neon medusa_app test execution is pending approved temporary DB URLs.
 DEFER - api_key RLS: Medusa creates a platform "Default Publishable API Key" at
        boot with no tenant context; needs a tenant-nullable model. Tracked.
-TODO  - /store* domain tenant resolver (storefront, Phase 1 main task).
+DONE - /store* domain tenant resolver, BACKEND half: tenants + tenant_domains
+       registry (20260616000200), HMAC host/tenant signing (domain-auth.ts),
+       /selfkart/resolve-domain route, domainTenantContextMiddleware on /store*,
+       provision-tenant-storefront.ts, SELFKART_STOREFRONT_SECRET prod guard, and
+       domain-resolver-isolation.test.js (passes standalone + in-suite on a
+       disposable Neon branch). Browser cannot forge tenant; RLS still fails closed.
+TODO  - /store* storefront FRONTEND: the Next.js apps/storefront/ app (proxy
+       host->tenant, server-side Medusa client, product render). Phase 1 NEXT #1.
 ```
 
 ---

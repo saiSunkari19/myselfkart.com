@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from "@medusajs/utils"
 import {
   assertTenantReadPathPatchApplied,
   assertTenantTransactionPatchApplied,
+  STOREFRONT_DEFAULT_BAD_SECRET,
 } from "./src/modules/tenant-context"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
@@ -27,6 +28,16 @@ if (process.env.NODE_ENV === "production") {
   }
   if (!process.env.COOKIE_SECRET || cookieSecret === KNOWN_BAD_COOKIE) {
     throw new Error("COOKIE_SECRET must be set to a strong secret in production")
+  }
+  // Storefront tenant context is derived from this signed value, so a default
+  // secret would let anyone forge cross-tenant /store* access.
+  if (
+    !process.env.SELFKART_STOREFRONT_SECRET ||
+    process.env.SELFKART_STOREFRONT_SECRET === STOREFRONT_DEFAULT_BAD_SECRET
+  ) {
+    throw new Error(
+      "SELFKART_STOREFRONT_SECRET must be set to a strong secret in production"
+    )
   }
 }
 

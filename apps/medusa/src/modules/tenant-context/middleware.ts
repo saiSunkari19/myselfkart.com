@@ -5,6 +5,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 
+import { verifyStorefrontSignature } from "./domain-auth"
 import { runWithTenantContext } from "./store"
 
 const UUID_PATTERN =
@@ -15,6 +16,11 @@ function normalizeUuid(value: unknown): string | undefined {
   return typeof candidate === "string" && UUID_PATTERN.test(candidate)
     ? candidate
     : undefined
+}
+
+function firstHeader(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value
+  return typeof candidate === "string" ? candidate : undefined
 }
 
 /**
@@ -72,4 +78,39 @@ export function tenantContextMiddleware(
   }
 
   return runWithTenantContext({ tenantId, source: "session" }, () => next())
+}
+
+/**
+ * Domain tenant resolution for /store*.
+ *
+ * The Next.js storefront resolves the tenant from the request Host server-side,
+ * then calls Medusa with the tenant_id plus an HMAC-SHA256 signature over it
+ * (signed with SELFKART_STOREFRONT_SECRET, which only the Next.js server holds).
+ * The browser cannot forge this, so the tenant is derived from a trusted source.
+ * Postgres RLS still fail-closes for any /store* query that reaches here without
+ * valid context, so there is no leak even if this middleware is bypassed.
+ */
+export function domainTenantContextMiddleware(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  const testTenantId = resolveTestTenant(req)
+  if (testTenantId) {
+    return runWithTenantContext(
+      { tenantId: testTenantId, source: "test" },
+      () => next()
+    )
+  }
+
+  const tenantId = normalizeUuid(req.headers["x-selfkart-tenant-id"])
+  const signature = firstHeader(req.headers["x-selfkart-tenant-sig"])
+
+  if (!tenantId || !verifyStorefrontSignature(tenantId, signature)) {
+    return res.status(403).json({
+      message: "Valid tenant context is required",
+    })
+  }
+
+  return runWithTenantContext({ tenantId, source: "domain" }, () => next())
 }
