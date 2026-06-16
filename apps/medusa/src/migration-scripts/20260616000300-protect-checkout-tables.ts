@@ -133,6 +133,67 @@ export default async function protectCheckoutTables({
     }
   }
 
+  // These are tenant-owned tables. Medusa ships global name uniqueness for a
+  // single-store setup, but under RLS tenant B cannot reuse tenant A's "Shipping"
+  // fulfillment set or "US" service zone unless uniqueness includes tenant_id.
+  await knex.raw(`drop index if exists "IDX_fulfillment_set_name_unique";`)
+  await knex.raw(`
+    create unique index if not exists "IDX_fulfillment_set_tenant_name_unique"
+    on "fulfillment_set" ("tenant_id", "name")
+    where "deleted_at" is null;
+  `)
+  await knex.raw(`drop index if exists "IDX_service_zone_name_unique";`)
+  await knex.raw(`
+    create unique index if not exists "IDX_service_zone_tenant_name_unique"
+    on "service_zone" ("tenant_id", "name")
+    where "deleted_at" is null;
+  `)
+
+  // Existing imported products may already have price_set / price rows created
+  // before this checkout RLS migration. Backfill those rows from the owning
+  // product variant. The nullable tenant trigger deliberately makes tenant_id
+  // immutable after insert, so this owner-only migration disables those two
+  // triggers only for the backfill and immediately enables them again.
+  await knex.raw(`
+    alter table "price_set" disable trigger "trg_price_set_tenant_id";
+    alter table "price" disable trigger "trg_price_tenant_id";
+
+    do $$
+    declare
+      tenant uuid;
+    begin
+      for tenant in
+        select distinct p.tenant_id
+        from product p
+        join product_variant pv on pv.product_id = p.id
+        join product_variant_price_set pvps on pvps.variant_id = pv.id
+        where p.tenant_id is not null
+      loop
+        update price_set ps
+        set tenant_id = tenant
+        from product_variant_price_set pvps
+        join product_variant pv on pv.id = pvps.variant_id
+        join product p on p.id = pv.product_id
+        where ps.id = pvps.price_set_id
+        and p.tenant_id = tenant
+        and ps.tenant_id is distinct from tenant;
+
+        update price pr
+        set tenant_id = tenant
+        from product_variant_price_set pvps
+        join product_variant pv on pv.id = pvps.variant_id
+        join product p on p.id = pv.product_id
+        where pr.price_set_id = pvps.price_set_id
+        and p.tenant_id = tenant
+        and pr.tenant_id is distinct from tenant;
+      end loop;
+    end;
+    $$;
+
+    alter table "price_set" enable trigger "trg_price_set_tenant_id";
+    alter table "price" enable trigger "trg_price_tenant_id";
+  `)
+
   // Re-grant runtime DML/sequence privileges: link tables and any objects created
   // after the module migrations need medusa_app access (medusa_app never owns
   // tables, so privileges must be (re)granted explicitly).

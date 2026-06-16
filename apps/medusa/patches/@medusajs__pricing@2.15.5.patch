@@ -1,0 +1,29 @@
+diff --git a/dist/repositories/pricing.js b/dist/repositories/pricing.js
+index 850a85819b4509920a065f8321ebb7de25e948d7..7dfd052228a2a0521c3f30d2a2665640d42bed3f 100644
+--- a/dist/repositories/pricing.js
++++ b/dist/repositories/pricing.js
+@@ -9,5 +9,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.PricingRepository = void 0;
+ const utils_1 = require("@medusajs/framework/utils");
++const selfkartTenantContextStorageSymbol = Symbol.for("selfkart.tenant-context-storage");
++function getSelfkartTenantContext() {
++    const storage = globalThis[selfkartTenantContextStorageSymbol];
++    return storage?.getStore?.();
++}
+ class PricingRepository extends utils_1.MikroOrmBase {
+     constructor() {
+         // @ts-ignore
+@@ -192,6 +197,13 @@ class PricingRepository extends utils_1.MikroOrmBase {
+             .orderByRaw("price.price_list_id IS NOT NULL DESC")
+             .orderByRaw("price.rules_count + COALESCE(pl.rules_count, 0) DESC")
+             .orderBy("price.amount", "asc");
++        const selfkartTenantContext = getSelfkartTenantContext();
++        const queryIsAlreadyTransactional = Boolean(query.client?.transacting || knex.client?.transacting);
++        if (selfkartTenantContext?.tenantId && !queryIsAlreadyTransactional) {
++            return await knex.transaction(async (trx) => {
++                return await query.transacting(trx);
++            });
++        }
+         return await query;
+     }
+ }

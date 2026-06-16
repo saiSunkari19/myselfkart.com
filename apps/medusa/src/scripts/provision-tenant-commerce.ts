@@ -13,6 +13,8 @@ import {
 } from "@medusajs/core-flows"
 
 import { runWithTenantContext } from "../modules/tenant-context"
+import { stableId } from "./seed-tenant-inventory-resources"
+import type { Knex } from "knex"
 
 /**
  * Provisions the checkout pipeline for one tenant so a buyer can go
@@ -410,11 +412,50 @@ async function ensureShippingOption(
   logger.info(`Created Standard shipping option on service zone ${args.serviceZoneId}`)
 }
 
+/**
+ * Links every tenant product to the default shipping profile. CSV-imported
+ * products are NOT auto-linked to a shipping profile (only admin-created products
+ * are), so without this `cart.complete` fails with "cart items require shipping
+ * profiles that are not satisfied by the current shipping methods". Runs inside
+ * the tenant context (RLS scopes `product` to this tenant, and the
+ * product_shipping_profile insert satisfies the tenant-derived WITH CHECK).
+ */
+async function linkProductsToShippingProfile(
+  knex: Knex,
+  tenantId: string,
+  shippingProfileId: string
+): Promise<number> {
+  return runWithTenantContext({ tenantId, source: "session" }, async () => {
+    return knex.transaction(async (trx) => {
+      await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+      const products = await trx("product").select("id").whereNull("deleted_at")
+      let linked = 0
+      for (const product of products) {
+        const exists = await trx("product_shipping_profile")
+          .where({ product_id: product.id, shipping_profile_id: shippingProfileId })
+          .whereNull("deleted_at")
+          .first("id")
+        if (exists) {
+          continue
+        }
+        await trx("product_shipping_profile").insert({
+          id: stableId("prodsp_selfkart", product.id, shippingProfileId),
+          product_id: product.id,
+          shipping_profile_id: shippingProfileId,
+        })
+        linked++
+      }
+      return linked
+    })
+  })
+}
+
 export default async function provisionTenantCommerce({
   container,
 }: ExecArgs): Promise<void> {
   const input = readInput()
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
 
   // --- Platform-shared setup (no tenant context) ---
   await ensureStoreCurrency(container, input.currency)
@@ -442,7 +483,16 @@ export default async function provisionTenantCommerce({
     })
   })
 
+  // Link the tenant's products to the default shipping profile so checkout can
+  // complete (own tenant context + transaction; see the function doc).
+  const linkedProfiles = await linkProductsToShippingProfile(
+    knex,
+    input.tenantId,
+    shippingProfileId
+  )
+
   logger.info(
-    `Tenant commerce provisioned: tenant_id=${input.tenantId} region=${regionId} currency=${input.currency}`
+    `Tenant commerce provisioned: tenant_id=${input.tenantId} region=${regionId} ` +
+      `currency=${input.currency} products_linked_to_shipping_profile=${linkedProfiles}`
   )
 }

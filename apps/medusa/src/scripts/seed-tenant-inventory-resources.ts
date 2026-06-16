@@ -31,9 +31,20 @@ function readInput(): Input {
   return { tenantId, sellerName, stockedQuantity }
 }
 
-function stableId(prefix: string, ...parts: string[]): string {
+export function stableId(prefix: string, ...parts: string[]): string {
   const hash = createHash("sha1").update(parts.join(":")).digest("hex").slice(0, 24)
   return `${prefix}_${hash}`
+}
+
+/**
+ * Deterministic id of a tenant's own sales channel. The seed creates the channel
+ * with exactly this id (see `upsertTenantSalesChannel`), so any other script can
+ * resolve a tenant's channel by id alone — without depending on RLS visibility or
+ * "first by created_at", which is what let publishable keys cross-link to the
+ * wrong tenant's sales channel.
+ */
+export function tenantSalesChannelId(tenantId: string): string {
+  return stableId("sc_selfkart", tenantId)
 }
 
 function rawQuantity(value: number): string {
@@ -92,8 +103,12 @@ async function upsertTenantStockLocation(
   return id
 }
 
-async function linkProductsToSalesChannel(trx: Knex.Transaction, salesChannelId: string) {
-  const products = await trx("product").select("id")
+async function linkProductsToSalesChannel(
+  trx: Knex.Transaction,
+  tenantId: string,
+  salesChannelId: string
+) {
+  const products = await trx("product").select("id").where({ tenant_id: tenantId })
 
   for (const product of products) {
     const exists = await trx("product_sales_channel")
@@ -149,7 +164,12 @@ async function ensureInventoryLevels(
     .whereExists(function () {
       this.select(trx.raw("1"))
         .from("product_variant_inventory_item as pvii")
+        .join("product_variant as pv", "pv.id", "pvii.variant_id")
+        .join("product as p", "p.id", "pv.product_id")
         .whereRaw('pvii."inventory_item_id" = ii."id"')
+        .where("p.tenant_id", tenantId)
+        .whereNull("p.deleted_at")
+        .whereNull("pv.deleted_at")
         .whereNull("pvii.deleted_at")
     })
     .whereNull("ii.deleted_at")
@@ -207,7 +227,7 @@ export async function ensureTenantInventoryResources(
         input.sellerName
       )
 
-      await linkProductsToSalesChannel(trx, salesChannelId)
+      await linkProductsToSalesChannel(trx, input.tenantId, salesChannelId)
       await linkSalesChannelToStockLocation(trx, salesChannelId, stockLocationId)
       await ensureInventoryLevels(
         trx,

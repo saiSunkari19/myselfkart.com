@@ -5,6 +5,12 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
+  '@medusajs/inventory@2.15.5':
+    hash: 6sadcwdr37amrp3jmztrrfxlea
+    path: patches/@medusajs__inventory@2.15.5.patch
+  '@medusajs/pricing@2.15.5':
+    hash: gmf5waviu3btnyppql36dpssyy
+    path: patches/@medusajs__pricing@2.15.5.patch
   '@medusajs/utils@2.15.5':
     hash: mtaxfmsymlrigwspkqds4x4r7e
     path: patches/@medusajs__utils@2.15.5.patch
@@ -6308,7 +6314,7 @@ snapshots:
     dependencies:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
 
-  '@medusajs/inventory@2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
+  '@medusajs/inventory@2.15.5(patch_hash=6sadcwdr37amrp3jmztrrfxlea)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
     dependencies:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
 
@@ -6368,7 +6374,7 @@ snapshots:
       '@medusajs/fulfillment': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/fulfillment-manual': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/index': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
-      '@medusajs/inventory': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
+      '@medusajs/inventory': 2.15.5(patch_hash=6sadcwdr37amrp3jmztrrfxlea)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/link-modules': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/locking': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/locking-postgres': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
@@ -6379,7 +6385,7 @@ snapshots:
       '@medusajs/order': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/payment': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))(@types/node@25.9.3)
       '@medusajs/payment-stripe': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
-      '@medusajs/pricing': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
+      '@medusajs/pricing': 2.15.5(patch_hash=gmf5waviu3btnyppql36dpssyy)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/product': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/promotion': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/rbac': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
@@ -6509,7 +6515,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@medusajs/pricing@2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
+  '@medusajs/pricing@2.15.5(patch_hash=gmf5waviu3btnyppql36dpssyy)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
     dependencies:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
 

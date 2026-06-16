@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import type { Knex } from "knex"
 
 import { runWithTenantContext } from "../modules/tenant-context"
+import { stableId, tenantSalesChannelId } from "./seed-tenant-inventory-resources"
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -52,7 +53,23 @@ async function findTenantSalesChannelId(knex: Knex, tenantId: string): Promise<s
   return runWithTenantContext({ tenantId, source: "session" }, async () => {
     return knex.transaction(async (trx) => {
       await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+
+      // Resolve the channel by its deterministic seeded id AND filter on
+      // tenant_id explicitly (defense in depth with RLS). This makes it
+      // impossible to link a publishable key to another tenant's sales channel —
+      // the bug that previously crossed seller-a's key to seller-b's channel.
+      const seededId = tenantSalesChannelId(tenantId)
+      const seeded = await trx("sales_channel")
+        .where({ id: seededId, tenant_id: tenantId })
+        .whereNull("deleted_at")
+        .first("id")
+      if (seeded?.id) {
+        return seeded.id as string
+      }
+
+      // Fallback: any channel explicitly owned by this tenant (still tenant-filtered).
       const row = await trx("sales_channel")
+        .where({ tenant_id: tenantId })
         .whereNull("deleted_at")
         .orderBy("created_at", "asc")
         .first("id")
@@ -66,6 +83,41 @@ async function findTenantSalesChannelId(knex: Knex, tenantId: string): Promise<s
   })
 }
 
+/**
+ * Ensures the publishable key is linked to EXACTLY the tenant's own sales channel:
+ * soft-deletes any active link to a different channel (repairs the historical
+ * cross-link) and inserts the correct link if missing. Runs every provision so
+ * re-running heals already-crossed keys. publishable_api_key_sales_channel is not
+ * tenant-RLS'd (api_key is platform-global), so this reads the true links
+ * regardless of tenant context.
+ */
+async function ensureApiKeySalesChannelLink(
+  knex: Knex,
+  apiKeyId: string,
+  salesChannelId: string
+): Promise<number> {
+  const repaired = await knex("publishable_api_key_sales_channel")
+    .where({ publishable_key_id: apiKeyId })
+    .whereNot({ sales_channel_id: salesChannelId })
+    .whereNull("deleted_at")
+    .update({ deleted_at: knex.fn.now(), updated_at: knex.fn.now() })
+
+  const existing = await knex("publishable_api_key_sales_channel")
+    .where({ publishable_key_id: apiKeyId, sales_channel_id: salesChannelId })
+    .whereNull("deleted_at")
+    .first("id")
+
+  if (!existing) {
+    await knex("publishable_api_key_sales_channel").insert({
+      id: stableId("pksc_selfkart", apiKeyId, salesChannelId),
+      publishable_key_id: apiKeyId,
+      sales_channel_id: salesChannelId,
+    })
+  }
+
+  return repaired
+}
+
 export default async function provisionTenantStorefront({
   container,
 }: ExecArgs): Promise<void> {
@@ -73,7 +125,6 @@ export default async function provisionTenantStorefront({
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
   const apiKeyModule = container.resolve(Modules.API_KEY)
-  const link = container.resolve(ContainerRegistrationKeys.LINK)
 
   // Upsert the tenant registry row first so tenant_domains FK is satisfiable.
   await knex("tenants")
@@ -92,31 +143,50 @@ export default async function provisionTenantStorefront({
       updated_at: knex.fn.now(),
     })
 
+  // Resolve the tenant's OWN sales channel up front (deterministic + tenant-filtered).
+  const salesChannelId = await findTenantSalesChannelId(knex, input.tenantId)
+
   // Reuse the publishable key already recorded for this host, if any.
   const existingDomain = await knex("tenant_domains")
     .whereRaw("lower(host) = ?", [input.host])
     .first("id", "publishable_key")
 
   let publishableKey = existingDomain?.publishable_key as string | undefined
+  let apiKeyId: string
 
   if (!publishableKey) {
-    const salesChannelId = await findTenantSalesChannelId(knex, input.tenantId)
-
     const apiKey = await apiKeyModule.createApiKeys({
       title: `${input.sellerName} Storefront Key`,
       type: "publishable",
       created_by: "selfkart-storefront-provision",
     })
-
-    await link.create({
-      [Modules.API_KEY]: { publishable_key_id: apiKey.id },
-      [Modules.SALES_CHANNEL]: { sales_channel_id: salesChannelId },
-    })
-
+    apiKeyId = apiKey.id
     publishableKey = apiKey.token
-    logger.info(
-      `Created publishable key ${apiKey.redacted} linked to sales channel ${salesChannelId}`
+    logger.info(`Created publishable key ${apiKey.redacted}`)
+  } else {
+    // Re-provision / repair path: resolve the existing key's id from its token.
+    const existingKey = await knex("api_key")
+      .where({ token: publishableKey })
+      .whereNull("deleted_at")
+      .first("id")
+    if (!existingKey?.id) {
+      throw new Error(
+        `tenant_domains has publishable_key for ${input.host} but no matching api_key row`
+      )
+    }
+    apiKeyId = existingKey.id
+  }
+
+  // Always (re)assert the link so the key points at this tenant's channel and
+  // never another tenant's — repairs cross-linked keys on re-run.
+  const repaired = await ensureApiKeySalesChannelLink(knex, apiKeyId, salesChannelId)
+  if (repaired > 0) {
+    logger.warn(
+      `Repaired ${repaired} cross-linked sales-channel link(s) for ${input.host}; ` +
+        `key now linked to tenant sales channel ${salesChannelId}`
     )
+  } else {
+    logger.info(`Publishable key linked to tenant sales channel ${salesChannelId}`)
   }
 
   const domainId = existingDomain?.id ?? `tdom_${slugify(input.host)}`
