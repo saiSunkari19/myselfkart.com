@@ -10,9 +10,13 @@
     "build": "medusa build",
     "start": "medusa start",
     "db:migrate": "medusa db:migrate",
+    "delete:seller-products": "medusa exec ./src/scripts/delete-seller-products.ts",
+    "prepare:seller-import": "medusa exec ./src/scripts/prepare-seller-product-import.ts",
+    "link:seller-taxonomy": "medusa exec ./src/scripts/seed-tenant-product-taxonomy.ts",
     "seed:tenants": "medusa exec ./src/scripts/seed-tenants.ts",
-    "test": "node --test --test-concurrency=1 tests/integration/rls/*.test.js",
-    "test:rls": "node --test --test-concurrency=1 tests/integration/rls/*.test.js"
+    "test": "node --test --test-concurrency=1 tests/integration/rls/*.test.js tests/integration/import/*.test.js",
+    "test:rls": "node --test --test-concurrency=1 tests/integration/rls/*.test.js",
+    "test:import": "node --test --test-concurrency=1 tests/integration/import/*.test.js"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +31,7 @@
     "@medusajs/utils": "2.15.5"
   },
   "devDependencies": {
+    "knex": "3.2.8",
     "typescript": "5.7.3"
   },
   "pnpm": {

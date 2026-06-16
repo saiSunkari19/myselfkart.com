@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@medusajs/utils@2.15.5':
-    hash: vhijve6mwx2g3hhiyqpk54vsxe
+    hash: mtaxfmsymlrigwspkqds4x4r7e
     path: patches/@medusajs__utils@2.15.5.patch
   '@mikro-orm/knex@6.6.12':
     hash: npkq4efdsmzavjzsw2tjbyxbum
@@ -33,8 +33,11 @@ importers:
         version: 2.15.5(@medusajs/admin-sdk@2.15.5)(@medusajs/cli@2.15.5(@types/node@25.9.3))(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))(@medusajs/icons@2.15.5(react@18.3.1))(@medusajs/ui@4.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(@types/node@25.9.3)(awilix@8.0.1)(picomatch@4.0.4)(posthog-node@5.37.0(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@medusajs/utils':
         specifier: 2.15.5
-        version: 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
+        version: 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
     devDependencies:
+      knex:
+        specifier: 3.2.8
+        version: 3.2.8(pg@8.21.0)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -6060,7 +6063,7 @@ snapshots:
     dependencies:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
       '@medusajs/telemetry': 2.15.5
-      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
       '@types/express': 4.17.25
       chalk: 4.1.2
       configstore: 5.0.1
@@ -6253,7 +6256,7 @@ snapshots:
       '@medusajs/orchestration': 2.15.5(@types/node@25.9.3)(express@4.22.2)
       '@medusajs/telemetry': 2.15.5
       '@medusajs/types': 2.15.5(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))
-      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
       '@medusajs/workflows-sdk': 2.15.5(@types/node@25.9.3)(express@4.22.2)
       '@types/express': 4.17.25
       chokidar: 4.0.3
@@ -6440,7 +6443,7 @@ snapshots:
     dependencies:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
       '@medusajs/orchestration': 2.15.5(@types/node@25.9.3)(express@4.22.2)
-      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
     transitivePeerDependencies:
       - '@types/node'
       - better-sqlite3
@@ -6474,7 +6477,7 @@ snapshots:
   '@medusajs/orchestration@2.15.5(@types/node@25.9.3)(express@4.22.2)':
     dependencies:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
-      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
       ulid: 2.4.0
     transitivePeerDependencies:
       - '@types/node'
@@ -6605,7 +6608,7 @@ snapshots:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
       jsonwebtoken: 9.0.3
 
-  '@medusajs/utils@2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)':
+  '@medusajs/utils@2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)':
     dependencies:
       '@graphql-codegen/core': 4.0.2(graphql@16.14.2)
       '@graphql-codegen/typescript': 4.1.6(graphql@16.14.2)
@@ -6655,7 +6658,7 @@ snapshots:
       '@medusajs/deps': 2.15.5(@types/node@25.9.3)
       '@medusajs/modules-sdk': 2.15.5(@types/node@25.9.3)(express@4.22.2)
       '@medusajs/orchestration': 2.15.5(@types/node@25.9.3)(express@4.22.2)
-      '@medusajs/utils': 2.15.5(patch_hash=vhijve6mwx2g3hhiyqpk54vsxe)(@types/node@25.9.3)(express@4.22.2)
+      '@medusajs/utils': 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
       ulid: 2.4.0
     transitivePeerDependencies:
       - '@types/node'

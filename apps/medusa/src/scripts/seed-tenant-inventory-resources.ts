@@ -186,13 +186,10 @@ async function ensureInventoryLevels(
   }
 }
 
-export default async function seedTenantInventoryResources({
-  container,
-}: ExecArgs): Promise<void> {
-  const input = readInput()
-  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
-  const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
-
+export async function ensureTenantInventoryResources(
+  knex: Knex,
+  input: Input
+): Promise<void> {
   await runWithTenantContext({ tenantId: input.tenantId, source: "session" }, async () => {
     await knex.transaction(async (trx) => {
       await trx.raw("select set_config('app.current_tenant', ?, true)", [input.tenantId])
@@ -218,7 +215,16 @@ export default async function seedTenantInventoryResources({
       )
     })
   })
+}
 
+export default async function seedTenantInventoryResources({
+  container,
+}: ExecArgs): Promise<void> {
+  const input = readInput()
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
+
+  await ensureTenantInventoryResources(knex, input)
   logger.info(
     `Tenant inventory resources ready: tenant_id=${input.tenantId} seller=${input.sellerName}`
   )

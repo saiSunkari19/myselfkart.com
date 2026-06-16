@@ -1,5 +1,5 @@
 diff --git a/dist/modules-sdk/create-pg-connection.js b/dist/modules-sdk/create-pg-connection.js
-index 8df7d15f911e15825bbaed1d74184d4869dc1ef7..e67a83fb7847e4b558e636acb3251d1a9663c291 100644
+index 8df7d15f911e15825bbaed1d74184d4869dc1ef7..8479ba957cdb4f9a6fee86b5d160e18dfc3c7622 100644
 --- a/dist/modules-sdk/create-pg-connection.js
 +++ b/dist/modules-sdk/create-pg-connection.js
 @@ -19,7 +19,7 @@ function createPgConnection(options) {
@@ -59,3 +59,35 @@ index 8df7d15f911e15825bbaed1d74184d4869dc1ef7..e67a83fb7847e4b558e636acb3251d1a
 +    });
 +}
  //# sourceMappingURL=create-pg-connection.js.map
+\ No newline at end of file
+diff --git a/dist/product/csv-normalizer.js b/dist/product/csv-normalizer.js
+index 5606247dfc6758c455c3604eedd95b0c8dea492c..707e08e6563d99fe2326dbe7931646766b913c18 100644
+--- a/dist/product/csv-normalizer.js
++++ b/dist/product/csv-normalizer.js
+@@ -43,7 +43,10 @@ function processAsString(inputKey, outputKey) {
+     return (csvRow, _, __, output) => {
+         const value = csvRow[inputKey];
+         if ((0, common_1.isPresent)(value)) {
+-            output[outputKey] = value;
++            // The CSV parser auto-types numeric-looking cells (e.g. "32") into
++            // numbers, but these columns are stored and validated as strings.
++            // Coerce back to string so Zod validation (e.g. variant title) passes.
++            output[outputKey] = String(value);
+         }
+     };
+ }
+@@ -244,9 +247,12 @@ const optionColumns = {
+             if (!(0, common_1.isPresent)(value)) {
+                 throw createError(rowNumber, `Missing option value for "${columnName}"`);
+             }
++            // Option names/values are validated as strings, but the CSV parser
++            // auto-types numeric sizes (e.g. "32") into numbers. Coerce back so
++            // product.options[].values[] and variant.options.<name> stay strings.
+             return {
+-                key,
+-                value,
++                key: String(key),
++                value: String(value),
+             };
+         });
+     },

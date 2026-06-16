@@ -5,3 +5,6 @@ node_modules/
 **/.medusa/
 dist/
 build/
+.agents/*
+# Medusa local file storage (runtime uploads/exports)
+apps/medusa/static/

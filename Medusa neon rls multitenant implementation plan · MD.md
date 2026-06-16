@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. Use `context7-mcp` before writing Medusa, Next.js, Neon, or SDK-specific code. Use Neon MCP for database inspection and migrations where available.
 
 **Prepared for:** Sai Krishna Sunkari  
-**Updated:** 2026-06-15  
+**Updated:** 2026-06-16
 **Goal:** Build a multi-tenant ecommerce SaaS where one Medusa backend, one Next.js storefront, and one Neon Postgres database safely serve many independent sellers.  
 **Architecture:** Shared Medusa v2 backend plus Neon Postgres 17 RLS. Tenant context is derived server-side, set with `SET LOCAL app.current_tenant` inside the same transaction as tenant-scoped queries, and enforced by Postgres RLS.  
 **Tech Stack:** Medusa `2.15.5`, Neon Postgres `17`, Next.js `16.2.9`, pnpm via Corepack, Cloudflare R2, Redis, Razorpay per tenant, Shiprocket per tenant.
@@ -53,6 +53,17 @@
   tenant-nullable policy so Medusa can keep its platform Default Sales Channel
   hidden from sellers while each seller sees only their own channels. Full RLS
   suite on disposable Neon branch `br-morning-surf-aoslb6jh`: **9 pass, 0 fail.**
+- **Admin notification isolation:** the Medusa Admin notification feed reads the
+  shared `notification` table, which was missing tenant protection. Added
+  `20260616000100-protect-notifications.ts` to stamp tenant-context
+  notifications, enable FORCE RLS, and make idempotency unique per tenant.
+  Added `notification-isolation.test.js`; TypeScript verification passes. Full
+  Neon runtime execution is pending approved temporary database credentials.
+- **Seller CSV import wrapper:** added a Selfkart wrapper layer around Medusa's
+  native product import. It parses seller CSV data, creates tenant-scoped
+  taxonomy IDs, strips raw global taxonomy IDs from the Medusa upload CSV, and
+  exposes a seller-facing Admin page at `/app/seller-import` plus backend routes
+  for prepare/complete.
 - **Production hardening:** production now throws if `JWT_SECRET` or
   `COOKIE_SECRET` are unset/default, and the test tenant header is disabled in
   production even if `SELFKART_ALLOW_TEST_TENANT_HEADER=true`.
@@ -770,6 +781,10 @@ DONE - Tenant resource isolation: inventory_item, inventory_level,
        reservation_item, stock_location, stock_location_address, sales_channel,
        product_sales_channel, product_variant_inventory_item, and
        sales_channel_stock_location are RLS-protected. Full suite 9 pass, 0 fail.
+DONE - Admin notification isolation: notification now has nullable tenant_id,
+       tenant stamping trigger, FORCE RLS policies, tenant-aware idempotency
+       uniqueness, and notification-isolation.test.js. TypeScript passes; full
+       Neon medusa_app test execution is pending approved temporary DB URLs.
 DEFER - api_key RLS: Medusa creates a platform "Default Publishable API Key" at
        boot with no tenant context; needs a tenant-nullable model. Tracked.
 TODO  - /store* domain tenant resolver (storefront, Phase 1 main task).

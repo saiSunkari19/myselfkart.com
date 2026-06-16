@@ -136,14 +136,71 @@ Because of RLS, a product created by Seller A is invisible to Seller B even if
 they share the same product handle or SKU (handles/SKUs are unique **per tenant**,
 not globally).
 
+### Seller CSV import flow
+
+Sellers should use the Selfkart import page in Admin:
+
+```txt
+http://localhost:9000/app/seller-import
+```
+
+The page accepts the seller CSV, prepares tenant-scoped catalogue data, runs the
+Medusa product import, confirms it, links categories/collections/tags/types, and
+creates starter inventory resources.
+
+Medusa's native CSV import only associates IDs that already exist. Because those
+IDs are global primary keys, do not give every seller the same CSV with raw
+`Product Collection Id`, `Product Type Id`, or `Product Tag` values and expect
+Medusa's default importer to handle it. Use the Selfkart import page instead.
+
+For development or recovery, the same backend flow is available as scripts:
+
+```sh
+SELLER_ADMIN_TENANT_ID=<tenant-uuid> \
+SELLER_PRODUCT_CSV=../../outputs/medusa-cloth-store-products-50-with-associations.csv \
+SELLER_PRODUCT_OUTPUT_CSV=../../outputs/medusa-cloth-store-products-50-prepared.csv \
+DATABASE_URL="$APP_DATABASE_URL" \
+corepack pnpm prepare:seller-import
+```
+
+Then upload the prepared CSV in Admin's native product importer:
+
+```txt
+../../outputs/medusa-cloth-store-products-50-prepared.csv
+```
+
+After import finishes, run the taxonomy linker. This links the newly imported
+products to tenant-scoped collections, types, tags, and categories by product
+handle:
+
+```sh
+SELLER_ADMIN_TENANT_ID=<tenant-uuid> \
+PRODUCT_TAXONOMY_CSV=../../outputs/medusa-cloth-store-taxonomy-associations.csv \
+DATABASE_URL="$APP_DATABASE_URL" \
+corepack pnpm link:seller-taxonomy
+```
+
+The same helper is exposed for future Admin UI work at:
+
+```txt
+POST /admin/selfkart/product-imports/prepare
+```
+
+It accepts a `file` upload or JSON `{ "csv": "..." }`, creates tenant-scoped
+taxonomy, and returns a Medusa-safe CSV string.
+
 ### Seller inventory setup
 
-Each seller must have tenant-owned inventory resources:
+Each seller also must have tenant-owned inventory resources:
 
 - one sales channel
 - one stock location
 - one sales-channel → stock-location link
 - one inventory level per managed inventory item
+
+Regions are needed for checkout/shipping later; they are not what caused product
+CSV import failure. Stock location and inventory levels are what make imported
+variants show positive stock in Admin.
 
 After importing products for a seller, run:
 
@@ -174,8 +231,8 @@ buyer browse → cart → checkout → order flow will be RLS-scoped the same wa
 Run the RLS integration suite against a **migrated** branch through the pooled
 role (it seeds fixtures, creates two seller admins, and asserts no cross-tenant
 leakage on products, carts, customers, orders, the admin user table, the read
-path, inventory items, inventory levels, stock locations, sales channels, and
-under concurrency):
+path, inventory items, inventory levels, stock locations, sales channels, admin
+notifications, and under concurrency):
 
 ```sh
 APP_DATABASE_URL="$APP_DATABASE_URL" ITERATIONS=500 CONCURRENCY=50 \
@@ -195,6 +252,11 @@ Expected: all tests pass. The suite also fails closed if the app role is
 - **A seller sees zero products/data** — the tenant RLS read-path patch may not be
   applied. `corepack pnpm install` re-applies `patches/@mikro-orm__knex@...patch`;
   the server refuses to boot if the patch is missing (startup guard).
+- **Notifications look shared across sellers** — run the latest migrations. The
+  `notification` table is tenant-scoped by
+  `src/migration-scripts/20260616000100-protect-notifications.ts`; old platform
+  notifications created before this migration may remain unassigned, but new
+  seller-context notifications are stamped with that seller's tenant.
 - **`app.current_tenant is required ...` during a script** — that script writes a
   tenant-scoped table without a tenant context. Wrap the work in
   `runWithTenantContext(...)` (see `src/scripts/create-seller-admin.ts`).

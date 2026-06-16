@@ -760,6 +760,7 @@ commerce-isolation.test.js       cart/customer/order list isolation
 cross-tenant-lookup.test.js      foreign-id lookup + cross-tenant update blocked
 background-job-isolation.test.js worker-path isolation + fail-safe on missing context
 concurrent-pooler.test.js        500 probes @ concurrency 50 + runtime role guard
+notification-isolation.test.js   admin notification feed isolation
 ```
 
 Expected:
@@ -797,3 +798,30 @@ Admin identity tables (user, auth_identity, provider_identity, invite, api_key) 
 
 The fallback path was NOT triggered (would have been: stop shared-RLS, switch to
 one Medusa instance/database per seller).
+
+### Notification follow-up - 2026-06-16
+
+User report: Admin notifications looked common between seller logins.
+
+Finding:
+
+```txt
+notification table: RLS disabled, no tenant_id
+notification_provider table: left platform-global for provider configuration
+```
+
+Change:
+
+```txt
+apps/medusa/src/migration-scripts/20260616000100-protect-notifications.ts
+apps/medusa/src/scripts/seed-tenant-notifications.ts
+apps/medusa/src/scripts/assert-notification-isolation.ts
+apps/medusa/tests/integration/rls/notification-isolation.test.js
+```
+
+Status:
+
+```txt
+TypeScript check: passed
+Full Neon medusa_app runtime test: pending approved temporary DB URLs
+```
