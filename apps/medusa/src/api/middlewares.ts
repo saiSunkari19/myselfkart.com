@@ -4,12 +4,21 @@ import {
   domainTenantContextMiddleware,
   tenantContextMiddleware,
 } from "../modules/tenant-context"
+import { platformAuthMiddleware } from "../platform/middleware"
 
 const multer = require("multer")
 const upload = multer({ storage: multer.memoryStorage() })
 
 export default defineMiddlewares({
   routes: [
+    // /selfkart/platform* is the cross-tenant superadmin surface. It lives
+    // OUTSIDE /admin* (which is hard-jailed to a single tenant) and is guarded
+    // by an opaque platform session instead. The login route is exempt inside
+    // the middleware. These routes operate on non-RLS platform tables only.
+    {
+      matcher: "/selfkart/platform*",
+      middlewares: [platformAuthMiddleware],
+    },
     // /admin* tenant is derived from the authenticated seller admin's session
     // (auth_identity.app_metadata.tenant_id, carried in the JWT). The framework
     // authenticate("user") middleware runs first, so req.auth_context is set.

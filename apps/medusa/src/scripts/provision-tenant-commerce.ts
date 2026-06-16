@@ -450,10 +450,14 @@ async function linkProductsToShippingProfile(
   })
 }
 
-export default async function provisionTenantCommerce({
-  container,
-}: ExecArgs): Promise<void> {
-  const input = readInput()
+/**
+ * Callable form used by the platform onboarding orchestrator (provision-seller).
+ * The CLI default export below reads env into `input` and delegates here.
+ */
+export async function provisionTenantCommerceWith(
+  container: ExecArgs["container"],
+  input: Input
+): Promise<void> {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
 
@@ -495,4 +499,10 @@ export default async function provisionTenantCommerce({
     `Tenant commerce provisioned: tenant_id=${input.tenantId} region=${regionId} ` +
       `currency=${input.currency} products_linked_to_shipping_profile=${linkedProfiles}`
   )
+}
+
+export default async function provisionTenantCommerce({
+  container,
+}: ExecArgs): Promise<void> {
+  await provisionTenantCommerceWith(container, readInput())
 }

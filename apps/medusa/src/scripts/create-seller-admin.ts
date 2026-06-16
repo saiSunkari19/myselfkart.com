@@ -42,8 +42,15 @@ function readInput(): SellerAdminInput {
  *     read by the /admin* tenant middleware (no DB round-trip at request time).
  *   - user.tenant_id                         -> durable source of truth.
  */
-export default async function createSellerAdmin({ container }: ExecArgs) {
-  const { tenantId, email, password } = readInput()
+/**
+ * Callable form used by the platform onboarding orchestrator (provision-seller).
+ * The CLI default export below just reads env into `input` and delegates here.
+ */
+export async function provisionSellerAdmin(
+  container: ExecArgs["container"],
+  input: SellerAdminInput
+): Promise<void> {
+  const { tenantId, email, password } = input
 
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
@@ -113,4 +120,8 @@ export default async function createSellerAdmin({ container }: ExecArgs) {
   logger.info(
     `Seller admin ready: email=${email} user_id=${userId} tenant_id=${tenantId}`
   )
+}
+
+export default async function createSellerAdmin({ container }: ExecArgs): Promise<void> {
+  await provisionSellerAdmin(container, readInput())
 }

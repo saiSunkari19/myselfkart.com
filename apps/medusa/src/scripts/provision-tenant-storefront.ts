@@ -118,10 +118,14 @@ async function ensureApiKeySalesChannelLink(
   return repaired
 }
 
-export default async function provisionTenantStorefront({
-  container,
-}: ExecArgs): Promise<void> {
-  const input = readInput()
+/**
+ * Callable form used by the platform onboarding orchestrator (provision-seller).
+ * The CLI default export below reads env into `input` and delegates here.
+ */
+export async function provisionTenantStorefrontWith(
+  container: ExecArgs["container"],
+  input: Input
+): Promise<void> {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
   const apiKeyModule = container.resolve(Modules.API_KEY)
@@ -155,11 +159,20 @@ export default async function provisionTenantStorefront({
   let apiKeyId: string
 
   if (!publishableKey) {
-    const apiKey = await apiKeyModule.createApiKeys({
-      title: `${input.sellerName} Storefront Key`,
-      type: "publishable",
-      created_by: "selfkart-storefront-provision",
-    })
+    // Create the key INSIDE the tenant context so the api_key RLS trigger stamps
+    // tenant_id = this tenant (see migration 20260616000500). Without this, the
+    // key would be stamped null (platform row) and the tenant-scoped /store*
+    // publishable-key lookup — which runs under the domain's tenant context —
+    // would not see it, breaking the storefront.
+    const apiKey = await runWithTenantContext(
+      { tenantId: input.tenantId, source: "session" },
+      () =>
+        apiKeyModule.createApiKeys({
+          title: `${input.sellerName} Storefront Key`,
+          type: "publishable",
+          created_by: "selfkart-storefront-provision",
+        })
+    )
     apiKeyId = apiKey.id
     publishableKey = apiKey.token
     logger.info(`Created publishable key ${apiKey.redacted}`)
@@ -210,4 +223,10 @@ export default async function provisionTenantStorefront({
   logger.info(
     `Storefront provisioned: host=${input.host} tenant_id=${input.tenantId} status=${input.status}`
   )
+}
+
+export default async function provisionTenantStorefront({
+  container,
+}: ExecArgs): Promise<void> {
+  await provisionTenantStorefrontWith(container, readInput())
 }

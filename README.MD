@@ -164,27 +164,72 @@ and concurrency.
 
 Start from the handoff at the top of
 `Medusa neon rls multitenant implementation plan · MD.md` — it is the source of
-truth. Current short list:
+truth. To onboard a seller, follow `docs/seller-onboarding.md`. Current short list:
 
-1. **Run the live Neon-branch E2E for buyer cart → checkout → order.** The code is
-   implemented and compiles (`next build` + `tsc` green), but the dynamic flow is
-   not yet proven against a live pooled `medusa_app` DB. On a disposable Neon
-   branch: `db:migrate` as `neondb_owner` (picks up
-   `20260616000300-protect-checkout-tables.ts`), `seed:tenants`,
-   `seed-tenant-inventory-resources`, `provision:storefront` + `provision:commerce`
-   for two tenants, then buy through both storefronts. Confirm cross-tenant
-   cart/order/price isolation and a green `test:rls`.
-   - **Watch item (MEDIUM):** the checkout tables now FORCE RLS. The flow only
-     works if tenant context holds through every payment/fulfillment write and
-     Medusa's price-calc reads. If a write escapes the request transaction, the
-     row gets `tenant_id` NULL and is hidden from the tenant (functional break,
-     not a leak — RLS fails closed). Validate end to end; fix context propagation
-     if any step breaks.
-2. **`api_key` tenant-nullable scoping** — sellers can still see each other's keys
-   (Medusa's boot-time Default Publishable Key has no tenant). MEDIUM security gap.
+1. ~~**Run the live Neon-branch E2E for buyer cart → checkout → order.**~~ **DONE
+   2026-06-16 (commit 099afd1a9)** — buy-through proven on a disposable branch for
+   two tenants, cross-tenant reads 404, `test:rls` 12/12. Fixed along the way: the
+   inventory pnpm patch (bad hunk header → never applied), cross-linked publishable
+   keys, and missing product↔shipping_profile links. See the plan's handoff +
+   `docs/seller-onboarding.md`.
+2. ~~**`api_key` tenant-nullable scoping**~~ **DONE 2026-06-16** — migration
+   `20260616000500-protect-api-key` applies the tenant-nullable RLS policy to
+   `api_key`; per-tenant keys are stamped + isolated, the boot-time Default key
+   stays `tenant_id` null (platform-only). Verify:
+   `DATABASE_URL="$APP_DATABASE_URL" corepack pnpm assert:api-key-isolation`.
+   Follow-up (low risk): scope the `publishable_api_key_sales_channel` link table.
 3. **R2 media with tenant-prefixed object keys** — storefront already allows remote
    image hosts; uploads aren't tenant-prefixed yet.
 4. **Phase 3 tax-table RLS** (`tax_region`/`tax_rate`/`tax_rate_rule`) before
    enabling tenant taxes (deferred — pilot uses `automatic_taxes=false`).
 5. **Real coming-soon / suspended templates** + a tenant-status admin (routing
    already renders placeholder pages).
+
+
+
+
+## Super admin (platform console)
+
+`apps/superadmin` is a separate Next.js console (port 3100) for **platform
+operators**, not sellers. It turns the manual `docs/seller-onboarding.md` runbook
+into a UI flow:
+
+```
+selfkart.com/apply (public form)  ->  seller_applications row (pending)
+   ->  operator clicks Approve in the console
+   ->  provisionSellerFromApplication() runs onboarding steps 1,3,4,5
+       (create-seller-admin -> seed-inventory-resources -> provision:commerce
+        -> provision:storefront), idempotent + self-healing
+   ->  tenant goes active; operator gets the seller's one-time admin credential
+   ->  seller logs in at /app and imports their catalog (step 2)
+```
+
+Surfaces: **Dashboard** (pending-application queue + tenant counts),
+**Applications** (review / approve / reject, with retry on failed provisioning),
+**Tenants** (every store + its domain + status), public **/apply** form.
+
+Architecture: platform data (`platform_admins`, `platform_admin_sessions`,
+`seller_applications`) lives in **non-RLS platform tables** (like
+`tenants`/`tenant_domains`), so the cross-tenant operator needs no RLS bypass.
+Routes live under `/selfkart/platform/*` (outside the tenant-jailed `/admin*`),
+guarded by an opaque session (scrypt-hashed password, SHA-256-hashed bearer
+token). The browser never calls Medusa directly — the console server forwards the
+session as `x-platform-session`.
+
+### Run it
+
+```sh
+cd apps/medusa
+DATABASE_URL="$MIGRATOR_DATABASE_URL" corepack pnpm db:migrate          # creates platform tables
+PLATFORM_ADMIN_EMAIL=ops@selfkart.com PLATFORM_ADMIN_PASSWORD='1234567890' PLATFORM_ADMIN_ROLE=owner \
+  DATABASE_URL="$APP_DATABASE_URL" corepack pnpm create:platform-admin
+cd ../superadmin && cp .env.example .env && corepack pnpm dev           # :3100
+```
+
+`apps/superadmin/.env`: `MEDUSA_BACKEND_URL` (server-side reachable Medusa) and
+`SELFKART_STOREFRONT_BASE_DOMAIN` (for the /apply URL preview, e.g. `localhost`).
+
+Verify the platform flow on a disposable Neon branch:
+`DATABASE_URL="$APP_DATABASE_URL" corepack pnpm exec medusa exec ./src/scripts/assert-platform-admin-flow.ts`
+
+
