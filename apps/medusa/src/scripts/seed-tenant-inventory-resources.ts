@@ -49,21 +49,25 @@ async function upsertTenantSalesChannel(
   tenantId: string,
   sellerName: string
 ): Promise<string> {
-  const name = `${sellerName} Sales Channel`
-  const existing = await trx("sales_channel").where({ name }).first("id")
-
-  if (existing?.id) {
-    return existing.id
-  }
-
+  // Upsert by the deterministic, tenant-namespaced id (not by name): re-seeding
+  // the same tenant must reuse its channel instead of colliding on
+  // sales_channel_pkey, and must refresh the name/description so the row reflects
+  // the current seller name. The row is owned by this tenant, so the ON CONFLICT
+  // update passes RLS (it runs inside this tenant's context).
   const id = stableId("sc_selfkart", tenantId)
-  await trx("sales_channel").insert({
-    id,
-    name,
-    description: `Tenant sales channel for ${sellerName}`,
-    is_disabled: false,
-    metadata: seededMetadata("sales_channel", tenantId),
-  })
+  const channelName = `${sellerName} Sales Channel`
+  const channelDescription = `Tenant sales channel for ${sellerName}`
+
+  await trx("sales_channel")
+    .insert({
+      id,
+      name: channelName,
+      description: channelDescription,
+      is_disabled: false,
+      metadata: seededMetadata("sales_channel", tenantId),
+    })
+    .onConflict("id")
+    .merge({ name: channelName, description: channelDescription })
 
   return id
 }
@@ -73,19 +77,17 @@ async function upsertTenantStockLocation(
   tenantId: string,
   sellerName: string
 ): Promise<string> {
-  const name = `${sellerName} Stock Location`
-  const existing = await trx("stock_location").where({ name }).first("id")
-
-  if (existing?.id) {
-    return existing.id
-  }
-
   const id = stableId("sloc_selfkart", tenantId)
-  await trx("stock_location").insert({
-    id,
-    name,
-    metadata: seededMetadata("stock_location", tenantId),
-  })
+  const locationName = `${sellerName} Stock Location`
+
+  await trx("stock_location")
+    .insert({
+      id,
+      name: locationName,
+      metadata: seededMetadata("stock_location", tenantId),
+    })
+    .onConflict("id")
+    .merge({ name: locationName })
 
   return id
 }

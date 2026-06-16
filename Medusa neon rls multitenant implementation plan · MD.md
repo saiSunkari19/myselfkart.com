@@ -87,10 +87,37 @@
   resistant and the registry resolves host->tenant, hides unknown hosts, and is
   readable with no tenant context. Validated on disposable Neon branch
   `domain-resolver-verify-20260616` (deleted after run): the new test passes
-  standalone AND in the full pooled `medusa_app` suite. **Still TODO: the Next.js
-  `apps/storefront/` app itself** (proxy host->tenant, server-side Medusa client,
-  product render) — the DoD "Tenant A storefront renders Tenant A product;
-  Tenant B does not" is not met until that lands.
+  standalone AND in the full pooled `medusa_app` suite.
+- **Storefront `/store*` domain tenant resolver — FRONTEND half (Phase 1 NEXT #1,
+  DoD MET):** the Next.js `apps/storefront/` app (Next `16.2.9`, standalone pnpm
+  project; the repo has no workspace root). Tenant is derived server-side from
+  the request Host — the browser never asserts a tenant. `src/lib/tenant/
+  resolve-tenant.ts` reads the Host, signs it (`signing.ts`, mirrors the backend
+  `domain-auth.ts` HMAC), calls `/selfkart/resolve-domain`, and is memoized per
+  request with React `cache()`; fails closed to a "store not found" page on
+  unknown host / bad sig / backend down. `src/lib/medusa/client.ts` builds a
+  per-request Medusa JS SDK instance carrying the tenant's publishable key
+  (sales-channel scoping) + signed `x-selfkart-tenant-id`/`-sig` headers (RLS
+  scoping). Pages: product list (`/`) and detail (`/products/[handle]`), both
+  `force-dynamic`; draft -> coming-soon, suspended -> unavailable. `proxy.ts`
+  (Next 16 middleware rename, nodejs runtime) strips any inbound `x-selfkart-*`
+  headers as defense-in-depth. `next build` + tsc pass. **Live E2E on disposable
+  Neon branch `storefront-e2e-20260616` (deleted after run):** started Medusa +
+  storefront against two provisioned domains (seller-a.localhost,
+  seller-b.localhost) and curled with both Host headers — tenant A renders only
+  A's catalog, B only B's (disjoint except the intentional `selfkart-rls-shared`
+  canary handle, a distinct row per tenant); an A-only product handle returns 200
+  under A's host and 404 under B's; unknown host -> "store could not be found";
+  resolve-domain signed->200 / bad-sig->403 / unknown->404; rendered HTML leaks
+  no tenant_id, signature, or secret. Buyer browse path is done; cart/checkout/
+  order remain (later phase).
+- **Seed idempotency fix (NEXT #3, done):** `seed-tenant-inventory-resources.ts`
+  now upserts the tenant sales channel + stock location by their deterministic
+  per-tenant id (`onConflict("id").merge(...)`, refreshing name/description)
+  instead of checking by name and inserting — so re-seeding (or seeding a Neon
+  branch reset from a `production` parent that already holds those rows) no
+  longer collides on `*_pkey`. Full pooled `medusa_app` RLS suite now **11 pass,
+  0 fail** (previously 2 failed on production-derived branches).
 - **Docs:** `apps/medusa/README.md` (multi-seller setup + per-seller flow);
   design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`.
 
@@ -102,31 +129,26 @@
 - **MEDIUM (functional):** invite RLS may break invite-acceptance (token lookup
   before the invitee has tenant context). Not exercised in the pilot (sellers are
   provisioned via `create-seller-admin`).
-- **LOW (test infra, pre-existing):** `seed-tenant-inventory-resources.ts` is not
-  idempotent against pre-existing rows — it checks `sales_channel`/`stock_location`
-  existence by `name` (RLS-scoped) but inserts a deterministic id keyed only on
-  `tenant_id`, so re-seeding a tenant whose channel already exists (e.g. on a Neon
-  branch reset from a `production` parent that already holds seeded channels)
-  collides on `sales_channel_pkey`. Surfaces the `inventory-module-isolation` and
-  `sales-channel-stock-location-isolation` tests as failures on production-derived
-  branches; both pass on a pristine branch. Fix: `onConflict("id")` ignore/merge,
-  or look up by the deterministic id. NOT a tenant-isolation defect.
+- ~~**LOW (test infra):** `seed-tenant-inventory-resources.ts` non-idempotent
+  channel/location seeding collided on `*_pkey` on production-derived branches.~~
+  **RESOLVED 2026-06-16:** now an `onConflict("id").merge(...)` upsert by the
+  deterministic per-tenant id. Full RLS suite 11 pass / 0 fail.
 
 ### NEXT (recommended order)
 
-1. **Build the Next.js `apps/storefront/` app** — the Medusa backend half of the
-   `/store*` domain resolver is DONE and validated (registry, HMAC boundary,
-   resolve-domain route, `/store*` middleware, provision script). What remains is
-   the buyer-facing app: Next.js `16.2.9` under `apps/storefront/`, `proxy.ts`
-   resolving tenant from Host (calls `/selfkart/resolve-domain` with the HMAC host
-   signature), a server-side Medusa client that attaches the signed
-   `x-selfkart-tenant-id` + `x-publishable-api-key`, and product list/detail
-   pages. DoD: Tenant A storefront renders Tenant A product; Tenant B does not.
+1. **Buyer cart -> checkout -> order on the storefront.** The browse half (product
+   list/detail, tenant-from-domain, RLS-scoped) is DONE and E2E-validated. Next is
+   the transactional half: cart, line items, address/shipping, and order placement
+   — all through the per-tenant SDK so they stay RLS-scoped. Add storefront pages +
+   verify cart/order isolation end to end (carts/orders RLS already proven at the
+   DB layer).
 2. `api_key` tenant-nullable scoping (still global — sellers can see each other's
-   keys). Phase 2 tenant registry hardening (status routing: draft/suspended).
-3. (Test infra) make `seed-tenant-inventory-resources.ts` idempotent — see KNOWN
-   GAPS. Optionally optimize the read path from per-query to per-request
-   transaction (same GUC mechanism) if admin/storefront read latency is too high.
+   keys; Medusa's boot-time Default Publishable Key has no tenant). Phase 2 tenant
+   registry hardening: storefront status routing already renders draft/suspended
+   pages, but add a real coming-soon/suspended template and tenant-status admin.
+3. R2 media with tenant-prefixed object keys (storefront image rendering already
+   allows remote hosts). Optionally optimize the read path from per-query to
+   per-request transaction (same GUC mechanism) if read latency demands.
 
 ### Session commit trail (branch `phase0b-medusa-rls`)
 
@@ -781,10 +803,12 @@ Validation run on 2026-06-15:
 
 **DoD:**
 
-- Product can be created in Medusa for Tenant A.
-- Tenant A storefront renders Tenant A product.
-- Tenant B storefront does not render Tenant A product.
-- Media loads from tenant-prefixed R2 path.
+- [x] Product can be created in Medusa for Tenant A.
+- [x] Tenant A storefront renders Tenant A product. (Live E2E 2026-06-16.)
+- [x] Tenant B storefront does not render Tenant A product. (A-only handle 404s
+  under B's host; catalogs disjoint; no tenant_id leak in HTML.)
+- [ ] Media loads from tenant-prefixed R2 path. (Storefront allows remote image
+  hosts; R2 tenant-prefixing not yet wired — tracked in NEXT.)
 
 ### Task 1.A - Seller Admin ↔ Tenant Binding
 
@@ -832,8 +856,13 @@ DONE - /store* domain tenant resolver, BACKEND half: tenants + tenant_domains
        provision-tenant-storefront.ts, SELFKART_STOREFRONT_SECRET prod guard, and
        domain-resolver-isolation.test.js (passes standalone + in-suite on a
        disposable Neon branch). Browser cannot forge tenant; RLS still fails closed.
-TODO  - /store* storefront FRONTEND: the Next.js apps/storefront/ app (proxy
-       host->tenant, server-side Medusa client, product render). Phase 1 NEXT #1.
+DONE - /store* storefront FRONTEND: Next.js apps/storefront/ app. Tenant from
+       Host server-side -> resolve-domain (HMAC) -> per-request SDK with signed
+       tenant headers + publishable key -> product list/detail. proxy.ts strips
+       inbound x-selfkart-* headers. Live E2E on a disposable Neon branch: A
+       renders only A's catalog, B only B's; A-only handle 404s under B's host;
+       unknown host -> store-not-found; no tenant_id/secret leak in HTML.
+TODO  - Buyer cart -> checkout -> order on the storefront (transactional half).
 ```
 
 ---
@@ -1277,15 +1306,17 @@ running state. In short:
   admin's JWT (`app_metadata.tenant_id`). The test header is gated behind
   `SELFKART_ALLOW_TEST_TENANT_HEADER`.
 
-Do next, in order:
+- Phase 1 storefront `/store*` domain resolver is DONE end to end: the Medusa
+  backend half (registry + HMAC + resolve-domain + `/store*` middleware + provision
+  script) and the Next.js `apps/storefront/` app (tenant-from-Host, per-request
+  signed SDK, product browse). DoD MET and live-validated: Tenant A renders only
+  A's catalog, Tenant B only B's. See the handoff DONE section for E2E details.
 
-1. **Security hardening (do first):** make `medusa-config.ts` throw on missing/
-   default `JWT_SECRET`/`COOKIE_SECRET` in production, and hard-gate the test
-   header to non-production. (Tenant is derived from the signed JWT, so a default
-   secret = cross-tenant forgery.)
-2. **Phase 1 - Stack Foundation / storefront** (section 7): Next.js `16.2.9` under
-   `apps/storefront/`, domain-level tenant routing via `proxy.ts`, server-side
-   Medusa calls, R2 media with tenant-prefixed keys. Add the `/store*` domain
-   tenant resolver (the buyer-facing half; admin side already done).
-   DoD: Tenant A storefront renders Tenant A product; Tenant B does not.
-3. `api_key` tenant-nullable scoping; tenant registry (Phase 2).
+Do next, in order (also in NEXT at the top):
+
+1. **Buyer cart -> checkout -> order** on the storefront (the transactional half;
+   carts/orders RLS already proven at the DB layer — wire the storefront pages and
+   verify isolation end to end).
+2. `api_key` tenant-nullable scoping (sellers can still see each other's keys).
+3. R2 media with tenant-prefixed object keys; optional read-path per-request
+   transaction optimization.
