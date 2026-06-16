@@ -12,8 +12,9 @@
 
 ## Implementation Progress / Handoff (updated 2026-06-16)
 
-> **New agent: start here.** This is the running state of the work. Branch:
-> `phase0b-medusa-rls` (not yet pushed; default branch is `master`). Neon project
+> **New agent: start here.** This is the running state of the work. Current branch:
+> `feat/storefront-domain-resolver` (latest commit `5ee701f50`: platform superadmin
+> console + api_key tenant-scoping; default branch is `main`). Neon project
 > `selfkart` / `jolly-rice-01919313`, Postgres 17. All validation is done on
 > disposable Neon branches (create → migrate as `neondb_owner` → test as
 > `medusa_app` pooled → delete). Backend lives in `apps/medusa/`; see its
@@ -160,31 +161,97 @@
     `src/scripts/assert-checkout-isolation.ts` assert (a) every checkout table is
     RLS-enabled/forced/policied and (b) a tenant-owned `price_set` is visible only
     to its tenant and never with no context.
-  - **Verified so far:** storefront `next build` (all 6 routes) + backend `tsc`
-    pass; checkout-isolation test file syntax-checks. **Live Neon-branch E2E (run
-    migrations as `neondb_owner`, provision two tenants, buy through both
-    storefronts, prove cart/order/price isolation via the pooled `medusa_app`
-    suite) is the remaining validation step.**
+  - **Verified — LIVE Neon-branch E2E PASSED (2026-06-16, commit 099afd1a9).**
+    On a disposable branch (migrate as `neondb_owner`, provision two tenants,
+    buy through both storefronts via the Store API with signed tenant headers):
+    both tenants complete priced orders (A=100, B=150 usd), `calc_price` and live
+    cart `unit_price` resolve under tenant RLS (pricing patch), `confirmInventory`
+    confirms own stock (inventory patch), and cross-tenant order/cart reads 404.
+    Full pooled `medusa_app` suite: **12 pass, 0 fail.** `next build` + `tsc` green.
+  - **Fixes landed during the E2E (commit 099afd1a9):**
+    1. **inventory patch never applied** — its hunk-header line counts were wrong
+       (`-3,41 +3,59` vs actual 39/57), so `pnpm install` silently refused it
+       (`ERR_PNPM_INVALID_PATCH`); GNU `patch --dry-run` had masked it. Corrected
+       to `-3,39 +3,57`; the inventory tenant-context fix now actually loads.
+    2. **`provision-tenant-storefront` cross-linked publishable keys** to the WRONG
+       tenant's sales channel → `POST /store/carts` 500 in Medusa's pub-key
+       middleware (RLS hides the foreign channel). Now resolves the tenant's own
+       channel by deterministic seeded id + explicit `tenant_id` filter and ALWAYS
+       (re)asserts the key↔channel link, self-healing crossed keys on re-run.
+    3. **CSV-imported products had no `shipping_profile`** → `cart.complete` failed
+       ("shipping profiles not satisfied"). `provision-tenant-commerce` now links
+       every tenant product to the default shipping profile.
+    Operator runbook: `docs/seller-onboarding.md`.
 
+- **`api_key` tenant-scoping (KNOWN-GAP closed, commit `5ee701f50`, 2026-06-16):**
+  `20260616000500-protect-api-key.ts` applies the tenant-NULLABLE RLS policy to
+  `api_key` (reuses `tenant-resource-sql.ts`): per-tenant publishable/secret keys
+  are stamped + isolated; Medusa's boot-time Default Publishable Key (created with
+  no tenant context) stays `tenant_id` null = platform-only, hidden from sellers.
+  Backfills existing keys' `tenant_id` from `tenant_domains.publishable_key=token`.
+  `provision-tenant-storefront` now creates the publishable key INSIDE
+  `runWithTenantContext` so it is stamped at creation. Safe for the storefront:
+  Medusa's `maybeAttachPublishableKeyScopes` reads `api_key` INSIDE our `/store*`
+  domain tenant context, so the `@mikro-orm/knex` read-path patch applies the GUC
+  and the tenant's own (stamped) key resolves. Gate: `assert-api-key-isolation.ts`
+  (`pnpm assert:api-key-isolation`) — A sees only A, B only B, no-context 0;
+  **PASSED live on the dev DB 2026-06-16.** Follow-up (LOW): scope the
+  `publishable_api_key_sales_channel` link table.
+- **Platform superadmin console + operator onboarding (Phase 10 seed + Phase 11
+  NEXT #5, commit `5ee701f50`, 2026-06-16):** new standalone Next.js app
+  `apps/superadmin/` (Next 16 + Tailwind v4, port 3100) for PLATFORM operators
+  (not sellers). Flow: public `/apply` form -> a `seller_applications` row
+  (pending) -> operator clicks Approve in the console ->
+  `provisionSellerFromApplication()` (`src/platform/provision-seller.ts`) runs the
+  per-seller onboarding steps 1,3,4,5 in-process (create-seller-admin ->
+  seed-inventory-resources -> provision:commerce -> provision:storefront, all
+  idempotent/self-healing) and returns the seller's one-time admin credential ->
+  tenant active; the seller logs into `/app` and imports their catalog (step 2).
+  - **Platform tables (NON-RLS, same posture as `tenants`/`tenant_domains`):**
+    `20260616000400-create-platform-admin.ts` adds `platform_admins`,
+    `platform_admin_sessions`, `seller_applications`. The cross-tenant operator
+    needs NO RLS bypass because platform state lives outside the per-tenant model.
+  - **Auth:** routes under `/selfkart/platform/*` (OUTSIDE the tenant-jailed
+    `/admin*`), guarded by `platformAuthMiddleware` (login route exempt; it matches
+    `req.originalUrl` because Express strips the mount prefix from `req.path`).
+    scrypt passwords, sha256-hashed opaque bearer sessions; the console SERVER
+    forwards the session as `x-platform-session` (the browser never calls Medusa
+    directly). Seed an operator with `pnpm create:platform-admin`.
+  - **Provision scripts refactored:** `create-seller-admin` /
+    `provision-tenant-commerce` / `provision-tenant-storefront` now export callable
+    `(container, input)` functions reused by the orchestrator, keeping their CLIs.
+  - **Console surfaces:** Dashboard (pending-application queue + tenant counts),
+    Applications (approve/reject + retry on failed), Tenants, public Apply form.
+  - **Verified:** backend `tsc` + superadmin `tsc`/`next build` green; DB-free auth
+    unit tests pass; `assert-platform-admin-flow.ts` (`pnpm assert:platform-admin`)
+    covers credential/session/application-lifecycle + subdomain uniqueness; full
+    apply->approve->provision flow rendered against a stub backend
+    (login/dashboard/applications/tenants/apply screenshotted).
 - **Docs:** `apps/medusa/README.md` (multi-seller setup + per-seller flow);
-  design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`.
+  design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`;
+  operator runbook `docs/seller-onboarding.md` (now points to the console flow).
 
 ### KNOWN GAPS / SECURITY TODO (must address before onboarding)
 
-- **MEDIUM:** `api_key` is NOT tenant-scoped (Medusa creates a platform Default
+- ~~**MEDIUM:** `api_key` is NOT tenant-scoped (Medusa creates a platform Default
   Publishable API Key at boot with no tenant context). A seller can currently see
-  other sellers' API keys. Needs a tenant-nullable model.
+  other sellers' API keys.~~ **RESOLVED 2026-06-16 (commit `5ee701f50`):**
+  `20260616000500-protect-api-key.ts` applies the tenant-nullable RLS policy +
+  backfill; per-tenant keys isolated, boot-time Default key stays platform-null.
+  `pnpm assert:api-key-isolation` passes live. Follow-up (LOW): scope the
+  `publishable_api_key_sales_channel` link table. See the DONE entry above.
 - **MEDIUM (functional):** invite RLS may break invite-acceptance (token lookup
   before the invitee has tenant context). Not exercised in the pilot (sellers are
   provisioned via `create-seller-admin`).
-- **MEDIUM (validate in E2E):** the checkout-pipeline tables now FORCE RLS. The
-  whole flow only works if tenant context holds through every cart/checkout write
-  AND through Medusa's internal price calculation reads. This is by-design (the
-  two pnpm patches set the GUC per transaction on /store* requests) but is NOT
-  yet proven end to end. If a payment/fulfillment write ever runs outside the
-  request transaction, the nullable-direct trigger leaves tenant_id NULL and the
-  row is HIDDEN from the tenant (a functional break, not a leak — RLS still
-  fails closed). The live Neon E2E must confirm the full buy-through works.
+- ~~**MEDIUM (validate in E2E):** the checkout-pipeline tables now FORCE RLS …
+  the live Neon E2E must confirm the full buy-through works.~~ **RESOLVED
+  2026-06-16 (commit 099afd1a9):** live buy-through proven on a disposable branch
+  — both tenants complete priced orders, prices/inventory resolve under tenant
+  context, cross-tenant reads 404, pooled suite 12/12. Tenant context held through
+  every cart/checkout/payment/fulfillment write and through Medusa's price-calc and
+  inventory reads (the four pnpm patches + `runWithTenantContext`). Required two
+  provisioning fixes (cross-linked keys, missing product↔shipping_profile — see the
+  DONE entry).
 - **DEFERRED:** tax tables (`tax_region`, `tax_rate`, `tax_rate_rule`) are not
   RLS'd. Safe while no tax is configured (pilot uses `automatic_taxes=false`);
   must be scoped in Phase 3 before enabling tenant taxes.
@@ -195,25 +262,27 @@
 
 ### NEXT (recommended order)
 
-1. **Run the live Neon-branch E2E for buyer cart -> checkout -> order** (the code
-   is IMPLEMENTED and compiles; see the DONE entry above). On a disposable Neon
-   branch: `db:migrate` as `neondb_owner` (picks up
-   `20260616000300-protect-checkout-tables.ts`), `seed:tenants`,
-   `seed-tenant-inventory-resources`, `provision:storefront` + `provision:commerce`
-   (with `SELFKART_PROVISION_PRICE_AMOUNT` set) for two tenants, then buy through
-   both storefronts. Confirm: A's catalog priced + buyable, A's cart/order not
-   visible under B's host, the pooled `medusa_app` suite (incl. the new
-   `checkout-isolation` test) is green. Fix anything the patches/context don't
-   carry through the payment/fulfillment writes (see the MEDIUM gap above).
-2. `api_key` tenant-nullable scoping (still global — sellers can see each other's
-   keys; Medusa's boot-time Default Publishable Key has no tenant). Phase 2 tenant
-   registry hardening: storefront status routing already renders draft/suspended
-   pages, but add a real coming-soon/suspended template and tenant-status admin.
+1. ~~Run the live Neon-branch E2E for buyer cart -> checkout -> order.~~ **DONE
+   2026-06-16 (commit 099afd1a9)** — passed; see the DONE entry and the resolved
+   MEDIUM gap above. Operator runbook now at `docs/seller-onboarding.md`.
+2. ~~`api_key` tenant-nullable scoping~~ **DONE 2026-06-16 (commit `5ee701f50`)** —
+   see the DONE entry. STILL OPEN from this item — Phase 2 tenant-registry
+   hardening: storefront status routing already renders draft/suspended pages, but
+   add a real coming-soon/suspended template and a tenant-status admin (the
+   superadmin console can host it; today status is only set at provision time).
 3. R2 media with tenant-prefixed object keys (storefront image rendering already
    allows remote hosts). Optionally optimize the read path from per-query to
    per-request transaction (same GUC mechanism) if read latency demands.
 4. Phase 3 tax-table RLS (`tax_region`/`tax_rate`/`tax_rate_rule`) before enabling
    tenant taxes (see DEFERRED gap above).
+5. ~~**Onboarding automation (Phase 11):** wrap steps 1-6 into one provisioning
+   command / admin flow.~~ **DONE 2026-06-16 (operator flow, commit `5ee701f50`)** —
+   the apply -> approve -> provision loop is live in `apps/superadmin` (see DONE
+   entry). STILL OPEN toward full Phase 11 self-serve: template/brand choice,
+   Razorpay + Shiprocket connect, custom-domain + TLS automation, and making
+   operator approval optional. Two engineering follow-ups: scope the
+   `publishable_api_key_sales_channel` link table (LOW), and move approve-time
+   provisioning off the request thread onto a job/queue (it runs inline today).
 
 ### Session commit trail (branch `phase0b-medusa-rls`)
 
@@ -1198,6 +1267,12 @@ create table if not exists tenant_usage_monthly (
 
 **Goal:** Operate the SaaS in under one hour per day.
 
+> **Status (2026-06-16, commit `5ee701f50`): seeded.** `apps/superadmin` console
+> is live with Dashboard (active/draft/suspended tenant counts + pending-application
+> queue), Applications (approve/reject/retry), and Tenants views. Still to add from
+> the list below: failed payments / shipments / webhooks / imports, near-limit +
+> high-traffic tenants, and audit events.
+
 **Dashboard must show:**
 
 - active/draft/suspended sellers
@@ -1218,6 +1293,16 @@ create table if not exists tenant_usage_monthly (
 ## 17. Phase 11 - Automated Onboarding
 
 **Goal:** Reduce manual seller setup time.
+
+> **Status (2026-06-16, commit `5ee701f50`): operator-gated flow live.**
+> `apps/superadmin` implements apply -> approve -> provision (create-seller-admin
+> -> seed-inventory-resources -> provision:commerce -> provision:storefront)
+> returning the seller's first admin credential; the seller then logs into `/app`
+> and imports their CSV. Orchestrator: `apps/medusa/src/platform/provision-seller.ts`.
+> Still to reach the self-serve DoD below: template/brand choice, Razorpay +
+> Shiprocket connect, custom-domain + TLS, and making operator approval optional.
+> (Provisioning currently runs inline in the approve request — move to a job/queue
+> before high volume.)
 
 **Flow:**
 
@@ -1384,17 +1469,18 @@ running state. In short:
   signed SDK, product browse). DoD MET and live-validated: Tenant A renders only
   A's catalog, Tenant B only B's. See the handoff DONE section for E2E details.
 
-- Buyer cart -> checkout -> order (Phase 1 NEXT #1) is now IMPLEMENTED and
-  compiles (storefront `/cart` `/checkout` `/order/[id]` via Server Actions;
-  checkout-pipeline RLS migration; `provision:commerce` script;
-  checkout-isolation test). The remaining step is the live Neon-branch E2E.
+- Buyer cart -> checkout -> order (Phase 1 NEXT #1) is **DONE and live-validated**
+  (commit 099afd1a9): storefront `/cart` `/checkout` `/order/[id]` via Server
+  Actions; checkout-pipeline RLS migration; `provision:commerce` /
+  `provision:storefront` (now self-healing + shipping-profile linking);
+  `checkout-isolation` test. Live buy-through proven on a disposable branch, pooled
+  suite 12/12. Operator runbook: `docs/seller-onboarding.md`.
 
 Do next, in order (also in NEXT at the top):
 
-1. **Run the live Neon E2E for buyer cart -> checkout -> order** (migrate +
-   provision two tenants + buy through both storefronts + green pooled
-   `medusa_app` suite incl. `checkout-isolation`).
-2. `api_key` tenant-nullable scoping (sellers can still see each other's keys).
-3. R2 media with tenant-prefixed object keys; optional read-path per-request
+1. `api_key` tenant-nullable scoping (sellers can still see each other's keys).
+2. R2 media with tenant-prefixed object keys; optional read-path per-request
    transaction optimization.
-4. Phase 3 tax-table RLS before enabling tenant taxes.
+3. Phase 3 tax-table RLS before enabling tenant taxes.
+4. Onboarding automation (Phase 11): wrap the proven per-seller steps
+   (`docs/seller-onboarding.md`) into one command / admin flow.
