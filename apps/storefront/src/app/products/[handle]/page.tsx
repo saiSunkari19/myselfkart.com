@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { AddToCart } from "../../../components/add-to-cart"
 import { getTenantProductByHandle } from "../../../lib/medusa/products"
 import { resolveTenant } from "../../../lib/tenant/resolve-tenant"
 
@@ -40,6 +41,7 @@ export default async function ProductPage({
       ) : null}
       <h1>{product.title}</h1>
       {product.description ? <p>{product.description}</p> : null}
+      <AddToCart variants={product.variants ?? []} />
     </main>
   )
 }

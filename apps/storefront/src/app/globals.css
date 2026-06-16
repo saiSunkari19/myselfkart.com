@@ -57,3 +57,141 @@ main {
   padding: 5rem 1rem;
   color: var(--muted);
 }
+
+.state.error {
+  color: #b91c1c;
+}
+
+.site-header {
+  display: flex;
+  gap: 1.25rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.site-header a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.product-card .price {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.add-to-cart {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+button,
+.add-to-cart button {
+  cursor: pointer;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--fg);
+  color: #fff;
+}
+
+input,
+select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.cart-lines,
+.order-lines {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.cart-line {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.cart-line-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 160px;
+}
+
+.cart-line-info span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.cart-line-total {
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+.cart-line form {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.cart-totals {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.25rem 1.5rem;
+  justify-content: end;
+  margin: 1.5rem 0;
+}
+
+.cart-totals dt {
+  color: var(--muted);
+}
+
+.cart-totals dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+section {
+  margin: 2rem 0;
+}
+
+.address-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  max-width: 560px;
+}
+
+.address-form button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.shipping-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.shipping-option {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}

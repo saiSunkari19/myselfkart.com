@@ -118,6 +118,54 @@
   branch reset from a `production` parent that already holds those rows) no
   longer collides on `*_pkey`. Full pooled `medusa_app` RLS suite now **11 pass,
   0 fail** (previously 2 failed on production-derived branches).
+- **Buyer cart -> checkout -> order — storefront transactional half (Phase 1
+  NEXT #1, IMPLEMENTED; live Neon E2E pending):** the buyer can now go
+  cart -> shipping -> payment -> completed order, all RLS-scoped per tenant.
+  - **Checkout-table RLS:** `20260616000300-protect-checkout-tables.ts` tenant-
+    isolates the remaining checkout pipeline (the cart/order tables were already
+    RLS'd in Phase 0B). Nullable-direct tenant_id on `price_set`, `price`,
+    `payment_collection`, `payment`, `payment_session`, `fulfillment_set`,
+    `service_zone`, `shipping_option`, `fulfillment`, `fulfillment_address`;
+    join-derived policies on `price_rule`, `geo_zone`, `shipping_option_rule`,
+    `capture`, `refund`, `fulfillment_item`, `fulfillment_label`,
+    `shipping_option_price_set`, `location_fulfillment_set`,
+    `location_fulfillment_provider` (all reuse `tenant-resource-sql.ts`).
+    **`region`/`region_country`/`region_payment_provider` are deliberately left
+    platform-shared (NOT RLS'd):** Medusa enforces one-country->one-region, so
+    per-tenant regions sharing a country collide; the currency/country container
+    is not seller data, while the sensitive data (prices, shipping rates,
+    payments, fulfillments, orders) IS tenant-scoped. `payment_provider`,
+    `fulfillment_provider`, `tax_provider`, `shipping_profile`,
+    `shipping_option_type`, `refund_reason`, `price_preference`, `price_list` are
+    also platform-shared. Tax tables (`tax_region`/`tax_rate`/`tax_rate_rule`)
+    deferred to Phase 3 (no tax setup in the pilot).
+  - **Per-tenant commerce provisioning:** `src/scripts/provision-tenant-commerce.ts`
+    (`pnpm provision:commerce`) ensures the shared region (currency + country +
+    `pp_system_default` manual payment), store supported-currency, and — inside
+    the tenant context so RLS stamps tenant_id — the tenant's variant prices
+    (opt-in via `SELFKART_PROVISION_PRICE_AMOUNT`), `manual_manual` fulfillment-
+    provider link, fulfillment set, service zone (country geo zone), and a flat-
+    rate shipping option. Idempotent; uses core-flows workflows wrapped in
+    `runWithTenantContext` (the `@medusajs/utils` connection patch stamps each
+    workflow transaction).
+  - **Storefront:** `apps/storefront/` now has `/cart`, `/checkout`, and
+    `/order/[id]` plus add-to-cart on the product list/detail. All cart/checkout
+    mutations run through Next.js **Server Actions** (`src/lib/cart/actions.ts`)
+    so the per-request signed tenant headers are attached server-side — the
+    browser never carries tenant context. The cart id is an httpOnly, host-scoped
+    cookie. SDK calls: region.list, cart.create/createLineItem/updateLineItem/
+    deleteLineItem/update, fulfillment.listCartOptions, cart.addShippingMethod,
+    payment.initiatePaymentSession (`pp_system_default`), cart.complete.
+  - **Test:** `tests/integration/rls/checkout-isolation.test.js` +
+    `src/scripts/assert-checkout-isolation.ts` assert (a) every checkout table is
+    RLS-enabled/forced/policied and (b) a tenant-owned `price_set` is visible only
+    to its tenant and never with no context.
+  - **Verified so far:** storefront `next build` (all 6 routes) + backend `tsc`
+    pass; checkout-isolation test file syntax-checks. **Live Neon-branch E2E (run
+    migrations as `neondb_owner`, provision two tenants, buy through both
+    storefronts, prove cart/order/price isolation via the pooled `medusa_app`
+    suite) is the remaining validation step.**
+
 - **Docs:** `apps/medusa/README.md` (multi-seller setup + per-seller flow);
   design doc `docs/superpowers/plans/2026-06-15-seller-admin-tenant-binding-design.md`.
 
@@ -129,6 +177,17 @@
 - **MEDIUM (functional):** invite RLS may break invite-acceptance (token lookup
   before the invitee has tenant context). Not exercised in the pilot (sellers are
   provisioned via `create-seller-admin`).
+- **MEDIUM (validate in E2E):** the checkout-pipeline tables now FORCE RLS. The
+  whole flow only works if tenant context holds through every cart/checkout write
+  AND through Medusa's internal price calculation reads. This is by-design (the
+  two pnpm patches set the GUC per transaction on /store* requests) but is NOT
+  yet proven end to end. If a payment/fulfillment write ever runs outside the
+  request transaction, the nullable-direct trigger leaves tenant_id NULL and the
+  row is HIDDEN from the tenant (a functional break, not a leak — RLS still
+  fails closed). The live Neon E2E must confirm the full buy-through works.
+- **DEFERRED:** tax tables (`tax_region`, `tax_rate`, `tax_rate_rule`) are not
+  RLS'd. Safe while no tax is configured (pilot uses `automatic_taxes=false`);
+  must be scoped in Phase 3 before enabling tenant taxes.
 - ~~**LOW (test infra):** `seed-tenant-inventory-resources.ts` non-idempotent
   channel/location seeding collided on `*_pkey` on production-derived branches.~~
   **RESOLVED 2026-06-16:** now an `onConflict("id").merge(...)` upsert by the
@@ -136,12 +195,16 @@
 
 ### NEXT (recommended order)
 
-1. **Buyer cart -> checkout -> order on the storefront.** The browse half (product
-   list/detail, tenant-from-domain, RLS-scoped) is DONE and E2E-validated. Next is
-   the transactional half: cart, line items, address/shipping, and order placement
-   — all through the per-tenant SDK so they stay RLS-scoped. Add storefront pages +
-   verify cart/order isolation end to end (carts/orders RLS already proven at the
-   DB layer).
+1. **Run the live Neon-branch E2E for buyer cart -> checkout -> order** (the code
+   is IMPLEMENTED and compiles; see the DONE entry above). On a disposable Neon
+   branch: `db:migrate` as `neondb_owner` (picks up
+   `20260616000300-protect-checkout-tables.ts`), `seed:tenants`,
+   `seed-tenant-inventory-resources`, `provision:storefront` + `provision:commerce`
+   (with `SELFKART_PROVISION_PRICE_AMOUNT` set) for two tenants, then buy through
+   both storefronts. Confirm: A's catalog priced + buyable, A's cart/order not
+   visible under B's host, the pooled `medusa_app` suite (incl. the new
+   `checkout-isolation` test) is green. Fix anything the patches/context don't
+   carry through the payment/fulfillment writes (see the MEDIUM gap above).
 2. `api_key` tenant-nullable scoping (still global — sellers can see each other's
    keys; Medusa's boot-time Default Publishable Key has no tenant). Phase 2 tenant
    registry hardening: storefront status routing already renders draft/suspended
@@ -149,6 +212,8 @@
 3. R2 media with tenant-prefixed object keys (storefront image rendering already
    allows remote hosts). Optionally optimize the read path from per-query to
    per-request transaction (same GUC mechanism) if read latency demands.
+4. Phase 3 tax-table RLS (`tax_region`/`tax_rate`/`tax_rate_rule`) before enabling
+   tenant taxes (see DEFERRED gap above).
 
 ### Session commit trail (branch `phase0b-medusa-rls`)
 
@@ -862,7 +927,14 @@ DONE - /store* storefront FRONTEND: Next.js apps/storefront/ app. Tenant from
        inbound x-selfkart-* headers. Live E2E on a disposable Neon branch: A
        renders only A's catalog, B only B's; A-only handle 404s under B's host;
        unknown host -> store-not-found; no tenant_id/secret leak in HTML.
-TODO  - Buyer cart -> checkout -> order on the storefront (transactional half).
+DONE  - Buyer cart -> checkout -> order on the storefront (transactional half),
+       IMPLEMENTED + compiles; live Neon E2E pending. Checkout-pipeline RLS
+       (20260616000300-protect-checkout-tables: price*/payment*/fulfillment*/
+       shipping_option/service_zone; region stays platform-shared),
+       provision-tenant-commerce.ts (shared region + manual payment/fulfillment +
+       per-tenant prices/shipping option), storefront /cart + /checkout +
+       /order/[id] via Server Actions (signed tenant headers server-side, httpOnly
+       cart cookie), and checkout-isolation.test.js. See the handoff DONE section.
 ```
 
 ---
@@ -1312,11 +1384,17 @@ running state. In short:
   signed SDK, product browse). DoD MET and live-validated: Tenant A renders only
   A's catalog, Tenant B only B's. See the handoff DONE section for E2E details.
 
+- Buyer cart -> checkout -> order (Phase 1 NEXT #1) is now IMPLEMENTED and
+  compiles (storefront `/cart` `/checkout` `/order/[id]` via Server Actions;
+  checkout-pipeline RLS migration; `provision:commerce` script;
+  checkout-isolation test). The remaining step is the live Neon-branch E2E.
+
 Do next, in order (also in NEXT at the top):
 
-1. **Buyer cart -> checkout -> order** on the storefront (the transactional half;
-   carts/orders RLS already proven at the DB layer — wire the storefront pages and
-   verify isolation end to end).
+1. **Run the live Neon E2E for buyer cart -> checkout -> order** (migrate +
+   provision two tenants + buy through both storefronts + green pooled
+   `medusa_app` suite incl. `checkout-isolation`).
 2. `api_key` tenant-nullable scoping (sellers can still see each other's keys).
 3. R2 media with tenant-prefixed object keys; optional read-path per-request
    transaction optimization.
+4. Phase 3 tax-table RLS before enabling tenant taxes.

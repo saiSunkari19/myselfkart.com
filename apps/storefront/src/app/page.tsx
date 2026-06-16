@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { formatMoney } from "../lib/format"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
 
@@ -43,17 +44,27 @@ export default async function HomePage() {
         <p className="state">No products are available yet.</p>
       ) : (
         <ul className="product-grid">
-          {products.map((product) => (
-            <li key={product.id} className="product-card">
-              <Link href={product.handle ? `/products/${product.handle}` : "#"}>
-                {product.thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={product.thumbnail} alt={product.title} />
-                ) : null}
-                <strong>{product.title}</strong>
-              </Link>
-            </li>
-          ))}
+          {products.map((product) => {
+            const price = product.variants?.find(
+              (v) => v.calculated_price?.calculated_amount != null
+            )?.calculated_price
+            return (
+              <li key={product.id} className="product-card">
+                <Link href={product.handle ? `/products/${product.handle}` : "#"}>
+                  {product.thumbnail ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={product.thumbnail} alt={product.title} />
+                  ) : null}
+                  <strong>{product.title}</strong>
+                  {price ? (
+                    <span className="price">
+                      {formatMoney(price.calculated_amount, price.currency_code)}
+                    </span>
+                  ) : null}
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </main>
