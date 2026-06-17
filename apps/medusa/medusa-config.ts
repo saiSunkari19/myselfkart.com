@@ -126,9 +126,16 @@ if (hasR2Config) {
 // fresh TCP+TLS handshake (~2 extra round trips) per request. Only client-side knex
 // pool + socket options are set here — no Postgres startup params, which PgBouncer
 // in transaction mode would reject. SSL stays driven by the URL.
+// Neon requires TLS. Force SSL for any non-local host so the connection works even
+// when the DATABASE_URL env var is missing `?sslmode=require` (e.g. set without the
+// query string in the Render dashboard). Equivalent to sslmode=require — no CA
+// verification — which matches the connection strings we already use. PgBouncer is
+// fine with client TLS (it's a transport option, not a Postgres startup param).
+const isLocalDatabase = /@(localhost|127\.0\.0\.1)/.test(databaseUrl)
 const databaseDriverOptions: any = {
   connection: {
     keepAlive: true,
+    ...(isLocalDatabase ? {} : { ssl: { rejectUnauthorized: false } }),
   },
   pool: {
     min: Number(process.env.DB_POOL_MIN) || 4,
