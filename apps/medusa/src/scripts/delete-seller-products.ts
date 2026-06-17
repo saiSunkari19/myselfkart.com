@@ -1,6 +1,6 @@
 import type { ExecArgs, RemoteQueryFunction } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { deleteProductsWorkflow } from "@medusajs/medusa/core-flows"
+import { deleteProductsWorkflow } from "@medusajs/core-flows"
 
 import { runWithTenantContext } from "../modules/tenant-context"
 

@@ -52,13 +52,13 @@ importers:
       '@medusajs/utils':
         specifier: 2.15.5
         version: 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
+      knex:
+        specifier: 3.2.8
+        version: 3.2.8(pg@8.21.0)
       ulid:
         specifier: 2.4.0
         version: 2.4.0
     devDependencies:
-      knex:
-        specifier: 3.2.8
-        version: 3.2.8(pg@8.21.0)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@25.9.3)(typescript@5.7.3)

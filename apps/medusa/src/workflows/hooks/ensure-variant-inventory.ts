@@ -1,7 +1,7 @@
 import {
   createProductsWorkflow,
   createProductVariantsWorkflow,
-} from "@medusajs/medusa/core-flows"
+} from "@medusajs/core-flows"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { Knex } from "knex"
 

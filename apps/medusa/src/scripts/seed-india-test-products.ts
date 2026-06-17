@@ -1,6 +1,6 @@
 import type { ExecArgs } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { createProductsWorkflow } from "@medusajs/medusa/core-flows"
+import { createProductsWorkflow } from "@medusajs/core-flows"
 
 import { runWithTenantContext } from "../modules/tenant-context"
 import { tenantSalesChannelId } from "./seed-tenant-inventory-resources"

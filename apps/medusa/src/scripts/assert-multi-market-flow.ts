@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-import { createProductsWorkflow } from "@medusajs/medusa/core-flows"
+import { createProductsWorkflow } from "@medusajs/core-flows"
 import type { ExecArgs } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { Knex } from "knex"

@@ -21,7 +21,12 @@ services:
     # reinstall there with pnpm (--prod, runtime deps only) so the RLS tenant-context
     # patches actually apply at runtime. npm would ignore pnpm.patchedDependencies,
     # silently shipping unpatched Medusa.
-    buildCommand: NODE_ENV=development corepack pnpm install --frozen-lockfile && NODE_ENV=development corepack pnpm run build && cp -r patches .medusa/server/ && cd .medusa/server && corepack pnpm install --prod
+    # Finally remove the source node_modules: .medusa/server is nested under
+    # apps/medusa, so at runtime Node resolution walks up and finds BOTH the
+    # source deps and .medusa/server's, loading @medusajs/core-flows twice ->
+    # "Workflow with id create-payment-sessions already exists". Deleting the
+    # parent leaves .medusa/server self-contained (it has its own patched deps).
+    buildCommand: NODE_ENV=development corepack pnpm install --frozen-lockfile && NODE_ENV=development corepack pnpm run build && cp -r patches .medusa/server/ && cd .medusa/server && corepack pnpm install --prod && rm -rf ../../node_modules
     # Migrations and start must run from .medusa/server (compiled medusa-config.js
     # lives there; the source dir only has medusa-config.ts which prod can't load).
     preDeployCommand: cd .medusa/server && DATABASE_URL="$MIGRATOR_DATABASE_URL" corepack pnpm run db:migrate

@@ -42,10 +42,10 @@
     "@medusajs/js-sdk": "2.15.5",
     "@medusajs/medusa": "2.15.5",
     "@medusajs/utils": "2.15.5",
+    "knex": "3.2.8",
     "ulid": "2.4.0"
   },
   "devDependencies": {
-    "knex": "3.2.8",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "5.7.3"
