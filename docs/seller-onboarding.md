@@ -172,9 +172,14 @@ whose checkout breaks, just re-run, no manual SQL:
   is not yet scoped (low risk — the token lives on the now-isolated `api_key`).
 - **Taxes** are not RLS'd (pilot runs `automatic_taxes=false`). Don't enable
   per-seller taxes until Phase 3.
-- **R2 media** keys aren't tenant-prefixed yet.
-- **Payments/shipping are "manual"** (`pp_system_default` / `manual_manual`) for the
-  pilot — real Razorpay/Shiprocket per tenant are later phases.
+- ~~**R2 media** keys aren't tenant-prefixed yet.~~ — **FIXED in code**
+  (2026-06-17): the tenant-aware R2 file provider writes keys under
+  `tenants/{tenant_id}/media/` and rejects cross-tenant file reads/deletes. Run a
+  live Cloudflare R2 upload smoke test once real credentials are available.
+- **Payments/shipping checkout is still "manual"** (`pp_system_default` /
+  `manual_manual`) for the pilot. Razorpay credential management is now wired in
+  superadmin and visible read-only in seller admin, but the actual Razorpay
+  checkout provider/webhook flow is the next Phase 7 step.
 - ~~**Admin-created products don't get inventory levels automatically.**~~ —
   **FIXED** by the `productVariantsCreated` workflow hook
   (`src/workflows/hooks/ensure-variant-inventory.ts`). Previously only the

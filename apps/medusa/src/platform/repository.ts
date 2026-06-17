@@ -1,3 +1,10 @@
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "node:crypto"
+
 import type { Knex } from "knex"
 
 /**
@@ -266,6 +273,111 @@ export type TenantStats = {
   customers: number
 }
 
+export type PaymentProvider = "razorpay"
+export type PaymentMode = "test" | "live"
+
+export type TenantPaymentCredentialSummary = {
+  provider: PaymentProvider
+  mode: PaymentMode
+  enabled: boolean
+  key_id: string
+  key_secret_hint: string
+  webhook_secret_hint: string
+  ready: boolean
+  updated_at: string
+}
+
+type TenantPaymentCredentialRow = {
+  tenant_id: string
+  provider: PaymentProvider
+  mode: PaymentMode
+  enabled: boolean
+  key_id: string
+  key_secret_encrypted: string
+  key_secret_hint: string
+  webhook_secret_encrypted: string
+  webhook_secret_hint: string
+  updated_at: string
+}
+
+const DEV_CREDENTIAL_SECRET = "selfkart-dev-credential-secret-change-before-production"
+
+function credentialsSecret(): string {
+  const secret =
+    process.env.SELFKART_CREDENTIALS_SECRET ||
+    process.env.SELFKART_PLATFORM_SECRET ||
+    process.env.JWT_SECRET ||
+    process.env.COOKIE_SECRET ||
+    DEV_CREDENTIAL_SECRET
+
+  if (process.env.NODE_ENV === "production" && secret === DEV_CREDENTIAL_SECRET) {
+    throw new Error("SELFKART_CREDENTIALS_SECRET must be set in production")
+  }
+
+  return secret
+}
+
+function credentialsKey(): Buffer {
+  return createHash("sha256").update(credentialsSecret()).digest()
+}
+
+function encryptCredential(value: string): string {
+  const iv = randomBytes(12)
+  const cipher = createCipheriv("aes-256-gcm", credentialsKey(), iv)
+  const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()])
+  const tag = cipher.getAuthTag()
+
+  return [
+    "v1",
+    iv.toString("base64url"),
+    tag.toString("base64url"),
+    encrypted.toString("base64url"),
+  ].join(":")
+}
+
+function decryptCredential(value: string): string {
+  const [version, iv, tag, encrypted] = value.split(":")
+  if (version !== "v1" || !iv || !tag || !encrypted) {
+    throw new Error("Unsupported encrypted credential format")
+  }
+
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    credentialsKey(),
+    Buffer.from(iv, "base64url")
+  )
+  decipher.setAuthTag(Buffer.from(tag, "base64url"))
+
+  return Buffer.concat([
+    decipher.update(Buffer.from(encrypted, "base64url")),
+    decipher.final(),
+  ]).toString("utf8")
+}
+
+function secretHint(secret: string): string {
+  return secret.slice(-4)
+}
+
+function toPaymentCredentialSummary(
+  row: TenantPaymentCredentialRow
+): TenantPaymentCredentialSummary {
+  return {
+    provider: row.provider,
+    mode: row.mode,
+    enabled: row.enabled,
+    key_id: row.key_id,
+    key_secret_hint: row.key_secret_hint,
+    webhook_secret_hint: row.webhook_secret_hint,
+    ready: Boolean(
+      row.enabled &&
+        row.key_id &&
+        row.key_secret_encrypted &&
+        row.webhook_secret_encrypted
+    ),
+    updated_at: row.updated_at,
+  }
+}
+
 /**
  * Counts a tenant's catalog/commerce rows. The product/order/customer tables are
  * RLS-scoped, so we open a transaction and set `app.current_tenant` (local to the
@@ -313,6 +425,120 @@ export async function getTenantAdminEmail(
       .first("email")
     return (row?.email as string | undefined) ?? null
   })
+}
+
+export async function getTenantPaymentCredentialSummary(
+  knex: Knex,
+  tenantId: string,
+  provider: PaymentProvider
+): Promise<TenantPaymentCredentialSummary | null> {
+  const row = await knex<TenantPaymentCredentialRow>("tenant_payment_credentials")
+    .where({ tenant_id: tenantId, provider })
+    .first()
+
+  return row ? toPaymentCredentialSummary(row) : null
+}
+
+export async function getTenantPaymentCredentialSecret(
+  knex: Knex,
+  tenantId: string,
+  provider: PaymentProvider,
+  secret: "key_secret" | "webhook_secret"
+): Promise<string | null> {
+  const row = await knex<TenantPaymentCredentialRow>("tenant_payment_credentials")
+    .where({ tenant_id: tenantId, provider })
+    .first()
+
+  if (!row) {
+    return null
+  }
+
+  return decryptCredential(
+    secret === "key_secret"
+      ? row.key_secret_encrypted
+      : row.webhook_secret_encrypted
+  )
+}
+
+export async function upsertTenantPaymentCredentials(
+  knex: Knex,
+  tenantId: string,
+  input: {
+    provider: PaymentProvider
+    mode: PaymentMode
+    enabled: boolean
+    keyId: string
+    keySecret?: string
+    webhookSecret?: string
+  }
+): Promise<TenantPaymentCredentialSummary> {
+  const existing = await knex<TenantPaymentCredentialRow>("tenant_payment_credentials")
+    .where({ tenant_id: tenantId, provider: input.provider })
+    .first()
+
+  const keySecret = input.keySecret?.trim()
+  const webhookSecret = input.webhookSecret?.trim()
+
+  if (!existing && !keySecret) {
+    throw new Error("Razorpay key secret is required for first-time setup")
+  }
+  if (!existing && !webhookSecret) {
+    throw new Error("Razorpay webhook secret is required for first-time setup")
+  }
+
+  const row = {
+    tenant_id: tenantId,
+    provider: input.provider,
+    mode: input.mode,
+    enabled: input.enabled,
+    key_id: input.keyId.trim(),
+    key_secret_encrypted: keySecret
+      ? encryptCredential(keySecret)
+      : existing!.key_secret_encrypted,
+    key_secret_hint: keySecret ? secretHint(keySecret) : existing!.key_secret_hint,
+    webhook_secret_encrypted: webhookSecret
+      ? encryptCredential(webhookSecret)
+      : existing!.webhook_secret_encrypted,
+    webhook_secret_hint: webhookSecret
+      ? secretHint(webhookSecret)
+      : existing!.webhook_secret_hint,
+    updated_at: knex.fn.now(),
+  }
+
+  await knex("tenant_payment_credentials")
+    .insert(row)
+    .onConflict(["tenant_id", "provider"])
+    .merge({
+      mode: row.mode,
+      enabled: row.enabled,
+      key_id: row.key_id,
+      key_secret_encrypted: row.key_secret_encrypted,
+      key_secret_hint: row.key_secret_hint,
+      webhook_secret_encrypted: row.webhook_secret_encrypted,
+      webhook_secret_hint: row.webhook_secret_hint,
+      updated_at: knex.fn.now(),
+    })
+
+  const summary = await getTenantPaymentCredentialSummary(
+    knex,
+    tenantId,
+    input.provider
+  )
+  if (!summary) {
+    throw new Error("Could not read saved payment credentials")
+  }
+
+  return summary
+}
+
+export async function deleteTenantPaymentCredentials(
+  knex: Knex,
+  tenantId: string,
+  provider: PaymentProvider
+): Promise<void> {
+  await knex("tenant_payment_credentials")
+    .where({ tenant_id: tenantId, provider })
+    .del()
 }
 
 /** The seller application a tenant was provisioned from (owner contact, etc.). */

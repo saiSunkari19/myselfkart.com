@@ -54,12 +54,26 @@ export type TenantDetail = {
   domains: TenantDomain[]
   stats: TenantStats
   admin_email: string | null
+  payment_credentials: {
+    razorpay: TenantPaymentCredential | null
+  }
   owner: {
     name: string
     email: string
     phone: string | null
     applied_at: string
   } | null
+}
+
+export type TenantPaymentCredential = {
+  provider: "razorpay"
+  mode: "test" | "live"
+  enabled: boolean
+  key_id: string
+  key_secret_hint: string
+  webhook_secret_hint: string
+  ready: boolean
+  updated_at: string
 }
 
 export type PlatformAdmin = {

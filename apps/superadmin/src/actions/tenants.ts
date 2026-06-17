@@ -23,6 +23,21 @@ export type PasswordState = {
   credential?: { email: string; password: string } | null
 }
 
+export type RazorpayState = {
+  ok: boolean
+  error: string | null
+  credentials?: {
+    provider: "razorpay"
+    mode: "test" | "live"
+    enabled: boolean
+    key_id: string
+    key_secret_hint: string
+    webhook_secret_hint: string
+    ready: boolean
+    updated_at: string
+  } | null
+}
+
 /**
  * Generates (or sets) the seller admin's login password and returns it once so
  * the operator can share it. The seller logs into /admin with this email + password.
@@ -51,6 +66,55 @@ export async function resetTenantPasswordAction(
   } catch (error) {
     const message =
       error instanceof PlatformApiError ? error.message : "Could not update password."
+    return { ok: false, error: message }
+  }
+}
+
+/**
+ * Saves or rotates Razorpay credentials for one tenant. Blank secret fields are
+ * preserved by the backend once credentials already exist.
+ */
+export async function updateTenantRazorpayAction(
+  _prev: RazorpayState,
+  formData: FormData
+): Promise<RazorpayState> {
+  const id = String(formData.get("id") ?? "")
+  const mode = String(formData.get("mode") ?? "")
+  const keyId = String(formData.get("key_id") ?? "").trim()
+  const keySecret = String(formData.get("key_secret") ?? "")
+  const webhookSecret = String(formData.get("webhook_secret") ?? "")
+  const enabled = String(formData.get("enabled") ?? "") === "on"
+
+  if (!id) {
+    return { ok: false, error: "Missing tenant id." }
+  }
+  if (mode !== "test" && mode !== "live") {
+    return { ok: false, error: "Choose test or live mode." }
+  }
+  if (!keyId) {
+    return { ok: false, error: "Enter the Razorpay key id." }
+  }
+
+  try {
+    const result = await platformFetch<{
+      credentials: NonNullable<RazorpayState["credentials"]>
+    }>(`/selfkart/platform/tenants/${id}/payment-credentials/razorpay`, {
+      method: "POST",
+      body: {
+        mode,
+        enabled,
+        key_id: keyId,
+        key_secret: keySecret,
+        webhook_secret: webhookSecret,
+      },
+    })
+    revalidatePath(`/tenants/${id}`)
+    return { ok: true, error: null, credentials: result.credentials }
+  } catch (error) {
+    const message =
+      error instanceof PlatformApiError
+        ? error.message
+        : "Could not update Razorpay credentials."
     return { ok: false, error: message }
   }
 }

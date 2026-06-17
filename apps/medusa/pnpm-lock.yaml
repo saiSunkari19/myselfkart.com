@@ -22,12 +22,24 @@ importers:
 
   .:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.1068.0
+        version: 3.1068.0
+      '@aws-sdk/lib-storage':
+        specifier: 3.1068.0
+        version: 3.1068.0(@aws-sdk/client-s3@3.1068.0)
+      '@aws-sdk/s3-request-presigner':
+        specifier: 3.1068.0
+        version: 3.1068.0
       '@medusajs/admin-sdk':
         specifier: 2.15.5
         version: 2.15.5
       '@medusajs/cli':
         specifier: 2.15.5
         version: 2.15.5(@types/node@25.9.3)
+      '@medusajs/file-s3':
+        specifier: 2.15.5
+        version: 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))(@types/node@25.9.3)
       '@medusajs/framework':
         specifier: 2.15.5
         version: 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
@@ -40,6 +52,9 @@ importers:
       '@medusajs/utils':
         specifier: 2.15.5
         version: 2.15.5(patch_hash=mtaxfmsymlrigwspkqds4x4r7e)(@types/node@25.9.3)(express@4.22.2)
+      ulid:
+        specifier: 2.4.0
+        version: 2.4.0
     devDependencies:
       knex:
         specifier: 3.2.8

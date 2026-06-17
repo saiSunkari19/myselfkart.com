@@ -7,7 +7,9 @@ import {
 } from "../../lib/cart/actions"
 import { getCartId } from "../../lib/cart/cookie"
 import { formatMoney } from "../../lib/format"
+import { RazorpayCheckout } from "../../components/razorpay-checkout"
 import { getCart, listShippingOptions } from "../../lib/medusa/cart"
+import { getPaymentConfig } from "../../lib/medusa/payment"
 import { getRegion } from "../../lib/medusa/region"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 
@@ -48,6 +50,7 @@ export default async function CheckoutPage({
   const addr = cart.shipping_address
   const region = await getRegion(tenant)
   const countries = region?.countries ?? []
+  const paymentConfig = await getPaymentConfig(tenant)
 
   return (
     <main>
@@ -119,9 +122,15 @@ export default async function CheckoutPage({
         </dl>
 
         {hasAddress && hasShipping ? (
-          <form action={placeOrderAction}>
-            <button type="submit">Place order</button>
-          </form>
+          paymentConfig.razorpay ? (
+            // Seller has Razorpay configured → pay online via the Razorpay modal.
+            <RazorpayCheckout storeName="Online Store" email={cart.email} />
+          ) : (
+            // No online provider configured → fall back to manual order placement.
+            <form action={placeOrderAction}>
+              <button type="submit">Place order</button>
+            </form>
+          )
         ) : (
           <p className="state">
             Complete the steps above to place your order.

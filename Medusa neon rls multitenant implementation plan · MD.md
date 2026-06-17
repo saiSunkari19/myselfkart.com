@@ -56,6 +56,27 @@
     `DELETE /selfkart/platform/tenants/[id]`, a typed-confirm Delete panel + a
     "Delete disabled" bulk action. Validated live (a throwaway seller torn down with
     zero leftovers/orphans). CLI equivalent: `scripts/teardown-tenant.ts`.
+- **Multi-market validation + tax-table RLS (2026-06-17, current branch):**
+  - Added `pnpm assert:multi-market` (`src/scripts/assert-multi-market-flow.ts`),
+    a repeatable Medusa-side gate that provisions throwaway US / UAE / Europe
+    tenants, creates a sellable product per market, verifies tenant registry
+    currency/country, shared region country coverage, market-currency pricing,
+    shipping-zone country coverage, and tenant/no-context RLS visibility, then
+    tears down the throwaway tenants while preserving shared regions. **Passed**
+    live after the tax/index migrations.
+  - **Phase 3 tax-table RLS is closed:** `20260617000200-protect-tax-tables.ts`
+    tenant-isolates `tax_region` / `tax_rate` / `tax_rate_rule`. `tax_region`
+    gets a nullable direct `tenant_id`; `tax_rate` derives from `tax_region`; and
+    `tax_rate_rule` derives through `tax_rate -> tax_region`. Global
+    `tax_region` country/province uniqueness is replaced with tenant-aware
+    uniqueness so two sellers can configure the same country. Gate:
+    `pnpm assert:tax-rls` + `tests/integration/rls/tax-isolation.test.js`.
+  - Added `20260617000300-reassert-tenant-unique-indexes.ts` because Medusa module
+    migrations can recreate upstream global `fulfillment_set.name` /
+    `service_zone.name` uniqueness after the original checkout migration has
+    already been marked executed. The follow-up migration reasserts the
+    tenant-aware indexes after module migrations. Full pooled RLS suite is now
+    **13 pass, 0 fail**.
 - **Phase 0A — DB RLS gate:** `phase0-rls-smoke/run.sh` passes at 500/conc-50.
 - **Phase 0B — Medusa shared-RLS gate: PASSED (GO).** Versions frozen
   (Medusa 2.15.5 + Neon PG 17). Commerce tables (product/cart/customer/order +
@@ -286,9 +307,10 @@
   inventory reads (the four pnpm patches + `runWithTenantContext`). Required two
   provisioning fixes (cross-linked keys, missing product↔shipping_profile — see the
   DONE entry).
-- **DEFERRED:** tax tables (`tax_region`, `tax_rate`, `tax_rate_rule`) are not
-  RLS'd. Safe while no tax is configured (pilot uses `automatic_taxes=false`);
-  must be scoped in Phase 3 before enabling tenant taxes.
+- ~~**DEFERRED:** tax tables (`tax_region`, `tax_rate`, `tax_rate_rule`) are not
+  RLS'd.~~ **RESOLVED 2026-06-17:** `20260617000200-protect-tax-tables.ts` applies
+  tenant RLS + tenant-aware tax-region uniqueness; `pnpm assert:tax-rls` passes
+  live and is included in `pnpm test:rls`.
 - ~~**LOW (test infra):** `seed-tenant-inventory-resources.ts` non-idempotent
   channel/location seeding collided on `*_pkey` on production-derived branches.~~
   **RESOLVED 2026-06-16:** now an `onConflict("id").merge(...)` upsert by the
@@ -302,38 +324,39 @@
   NOT call import-complete, so it still needs a manual `provision:commerce` +
   `backfill-tenant-currency-prices` afterward (dev/recovery only).
 - **LOW (multi-region data):** USD/AED regions and the EUR region's countries are
-  created **lazily** when the first seller of that market is provisioned. Until
-  then those markets have no region. The stray Admin-created `eur` region was
-  renamed `Selfkart EUR`. Seller A (`00…000b`) is a leftover broken test tenant
-  with `currency=null` — delete it via the console to exercise the new delete flow.
+  created **lazily** when the first seller of that market is provisioned. The
+  automated Medusa-side gate `pnpm assert:multi-market` now proves US / UAE /
+  Europe provisioning, region country coverage, prices, shipping zones, and RLS.
+  A full browser/operator click-through for those markets is still useful before a
+  real seller pilot. Seller A (`00…000b`) is a leftover broken test tenant with
+  `currency=null` — delete it via the console to exercise the delete flow.
 - **LOW (open follow-up, restated):** scope the `publishable_api_key_sales_channel`
   link table (api_key itself is now tenant-scoped); move approve-time provisioning
   off the request thread onto a job/queue (runs inline today).
 
 ### NEXT (recommended order)
 
-> Updated 2026-06-17. Buyer E2E, api_key scoping, operator onboarding flow, and
-> multi-market + self-healing imports + delete are all DONE (see DONE section).
+> Updated 2026-06-17. Buyer E2E, api_key scoping, operator onboarding flow,
+> multi-market + self-healing imports + delete, Medusa-side US/UAE/EU market
+> validation, tax-table RLS, R2 tenant media key prefixing, storefront
+> tenant-status templates, and Razorpay credential management are all DONE
+> (see DONE section).
 > What remains:
 
-0. **Validate the 2026-06-17 multi-market flow end to end** (next concrete task —
-   see §24). Apply for a store in each of US / UAE / Europe, approve, import a CSV,
-   and confirm: the right region resolves, prices show in the market currency, and
-   buy-through completes. India is already proven; the other three regions are
-   created lazily on first provision and have not had a live buy-through yet.
-1. **Tax-table RLS (Phase 3)** — `tax_region`/`tax_rate`/`tax_rate_rule` are NOT
-   RLS'd. Required before enabling per-tenant taxes (pilot runs
-   `automatic_taxes=false`). This is the main remaining isolation gap.
-2. **Phase 2 tenant-registry hardening** — storefront already renders
-   draft/suspended pages; add a real coming-soon/suspended template. Tenant-status
-   admin now exists in the superadmin console (enable/disable/delete).
-3. **R2 media with tenant-prefixed object keys** (storefront already allows remote
-   image hosts). Optionally optimize the read path from per-query to per-request
-   transaction (same GUC mechanism) if read latency demands.
-4. **Engineering follow-ups (LOW):** scope `publishable_api_key_sales_channel`;
+0. **Optional final market click-through before pilot:** run the full operator +
+   browser path for US / UAE / Europe (apply -> approve -> in-admin CSV import ->
+   storefront checkout) now that `pnpm assert:multi-market` proves the backend
+   provisioning/RLS path.
+1. **Credentialed R2 smoke test before pilot:** tenant-aware R2 provider is wired
+   behind complete `R2_*` env config and asserted with a mocked S3 client. Run one
+   real upload against Cloudflare R2 credentials before seller pilot.
+2. **Razorpay checkout provider + webhook flow:** per-tenant encrypted Razorpay
+   credentials are stored and visible as readiness status. Next wire the Medusa
+   payment provider/session creation and tenant-scoped webhook reconciliation.
+3. **Engineering follow-ups (LOW):** scope `publishable_api_key_sales_channel`;
    move approve-time provisioning onto a job/queue (inline today); auto-heal the
    CLI import path (or fold it into the in-admin importer).
-5. **Phase 11 full self-serve (longer horizon)** — the apply → approve → provision
+4. **Phase 11 full self-serve (longer horizon)** — the apply → approve → provision
    operator loop is live (`apps/superadmin`). Remaining toward fully self-serve:
    template/brand choice, Razorpay (Phase 7) + Shiprocket (Phase 8) connect,
    custom-domain + TLS automation, and making operator approval optional.
@@ -995,8 +1018,12 @@ Validation run on 2026-06-15:
 - [x] Tenant A storefront renders Tenant A product. (Live E2E 2026-06-16.)
 - [x] Tenant B storefront does not render Tenant A product. (A-only handle 404s
   under B's host; catalogs disjoint; no tenant_id leak in HTML.)
-- [ ] Media loads from tenant-prefixed R2 path. (Storefront allows remote image
-  hosts; R2 tenant-prefixing not yet wired — tracked in NEXT.)
+- [x] Medusa generates tenant-prefixed R2 object keys through the tenant-aware
+  file provider. Verified 2026-06-17 with `corepack pnpm assert:tenant-media`
+  and fake `R2_*` provider registration.
+- [ ] Live media loads from a real Cloudflare R2 bucket path. Requires actual
+  `R2_FILE_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, and
+  `R2_ENDPOINT` credentials.
 
 ### Task 1.A - Seller Admin ↔ Tenant Binding
 
@@ -1107,9 +1134,12 @@ create table if not exists tenant_theme_config (
 **Routing states:**
 
 - `active`: render storefront.
-- `draft`: render coming-soon page.
-- `suspended`: render unavailable page.
-- unknown domain: render platform landing or 404 with no tenant data.
+- `draft`: render coming-soon page. **Implemented 2026-06-17** with tested
+  storefront status content and reusable status component.
+- `suspended`: render unavailable page. **Implemented 2026-06-17** with tested
+  storefront status content and reusable status component.
+- unknown domain: render safe not-found page with no tenant data. **Verified
+  2026-06-17** in browser against the production storefront build.
 
 **DoD:**
 
@@ -1239,17 +1269,31 @@ create table if not exists tenant_users (
 
 **Goal:** Seller money flows directly to each seller's Razorpay account.
 
+**Status (2026-06-17): credential-management foundation implemented.**
+Superadmin tenant detail can save per-tenant Razorpay mode, key id, key secret,
+webhook secret, and enabled flag. Secrets are encrypted at rest in
+`tenant_payment_credentials`; API/UI responses only expose readiness and last-four
+hints. Seller Admin has a read-only Seller Payments page showing whether Razorpay
+is ready for that tenant. Verification added as `pnpm assert:payment-credentials`
+(Medusa CLI execution was sandbox-blocked in this session; run after
+`pnpm db:migrate`).
+
 **Tables:**
 
 ```sql
-create table if not exists tenant_integrations (
-  tenant_id uuid primary key references tenants(id),
-  razorpay_key_id text,
-  razorpay_key_secret_encrypted text,
-  razorpay_webhook_secret_encrypted text,
-  shiprocket_credentials_encrypted text,
+create table if not exists tenant_payment_credentials (
+  tenant_id uuid not null references tenants(id) on delete cascade,
+  provider text not null check (provider in ('razorpay')),
+  mode text not null check (mode in ('test', 'live')),
+  enabled boolean not null default false,
+  key_id text not null,
+  key_secret_encrypted text not null,
+  key_secret_hint text not null,
+  webhook_secret_encrypted text not null,
+  webhook_secret_hint text not null,
   created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  updated_at timestamptz default now(),
+  primary key (tenant_id, provider)
 );
 ```
 
@@ -1533,17 +1577,18 @@ running state. In short:
 - **Multi-market (India/US/UAE/Europe), self-healing imports, and tenant delete are
   DONE** (2026-06-17, commit `9ec209f54`) — see the handoff DONE section. India is
   live-proven; US/UAE/Europe regions are created lazily on first provision and have
-  not yet had a live buy-through.
+  now been validated by the repeatable Medusa-side `pnpm assert:multi-market`
+  gate (region/currency/pricing/shipping/RLS). A final browser/operator
+  click-through remains useful before a real seller pilot.
+- **Phase 3 tax-table RLS is DONE** (2026-06-17): `tax_region` / `tax_rate` /
+  `tax_rate_rule` are protected and included in the pooled RLS suite.
 
 Do next, in order (also in NEXT at the top):
 
-1. **Validate US / UAE / Europe end to end** — apply → approve → import CSV →
-   confirm region/currency resolves, prices show in the market currency, and
-   buy-through completes (India already proven). The catalog CSVs carry
-   INR/USD/EUR/AED prices; import auto-heals stock + shipping profile + price.
-2. **Phase 3 tax-table RLS** (`tax_region`/`tax_rate`/`tax_rate_rule`) before
-   enabling per-tenant taxes — the main remaining isolation gap.
-3. R2 media with tenant-prefixed object keys; optional read-path per-request
-   transaction optimization.
-4. Engineering follow-ups (LOW): scope `publishable_api_key_sales_channel`;
+1. **Optional final US / UAE / Europe browser/operator click-through** — apply →
+   approve → in-admin CSV import → storefront checkout. The Medusa-side automated
+   gate now passes; this is the last human/browser confidence run.
+2. Credentialed R2 smoke test: configure real `R2_*` values and upload one media
+   object from a tenant-scoped admin/product path.
+3. Engineering follow-ups (LOW): scope `publishable_api_key_sales_channel`;
    approve-time provisioning onto a job/queue; auto-heal the CLI import path.

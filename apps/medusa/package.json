@@ -19,6 +19,10 @@
     "create:platform-admin": "medusa exec ./src/scripts/create-platform-admin.ts",
     "assert:platform-admin": "node --test --test-concurrency=1 tests/integration/platform/*.test.js",
     "assert:api-key-isolation": "medusa exec ./src/scripts/assert-api-key-isolation.ts",
+    "assert:multi-market": "medusa exec ./src/scripts/assert-multi-market-flow.ts",
+    "assert:tax-rls": "medusa exec ./src/scripts/assert-tax-rls.ts",
+    "assert:tenant-media": "medusa exec ./src/scripts/assert-tenant-media-prefix.ts",
+    "assert:payment-credentials": "medusa exec ./src/scripts/assert-tenant-payment-credentials.ts",
     "test": "node --test --test-concurrency=1 tests/integration/rls/*.test.js tests/integration/import/*.test.js",
     "test:rls": "node --test --test-concurrency=1 tests/integration/rls/*.test.js",
     "test:import": "node --test --test-concurrency=1 tests/integration/import/*.test.js"
@@ -28,12 +32,17 @@
   "license": "UNLICENSED",
   "type": "commonjs",
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1068.0",
+    "@aws-sdk/lib-storage": "3.1068.0",
+    "@aws-sdk/s3-request-presigner": "3.1068.0",
     "@medusajs/admin-sdk": "2.15.5",
     "@medusajs/cli": "2.15.5",
+    "@medusajs/file-s3": "2.15.5",
     "@medusajs/framework": "2.15.5",
     "@medusajs/js-sdk": "2.15.5",
     "@medusajs/medusa": "2.15.5",
-    "@medusajs/utils": "2.15.5"
+    "@medusajs/utils": "2.15.5",
+    "ulid": "2.4.0"
   },
   "devDependencies": {
     "knex": "3.2.8",

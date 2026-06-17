@@ -21,6 +21,23 @@ const KNOWN_BAD_COOKIE = "phase0b-cookie-secret-change-before-production"
 
 const jwtSecret = process.env.JWT_SECRET || KNOWN_BAD_JWT
 const cookieSecret = process.env.COOKIE_SECRET || KNOWN_BAD_COOKIE
+const r2Config = {
+  fileUrl: process.env.R2_FILE_URL || process.env.S3_FILE_URL,
+  accessKeyId: process.env.R2_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID,
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY,
+  region: process.env.R2_REGION || process.env.S3_REGION || "auto",
+  bucket: process.env.R2_BUCKET || process.env.S3_BUCKET,
+  endpoint: process.env.R2_ENDPOINT || process.env.S3_ENDPOINT,
+}
+const r2ConfigValues = [
+  r2Config.fileUrl,
+  r2Config.accessKeyId,
+  r2Config.secretAccessKey,
+  r2Config.bucket,
+  r2Config.endpoint,
+]
+const hasR2Config = r2ConfigValues.every(Boolean)
+const hasPartialR2Config = r2ConfigValues.some(Boolean) && !hasR2Config
 
 if (process.env.NODE_ENV === "production") {
   if (!process.env.JWT_SECRET || jwtSecret === KNOWN_BAD_JWT) {
@@ -41,6 +58,55 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
+if (hasPartialR2Config) {
+  throw new Error(
+    "R2 media config is incomplete. Set R2_FILE_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, and R2_ENDPOINT."
+  )
+}
+
+const modules: any[] = [
+  {
+    resolve: "./src/modules/tenant-context",
+  },
+  {
+    // Payment Module with the built-in manual provider plus our multi-tenant
+    // Razorpay provider. Razorpay holds no keys here — each operation resolves
+    // the current tenant's encrypted credentials at runtime (see
+    // src/modules/razorpay-payment). Registered id: pp_razorpay_razorpay.
+    resolve: "@medusajs/medusa/payment",
+    options: {
+      providers: [
+        {
+          resolve: "./src/modules/razorpay-payment",
+          id: "razorpay",
+        },
+      ],
+    },
+  },
+]
+
+if (hasR2Config) {
+  modules.push({
+    resolve: "@medusajs/medusa/file",
+    options: {
+      providers: [
+        {
+          resolve: "./src/modules/tenant-media",
+          id: "r2",
+          options: {
+            file_url: r2Config.fileUrl,
+            access_key_id: r2Config.accessKeyId,
+            secret_access_key: r2Config.secretAccessKey,
+            region: r2Config.region,
+            bucket: r2Config.bucket,
+            endpoint: r2Config.endpoint,
+          },
+        },
+      ],
+    },
+  })
+}
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl,
@@ -52,9 +118,5 @@ module.exports = defineConfig({
       cookieSecret,
     },
   },
-  modules: [
-    {
-      resolve: "./src/modules/tenant-context",
-    },
-  ],
+  modules,
 })

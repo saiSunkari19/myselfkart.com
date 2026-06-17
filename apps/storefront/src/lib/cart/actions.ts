@@ -16,6 +16,10 @@ import {
   type CartAddress,
 } from "../medusa/cart"
 import { getRegion } from "../medusa/region"
+import {
+  initiateRazorpaySession,
+  type RazorpaySession,
+} from "../medusa/payment"
 import { resolveTenant } from "../tenant/resolve-tenant"
 import type { TenantResolution } from "../tenant/types"
 import { clearCartId, getCartId, setCartId } from "./cookie"
@@ -143,4 +147,65 @@ export async function placeOrderAction(): Promise<void> {
   }
 
   redirect(`/checkout?error=${encodeURIComponent(result.message)}`)
+}
+
+/**
+ * Starts a Razorpay checkout: creates the per-tenant Razorpay order/session and
+ * returns the public data the browser widget needs. Called from the client
+ * Razorpay component (which then opens the Razorpay modal).
+ */
+export async function startRazorpayCheckoutAction(): Promise<
+  { ok: true; session: RazorpaySession } | { ok: false; error: string }
+> {
+  const tenant = await requireActiveTenant()
+  const cartId = await getCartId()
+  if (!cartId) {
+    return { ok: false, error: "Your cart could not be found." }
+  }
+
+  const cart = await getCart(tenant, cartId)
+  if (!cart) {
+    return { ok: false, error: "Your cart could not be found." }
+  }
+  if (!cart.shipping_address || cart.shipping_methods.length === 0) {
+    return {
+      ok: false,
+      error: "Add your shipping details and a delivery method first.",
+    }
+  }
+
+  try {
+    const session = await initiateRazorpaySession(tenant, cart)
+    return { ok: true, session }
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Could not start the payment.",
+    }
+  }
+}
+
+/**
+ * Completes the cart after the buyer has paid in the Razorpay modal. The backend
+ * provider authorizes by checking Razorpay directly (it does not trust the
+ * browser), so a failed/incomplete payment can't produce an order here.
+ */
+export async function completeRazorpayOrderAction(): Promise<
+  { ok: true; orderId: string } | { ok: false; error: string }
+> {
+  const tenant = await requireActiveTenant()
+  const cartId = await getCartId()
+  if (!cartId) {
+    return { ok: false, error: "Your cart could not be found." }
+  }
+
+  const result = await completeCart(tenant, cartId)
+  if (result.type === "order") {
+    await clearCartId()
+    return { ok: true, orderId: result.orderId }
+  }
+  return { ok: false, error: result.message }
 }

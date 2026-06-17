@@ -50,7 +50,17 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const MANUAL_PAYMENT_PROVIDER_ID = "pp_system_default"
+const RAZORPAY_PAYMENT_PROVIDER_ID = "pp_razorpay_razorpay"
 const MANUAL_FULFILLMENT_PROVIDER_ID = "manual_manual"
+
+// Every shared region offers both providers. Regions are shared by currency
+// across tenants, so a tenant that hasn't configured Razorpay simply never sees
+// it on the storefront (the storefront gates on tenant_payment_credentials), and
+// the provider itself fails closed if an unconfigured tenant tries to use it.
+const REGION_PAYMENT_PROVIDERS = [
+  MANUAL_PAYMENT_PROVIDER_ID,
+  RAZORPAY_PAYMENT_PROVIDER_ID,
+]
 
 type Input = {
   tenantId: string
@@ -122,6 +132,40 @@ async function ensureStoreCurrency(container: any, currency: string): Promise<vo
     input: { selector: { id: store.id }, update: { supported_currencies: next } },
   })
   logger.info(`Added supported currency ${currency} to store ${store.id}`)
+}
+
+/**
+ * Ensures a region offers every provider in REGION_PAYMENT_PROVIDERS. Idempotent:
+ * reads the region's current providers and only writes (replacing the set) when
+ * one is missing — so re-runs are no-ops and existing regions get backfilled.
+ */
+async function ensureRegionPaymentProviders(
+  container: any,
+  regionId: string
+): Promise<void> {
+  const query = container.resolve(ContainerRegistrationKeys.QUERY) as Query
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const { data: regions } = await query.graph({
+    entity: "region",
+    fields: ["id", "payment_providers.id"],
+    filters: { id: regionId },
+  })
+  const current = new Set<string>(
+    (regions[0]?.payment_providers ?? []).map((p: { id: string }) => p.id)
+  )
+  const missing = REGION_PAYMENT_PROVIDERS.filter((p) => !current.has(p))
+  if (missing.length === 0) {
+    return
+  }
+  await updateRegionsWorkflow(container).run({
+    input: {
+      selector: { id: regionId },
+      update: { payment_providers: [...current, ...missing] },
+    },
+  })
+  logger.info(
+    `Linked payment providers '${missing.join(",")}' to region ${regionId}`
+  )
 }
 
 /** Replaces a region's country list (used to move a country between regions). */
@@ -199,6 +243,7 @@ async function ensureSharedRegion(
         `Added countries '${missing.join(",")}' to shared region ${byCurrency.id} (${currency})`
       )
     }
+    await ensureRegionPaymentProviders(container, byCurrency.id)
     return byCurrency.id
   }
 
@@ -217,7 +262,7 @@ async function ensureSharedRegion(
           name: `Selfkart ${currency.toUpperCase()}`,
           currency_code: currency,
           countries: wanted,
-          payment_providers: [MANUAL_PAYMENT_PROVIDER_ID],
+          payment_providers: REGION_PAYMENT_PROVIDERS,
           automatic_taxes: false,
         },
       ],

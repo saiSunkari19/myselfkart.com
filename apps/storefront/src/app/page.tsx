@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { StorefrontStatePage } from "../components/storefront-state"
 import { formatMoney } from "../lib/format"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
@@ -12,27 +13,15 @@ export default async function HomePage() {
   const tenant = await resolveTenant()
 
   if (!tenant) {
-    return (
-      <main>
-        <p className="state">This store could not be found.</p>
-      </main>
-    )
+    return <StorefrontStatePage state="not-found" />
   }
 
   if (tenant.status === "draft") {
-    return (
-      <main>
-        <p className="state">This store is coming soon.</p>
-      </main>
-    )
+    return <StorefrontStatePage state="draft" />
   }
 
   if (tenant.status === "suspended") {
-    return (
-      <main>
-        <p className="state">This store is currently unavailable.</p>
-      </main>
-    )
+    return <StorefrontStatePage state="suspended" />
   }
 
   const products = await listTenantProducts(tenant)

@@ -8,3 +8,7 @@ build/
 .agents/*
 # Medusa local file storage (runtime uploads/exports)
 apps/medusa/static/
+# OS / tooling artifacts
+.DS_Store
+**/.DS_Store
+.playwright-mcp/

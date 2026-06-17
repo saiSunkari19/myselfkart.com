@@ -6,6 +6,7 @@ import {
   findApplicationByTenantId,
   findTenantById,
   getTenantAdminEmail,
+  getTenantPaymentCredentialSummary,
   getTenantStats,
   listTenantDomains,
   teardownTenant,
@@ -27,11 +28,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
     return
   }
 
-  const [domains, stats, application, adminEmail] = await Promise.all([
+  const [domains, stats, application, adminEmail, paymentCredentials] = await Promise.all([
     listTenantDomains(knex, id),
     getTenantStats(knex, id),
     findApplicationByTenantId(knex, id),
     getTenantAdminEmail(knex, id),
+    getTenantPaymentCredentialSummary(knex, id, "razorpay"),
   ])
 
   res.json({
@@ -41,6 +43,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
     // The seller's login email: prefer the real admin account, fall back to the
     // application's owner email.
     admin_email: adminEmail ?? application?.owner_email ?? null,
+    payment_credentials: {
+      razorpay: paymentCredentials,
+    },
     owner: application
       ? {
           name: application.owner_name,
