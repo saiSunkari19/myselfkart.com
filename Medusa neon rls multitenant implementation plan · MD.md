@@ -10,11 +10,12 @@
 
 ---
 
-## Implementation Progress / Handoff (updated 2026-06-16)
+## Implementation Progress / Handoff (updated 2026-06-17)
 
 > **New agent: start here.** This is the running state of the work. Current branch:
-> `feat/storefront-domain-resolver` (latest commit `5ee701f50`: platform superadmin
-> console + api_key tenant-scoping; default branch is `main`). Neon project
+> `feat/storefront-domain-resolver` (latest commit `9ec209f54`: multi-market
+> provisioning + tenant teardown + self-healing imports; prior `5ee701f50`: platform
+> superadmin console + api_key tenant-scoping; default branch is `main`). Neon project
 > `selfkart` / `jolly-rice-01919313`, Postgres 17. All validation is done on
 > disposable Neon branches (create → migrate as `neondb_owner` → test as
 > `medusa_app` pooled → delete). Backend lives in `apps/medusa/`; see its
@@ -22,6 +23,39 @@
 
 ### DONE and validated
 
+- **Multi-market provisioning + self-healing imports + tenant delete (2026-06-17,
+  commit `9ec209f54`):**
+  - **Four markets live** — India (INR/`in`), US (USD/`us`), UAE (AED/`ae`),
+    Europe (EUR / Core EU 9: de,fr,it,es,nl,ie,be,at,pt). Authoritative
+    `apps/medusa/src/platform/markets.ts` (currency → country set). Regions stay
+    platform-shared **one per currency** (Medusa enforces one-country→one-region);
+    `provision-tenant-commerce` now seeds the full country set per market on the
+    region AND the shipping service-zone. `/apply` is a single **Market** selector
+    (defaults to India).
+  - **Per-tenant region resolution (the multi-region blocker):** added
+    `tenants.currency`/`country` (migration `20260617000100`), stamped at provision
+    time; `resolve-domain` returns `currency`; storefront `getRegion` now picks the
+    region by the tenant's currency (was the ambiguous "first region with
+    countries"). Existing tenants backfilled.
+  - **Imports are sellable immediately.** Three "provisioning ran before the
+    catalog existed" gaps are now healed at import time in
+    `api/admin/selfkart/product-imports/complete`: (1) inventory levels, (2) link
+    every product to the default shipping profile (the *"cart items require shipping
+    profiles…"* error), (3) backfill a store-currency price on every variant (the
+    blank-price symptom when a CSV lacks the store-currency column). Plus a
+    `product-variant.created` workflow hook
+    (`apps/medusa/src/workflows/hooks/ensure-variant-inventory.ts`) auto-stocks
+    products hand-created in Admin. Reusable scripts:
+    `backfill-tenant-currency-prices.ts`, and the catalog CSVs now carry
+    `Variant Price INR/AED` columns.
+  - **Fixed multi-tenant unique-name collisions:** `fulfillment_set.name` /
+    `service_zone.name` have GLOBAL unique indexes — provisioning now namespaces
+    them per tenant (only the first seller could provision before).
+  - **Delete seller (superadmin):** `teardownTenant` (FK-ordered hard delete of all
+    tenant data; refuses on real orders unless forced; preserves the shared region),
+    `DELETE /selfkart/platform/tenants/[id]`, a typed-confirm Delete panel + a
+    "Delete disabled" bulk action. Validated live (a throwaway seller torn down with
+    zero leftovers/orphans). CLI equivalent: `scripts/teardown-tenant.ts`.
 - **Phase 0A — DB RLS gate:** `phase0-rls-smoke/run.sh` passes at 500/conc-50.
 - **Phase 0B — Medusa shared-RLS gate: PASSED (GO).** Versions frozen
   (Medusa 2.15.5 + Neon PG 17). Commerce tables (product/cart/customer/order +
@@ -259,30 +293,50 @@
   channel/location seeding collided on `*_pkey` on production-derived branches.~~
   **RESOLVED 2026-06-16:** now an `onConflict("id").merge(...)` upsert by the
   deterministic per-tenant id. Full RLS suite 11 pass / 0 fail.
+- ~~**MEDIUM (functional):** a catalog imported AFTER provisioning was not sellable
+  — no inventory levels, no product↔shipping_profile link, no store-currency
+  price.~~ **RESOLVED 2026-06-17 (commit `9ec209f54`):** the in-admin import-complete
+  route now heals all three, plus the `product-variant.created` hook covers
+  hand-created products. **Still open (LOW):** the **CLI import path**
+  (`prepare:seller-import` → native Admin importer → `link:seller-taxonomy`) does
+  NOT call import-complete, so it still needs a manual `provision:commerce` +
+  `backfill-tenant-currency-prices` afterward (dev/recovery only).
+- **LOW (multi-region data):** USD/AED regions and the EUR region's countries are
+  created **lazily** when the first seller of that market is provisioned. Until
+  then those markets have no region. The stray Admin-created `eur` region was
+  renamed `Selfkart EUR`. Seller A (`00…000b`) is a leftover broken test tenant
+  with `currency=null` — delete it via the console to exercise the new delete flow.
+- **LOW (open follow-up, restated):** scope the `publishable_api_key_sales_channel`
+  link table (api_key itself is now tenant-scoped); move approve-time provisioning
+  off the request thread onto a job/queue (runs inline today).
 
 ### NEXT (recommended order)
 
-1. ~~Run the live Neon-branch E2E for buyer cart -> checkout -> order.~~ **DONE
-   2026-06-16 (commit 099afd1a9)** — passed; see the DONE entry and the resolved
-   MEDIUM gap above. Operator runbook now at `docs/seller-onboarding.md`.
-2. ~~`api_key` tenant-nullable scoping~~ **DONE 2026-06-16 (commit `5ee701f50`)** —
-   see the DONE entry. STILL OPEN from this item — Phase 2 tenant-registry
-   hardening: storefront status routing already renders draft/suspended pages, but
-   add a real coming-soon/suspended template and a tenant-status admin (the
-   superadmin console can host it; today status is only set at provision time).
-3. R2 media with tenant-prefixed object keys (storefront image rendering already
-   allows remote hosts). Optionally optimize the read path from per-query to
-   per-request transaction (same GUC mechanism) if read latency demands.
-4. Phase 3 tax-table RLS (`tax_region`/`tax_rate`/`tax_rate_rule`) before enabling
-   tenant taxes (see DEFERRED gap above).
-5. ~~**Onboarding automation (Phase 11):** wrap steps 1-6 into one provisioning
-   command / admin flow.~~ **DONE 2026-06-16 (operator flow, commit `5ee701f50`)** —
-   the apply -> approve -> provision loop is live in `apps/superadmin` (see DONE
-   entry). STILL OPEN toward full Phase 11 self-serve: template/brand choice,
-   Razorpay + Shiprocket connect, custom-domain + TLS automation, and making
-   operator approval optional. Two engineering follow-ups: scope the
-   `publishable_api_key_sales_channel` link table (LOW), and move approve-time
-   provisioning off the request thread onto a job/queue (it runs inline today).
+> Updated 2026-06-17. Buyer E2E, api_key scoping, operator onboarding flow, and
+> multi-market + self-healing imports + delete are all DONE (see DONE section).
+> What remains:
+
+0. **Validate the 2026-06-17 multi-market flow end to end** (next concrete task —
+   see §24). Apply for a store in each of US / UAE / Europe, approve, import a CSV,
+   and confirm: the right region resolves, prices show in the market currency, and
+   buy-through completes. India is already proven; the other three regions are
+   created lazily on first provision and have not had a live buy-through yet.
+1. **Tax-table RLS (Phase 3)** — `tax_region`/`tax_rate`/`tax_rate_rule` are NOT
+   RLS'd. Required before enabling per-tenant taxes (pilot runs
+   `automatic_taxes=false`). This is the main remaining isolation gap.
+2. **Phase 2 tenant-registry hardening** — storefront already renders
+   draft/suspended pages; add a real coming-soon/suspended template. Tenant-status
+   admin now exists in the superadmin console (enable/disable/delete).
+3. **R2 media with tenant-prefixed object keys** (storefront already allows remote
+   image hosts). Optionally optimize the read path from per-query to per-request
+   transaction (same GUC mechanism) if read latency demands.
+4. **Engineering follow-ups (LOW):** scope `publishable_api_key_sales_channel`;
+   move approve-time provisioning onto a job/queue (inline today); auto-heal the
+   CLI import path (or fold it into the in-admin importer).
+5. **Phase 11 full self-serve (longer horizon)** — the apply → approve → provision
+   operator loop is live (`apps/superadmin`). Remaining toward fully self-serve:
+   template/brand choice, Razorpay (Phase 7) + Shiprocket (Phase 8) connect,
+   custom-domain + TLS automation, and making operator approval optional.
 
 ### Session commit trail (branch `phase0b-medusa-rls`)
 
@@ -1476,11 +1530,20 @@ running state. In short:
   `checkout-isolation` test. Live buy-through proven on a disposable branch, pooled
   suite 12/12. Operator runbook: `docs/seller-onboarding.md`.
 
+- **Multi-market (India/US/UAE/Europe), self-healing imports, and tenant delete are
+  DONE** (2026-06-17, commit `9ec209f54`) — see the handoff DONE section. India is
+  live-proven; US/UAE/Europe regions are created lazily on first provision and have
+  not yet had a live buy-through.
+
 Do next, in order (also in NEXT at the top):
 
-1. `api_key` tenant-nullable scoping (sellers can still see each other's keys).
-2. R2 media with tenant-prefixed object keys; optional read-path per-request
+1. **Validate US / UAE / Europe end to end** — apply → approve → import CSV →
+   confirm region/currency resolves, prices show in the market currency, and
+   buy-through completes (India already proven). The catalog CSVs carry
+   INR/USD/EUR/AED prices; import auto-heals stock + shipping profile + price.
+2. **Phase 3 tax-table RLS** (`tax_region`/`tax_rate`/`tax_rate_rule`) before
+   enabling per-tenant taxes — the main remaining isolation gap.
+3. R2 media with tenant-prefixed object keys; optional read-path per-request
    transaction optimization.
-3. Phase 3 tax-table RLS before enabling tenant taxes.
-4. Onboarding automation (Phase 11): wrap the proven per-seller steps
-   (`docs/seller-onboarding.md`) into one command / admin flow.
+4. Engineering follow-ups (LOW): scope `publishable_api_key_sales_channel`;
+   approve-time provisioning onto a job/queue; auto-heal the CLI import path.
