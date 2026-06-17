@@ -16,6 +16,16 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL or APP_DATABASE_URL is required")
 }
 
+const allowedWorkerModes = ["shared", "server", "worker"] as const
+type WorkerMode = (typeof allowedWorkerModes)[number]
+const rawWorkerMode = process.env.MEDUSA_WORKER_MODE || "shared"
+
+if (!allowedWorkerModes.includes(rawWorkerMode as WorkerMode)) {
+  throw new Error("MEDUSA_WORKER_MODE must be one of: shared, server, worker")
+}
+
+const workerMode = rawWorkerMode as WorkerMode
+
 const KNOWN_BAD_JWT = "phase0b-jwt-secret-change-before-production"
 const KNOWN_BAD_COOKIE = "phase0b-cookie-secret-change-before-production"
 
@@ -45,6 +55,9 @@ if (process.env.NODE_ENV === "production") {
   }
   if (!process.env.COOKIE_SECRET || cookieSecret === KNOWN_BAD_COOKIE) {
     throw new Error("COOKIE_SECRET must be set to a strong secret in production")
+  }
+  if (!process.env.REDIS_URL) {
+    throw new Error("REDIS_URL must be set in production")
   }
   // Storefront tenant context is derived from this signed value, so a default
   // secret would let anyone forge cross-tenant /store* access.
@@ -107,9 +120,29 @@ if (hasR2Config) {
   })
 }
 
+// Client-side connection tuning. The DB is remote (Neon, ap-southeast-1) behind
+// PgBouncer (sslmode=require&pgbouncer=true), so each request's RLS reads pay the
+// Singapore round-trip. Holding a pool of warm, keep-alive sockets avoids paying a
+// fresh TCP+TLS handshake (~2 extra round trips) per request. Only client-side knex
+// pool + socket options are set here — no Postgres startup params, which PgBouncer
+// in transaction mode would reject. SSL stays driven by the URL.
+const databaseDriverOptions: any = {
+  connection: {
+    keepAlive: true,
+  },
+  pool: {
+    min: Number(process.env.DB_POOL_MIN) || 4,
+    max: Number(process.env.DB_POOL_MAX) || 20,
+    idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_MS) || 60000,
+  },
+}
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl,
+    databaseDriverOptions,
+    redisUrl: process.env.REDIS_URL,
+    workerMode,
     http: {
       storeCors: process.env.STORE_CORS || "http://localhost:8000,http://localhost:3000",
       adminCors: process.env.ADMIN_CORS || "http://localhost:7001,http://localhost:9000",
@@ -117,6 +150,9 @@ module.exports = defineConfig({
       jwtSecret,
       cookieSecret,
     },
+  },
+  admin: {
+    backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
   },
   modules,
 })

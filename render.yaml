@@ -1,0 +1,64 @@
+services:
+  - type: keyvalue
+    name: selfkart-redis
+    plan: starter
+    region: singapore
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+
+  - type: web
+    name: selfkart-medusa
+    runtime: node
+    plan: standard
+    region: singapore
+    rootDir: apps/medusa
+    healthCheckPath: /health
+    buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm build
+    preDeployCommand: DATABASE_URL="$MIGRATOR_DATABASE_URL" corepack pnpm db:migrate
+    startCommand: cd .medusa/server && npm install && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 9000
+      - key: MEDUSA_WORKER_MODE
+        value: shared
+      - key: DISABLE_MEDUSA_ADMIN
+        value: "false"
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: selfkart-redis
+          property: connectionString
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_DATABASE_URL
+        sync: false
+      - key: MIGRATOR_DATABASE_URL
+        sync: false
+      - key: MEDUSA_BACKEND_URL
+        sync: false
+      - key: STORE_CORS
+        sync: false
+      - key: ADMIN_CORS
+        sync: false
+      - key: AUTH_CORS
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: SELFKART_STOREFRONT_SECRET
+        sync: false
+      - key: R2_FILE_URL
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_REGION
+        value: auto
