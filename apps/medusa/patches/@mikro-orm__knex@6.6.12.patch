@@ -15,6 +15,9 @@ index e3a855871..00118e405 100644
 +            const __skStore = globalThis[Symbol.for("selfkart.tenant-context-storage")];
 +            const __sk = __skStore && __skStore.getStore ? __skStore.getStore() : undefined;
 +            const __skTx = core_1.Utils.isObject(queryOrKnex) && queryOrKnex.client && queryOrKnex.client.transacting;
++            if (__sk && __sk.readTransaction && !__skTx) {
++                return this.execute(queryOrKnex, params, method, __sk.readTransaction, loggerContext);
++            }
 +            if (__sk && __sk.tenantId && !__skTx) {
 +                return this.getKnex().transaction((trx) => this.execute(queryOrKnex, params, method, trx, loggerContext));
 +            }

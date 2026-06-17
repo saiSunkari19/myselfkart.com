@@ -19,6 +19,9 @@ index 850a85819b4509920a065f8321ebb7de25e948d7..7dfd052228a2a0521c3f30d2a2665640
              .orderBy("price.amount", "asc");
 +        const selfkartTenantContext = getSelfkartTenantContext();
 +        const queryIsAlreadyTransactional = Boolean(query.client?.transacting || knex.client?.transacting);
++        if (selfkartTenantContext?.readTransaction && !queryIsAlreadyTransactional) {
++            return await query.transacting(selfkartTenantContext.readTransaction);
++        }
 +        if (selfkartTenantContext?.tenantId && !queryIsAlreadyTransactional) {
 +            return await knex.transaction(async (trx) => {
 +                return await query.transacting(trx);

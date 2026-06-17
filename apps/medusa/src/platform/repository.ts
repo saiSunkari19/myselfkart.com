@@ -273,6 +273,11 @@ export type TenantStats = {
   customers: number
 }
 
+export type TenantOperationalSummary = {
+  stats: TenantStats
+  adminEmail: string | null
+}
+
 export type PaymentProvider = "razorpay"
 export type PaymentMode = "test" | "live"
 
@@ -376,6 +381,52 @@ function toPaymentCredentialSummary(
     ),
     updated_at: row.updated_at,
   }
+}
+
+/**
+ * Tenant-scoped operational data for the superadmin tenant detail page. Keep
+ * these reads in one transaction and one SQL statement to avoid paying remote
+ * Neon round trips for separate stats/admin-email reads.
+ */
+export async function getTenantOperationalSummary(
+  knex: Knex,
+  tenantId: string
+): Promise<TenantOperationalSummary> {
+  return knex.transaction(async (trx) => {
+    await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+
+    const result = await trx.raw<{
+      rows: Array<{
+        products: string | number
+        orders: string | number
+        customers: string | number
+        admin_email: string | null
+      }>
+    }>(`
+      select
+        (select count(*)::int from "product" where "deleted_at" is null) as "products",
+        (select count(*)::int from "order") as "orders",
+        (select count(*)::int from "customer" where "deleted_at" is null) as "customers",
+        (
+          select "email"
+          from "user"
+          where "deleted_at" is null
+          order by "created_at" asc
+          limit 1
+        ) as "admin_email"
+    `)
+
+    const row = result.rows[0]
+
+    return {
+      stats: {
+        products: Number(row?.products ?? 0),
+        orders: Number(row?.orders ?? 0),
+        customers: Number(row?.customers ?? 0),
+      },
+      adminEmail: row?.admin_email ?? null,
+    }
+  })
 }
 
 /**

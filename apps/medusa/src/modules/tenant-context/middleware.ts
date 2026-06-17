@@ -4,9 +4,10 @@ import type {
   MedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { verifyStorefrontSignature } from "./domain-auth"
-import { runWithTenantContext } from "./store"
+import { runWithTenantContext, type TenantContext } from "./store"
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -21,6 +22,89 @@ function normalizeUuid(value: unknown): string | undefined {
 function firstHeader(value: unknown): string | undefined {
   const candidate = Array.isArray(value) ? value[0] : value
   return typeof candidate === "string" ? candidate : undefined
+}
+
+type TransactionLike = {
+  raw: (sql: string, bindings?: unknown[]) => Promise<unknown>
+  commit: () => Promise<unknown>
+  rollback: () => Promise<unknown>
+}
+
+type PgConnectionLike = {
+  transaction: () => Promise<TransactionLike>
+}
+
+const READ_TRANSACTION_METHODS = new Set(["GET", "HEAD"])
+
+function shouldUseReadTransaction(req: MedusaRequest): boolean {
+  return READ_TRANSACTION_METHODS.has(req.method.toUpperCase())
+}
+
+function resolvePgConnection(req: MedusaRequest): PgConnectionLike | undefined {
+  const scope = (req as MedusaRequest & {
+    scope?: { resolve?: (key: string) => unknown }
+  }).scope
+
+  return scope?.resolve?.(ContainerRegistrationKeys.PG_CONNECTION) as
+    | PgConnectionLike
+    | undefined
+}
+
+async function runWithTenantRequestContext(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction,
+  context: TenantContext
+) {
+  const pgConnection = shouldUseReadTransaction(req)
+    ? resolvePgConnection(req)
+    : undefined
+
+  if (!pgConnection?.transaction) {
+    return runWithTenantContext(context, () => next())
+  }
+
+  let readTransaction: TransactionLike | undefined
+
+  try {
+    readTransaction = await pgConnection.transaction()
+    await readTransaction.raw("select set_config('app.current_tenant', ?, true)", [
+      context.tenantId,
+    ])
+  } catch (error) {
+    if (readTransaction) {
+      await readTransaction.rollback().catch(() => undefined)
+    }
+
+    return next(error)
+  }
+
+  let settled = false
+  const settle = async (action: "commit" | "rollback") => {
+    if (settled || !readTransaction) {
+      return
+    }
+
+    settled = true
+    res.off("finish", commit)
+    res.off("close", rollback)
+
+    await readTransaction[action]().catch(() => undefined)
+  }
+  const commit = () => {
+    void settle("commit")
+  }
+  const rollback = () => {
+    void settle(res.writableEnded ? "commit" : "rollback")
+  }
+
+  res.once("finish", commit)
+  res.once("close", rollback)
+
+  return runWithTenantContext(
+    { ...context, readTransaction },
+    () => next()
+  )
 }
 
 /**
@@ -64,9 +148,11 @@ export function tenantContextMiddleware(
 ) {
   const testTenantId = resolveTestTenant(req)
   if (testTenantId) {
-    return runWithTenantContext(
-      { tenantId: testTenantId, source: "test" },
-      () => next()
+    return runWithTenantRequestContext(
+      req,
+      res,
+      next,
+      { tenantId: testTenantId, source: "test" }
     )
   }
 
@@ -77,7 +163,12 @@ export function tenantContextMiddleware(
     })
   }
 
-  return runWithTenantContext({ tenantId, source: "session" }, () => next())
+  return runWithTenantRequestContext(
+    req,
+    res,
+    next,
+    { tenantId, source: "session" }
+  )
 }
 
 /**
@@ -97,9 +188,11 @@ export function domainTenantContextMiddleware(
 ) {
   const testTenantId = resolveTestTenant(req)
   if (testTenantId) {
-    return runWithTenantContext(
-      { tenantId: testTenantId, source: "test" },
-      () => next()
+    return runWithTenantRequestContext(
+      req,
+      res,
+      next,
+      { tenantId: testTenantId, source: "test" }
     )
   }
 
@@ -112,5 +205,10 @@ export function domainTenantContextMiddleware(
     })
   }
 
-  return runWithTenantContext({ tenantId, source: "domain" }, () => next())
+  return runWithTenantRequestContext(
+    req,
+    res,
+    next,
+    { tenantId, source: "domain" }
+  )
 }

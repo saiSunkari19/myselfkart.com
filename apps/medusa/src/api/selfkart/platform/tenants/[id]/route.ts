@@ -5,9 +5,8 @@ import type { Knex } from "knex"
 import {
   findApplicationByTenantId,
   findTenantById,
-  getTenantAdminEmail,
+  getTenantOperationalSummary,
   getTenantPaymentCredentialSummary,
-  getTenantStats,
   listTenantDomains,
   teardownTenant,
   TenantHasOrdersError,
@@ -28,21 +27,20 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
     return
   }
 
-  const [domains, stats, application, adminEmail, paymentCredentials] = await Promise.all([
+  const [domains, summary, application, paymentCredentials] = await Promise.all([
     listTenantDomains(knex, id),
-    getTenantStats(knex, id),
+    getTenantOperationalSummary(knex, id),
     findApplicationByTenantId(knex, id),
-    getTenantAdminEmail(knex, id),
     getTenantPaymentCredentialSummary(knex, id, "razorpay"),
   ])
 
   res.json({
     tenant,
     domains,
-    stats,
+    stats: summary.stats,
     // The seller's login email: prefer the real admin account, fall back to the
     // application's owner email.
-    admin_email: adminEmail ?? application?.owner_email ?? null,
+    admin_email: summary.adminEmail ?? application?.owner_email ?? null,
     payment_credentials: {
       razorpay: paymentCredentials,
     },

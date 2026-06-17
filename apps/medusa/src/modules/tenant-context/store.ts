@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 export type TenantContext = {
   tenantId: string
   source: "domain" | "session" | "test"
+  readTransaction?: unknown
 }
 
 const storageSymbol = Symbol.for("selfkart.tenant-context-storage")
