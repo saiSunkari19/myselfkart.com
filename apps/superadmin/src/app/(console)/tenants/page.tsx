@@ -1,5 +1,7 @@
-import { ExternalLink } from "lucide-react"
+import { ChevronRight, ExternalLink } from "lucide-react"
+import Link from "next/link"
 
+import { DeleteDisabledButton } from "@/components/delete-disabled-button"
 import { EmptyState, PageHeader, Panel } from "@/components/primitives"
 import { StatusBadge } from "@/components/status-badge"
 import { formatDate } from "@/lib/format"
@@ -10,10 +12,17 @@ export default async function TenantsPage() {
   const { tenants } = await platformFetch<{ tenants: Tenant[] }>(
     "/selfkart/platform/tenants"
   )
+  const disabledCount = tenants.filter(
+    (t) => t.status === "suspended" || t.status === "draft"
+  ).length
 
   return (
     <>
-      <PageHeader title="Tenants" subtitle="Every provisioned store and its domain." />
+      <PageHeader
+        title="Tenants"
+        subtitle="Every provisioned store and its domain."
+        action={<DeleteDisabledButton disabledCount={disabledCount} />}
+      />
 
       <div className="px-10 py-8">
         <Panel>
@@ -22,20 +31,25 @@ export default async function TenantsPage() {
           ) : (
             <ul className="divide-y divide-[var(--color-line)]">
               {tenants.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center justify-between gap-4 px-6 py-5"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3">
-                      <p className="truncate font-medium">{t.name}</p>
-                      <StatusBadge status={t.status} />
+                <li key={t.id} className="flex items-center gap-4 px-6 py-5">
+                  <Link
+                    href={`/tenants/${t.id}`}
+                    className="group flex min-w-0 flex-1 items-center gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-3">
+                        <p className="truncate font-medium transition-colors group-hover:text-ink">
+                          {t.name}
+                        </p>
+                        <StatusBadge status={t.status} />
+                      </div>
+                      <p className="mt-1 text-sm text-ink-subtle">
+                        <span className="font-mono">{t.slug}</span> · created{" "}
+                        {formatDate(t.created_at)}
+                      </p>
                     </div>
-                    <p className="mt-1 text-sm text-ink-subtle">
-                      <span className="font-mono">{t.slug}</span> · created{" "}
-                      {formatDate(t.created_at)}
-                    </p>
-                  </div>
+                    <ChevronRight className="size-4 shrink-0 text-ink-subtle transition-colors group-hover:text-ink" />
+                  </Link>
 
                   {t.host ? (
                     <a

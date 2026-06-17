@@ -9,6 +9,11 @@ import {
   upsertSellerImportTaxonomy,
 } from "../../../../../modules/selfkart-product-import"
 import { requireTenantContext } from "../../../../../modules/tenant-context"
+import { backfillTenantCurrencyPrices } from "../../../../../scripts/backfill-tenant-currency-prices"
+import {
+  ensureShippingProfileId,
+  linkProductsToShippingProfile,
+} from "../../../../../scripts/provision-tenant-commerce"
 import { ensureTenantInventoryResources } from "../../../../../scripts/seed-tenant-inventory-resources"
 
 type CompleteBody = {
@@ -42,11 +47,26 @@ export async function POST(req: MedusaRequest<CompleteBody>, res: MedusaResponse
     linkedProducts = await linkSellerImportProducts(trx, seeds.associations)
   })
 
+  // Full post-import heal so an imported catalog is immediately sellable —
+  // provisioning ran before these products existed, so it covered none of them:
+  //  1. sales channel + stock location + inventory levels (stock)
+  //  2. link every product to the default shipping profile (else cart.complete
+  //     fails with "cart items require shipping profiles ... not satisfied")
+  //  3. ensure a store-currency price on every variant (else the storefront shows
+  //     no price when the CSV lacked the store-currency column)
   await ensureTenantInventoryResources(knex, {
     tenantId,
     sellerName,
     stockedQuantity,
   })
+
+  const shippingProfileId = await ensureShippingProfileId(req.scope)
+  const linkedShippingProfiles = await linkProductsToShippingProfile(
+    knex,
+    tenantId,
+    shippingProfileId
+  )
+  const pricedVariants = await backfillTenantCurrencyPrices(req.scope, { tenantId })
 
   res.status(200).json({
     summary: {
@@ -57,6 +77,8 @@ export async function POST(req: MedusaRequest<CompleteBody>, res: MedusaResponse
       tags: seeds.tags.length,
       categories: seeds.categories.length,
       stocked_quantity: stockedQuantity,
+      linked_shipping_profiles: linkedShippingProfiles,
+      priced_variants: pricedVariants,
     },
   })
 }

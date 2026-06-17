@@ -9,10 +9,12 @@ import {
   createShippingProfilesWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   updateProductsWorkflow,
+  updateRegionsWorkflow,
   updateStoresWorkflow,
 } from "@medusajs/core-flows"
 
 import { runWithTenantContext } from "../modules/tenant-context"
+import { countriesForCurrency } from "../platform/markets"
 import { stableId } from "./seed-tenant-inventory-resources"
 import type { Knex } from "knex"
 
@@ -122,25 +124,88 @@ async function ensureStoreCurrency(container: any, currency: string): Promise<vo
   logger.info(`Added supported currency ${currency} to store ${store.id}`)
 }
 
+/** Replaces a region's country list (used to move a country between regions). */
+async function setRegionCountries(
+  container: any,
+  regionId: string,
+  countries: string[]
+): Promise<void> {
+  await updateRegionsWorkflow(container).run({
+    input: { selector: { id: regionId }, update: { countries } },
+  })
+}
+
 /**
- * Returns the id of the shared region for `currency`, creating it (with the
- * country + manual payment provider) if it doesn't exist. Platform-level.
+ * Returns the id of the shared region for `currency`, ensuring it covers EVERY
+ * country in `countries` (a market may span several — e.g. the EUR region serves
+ * the Core EU set). Creates the region if none exists for the currency.
+ * Platform-level.
+ *
+ * Medusa enforces that a country belongs to exactly ONE region globally, so we
+ * look across ALL regions (not just the currency match): if a wanted country is
+ * held by a different-currency region, we detach it there before attaching it to
+ * the correct currency region. This makes provisioning idempotent and prevents
+ * the "Countries with codes ... are already assigned to a region" failure.
  */
 async function ensureSharedRegion(
   container: any,
   currency: string,
-  country: string
+  countries: string[]
 ): Promise<string> {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY) as Query
 
+  const wanted = Array.from(
+    new Set(countries.map((c) => c.trim().toLowerCase()).filter(Boolean))
+  )
   const { data: regions } = await query.graph({
     entity: "region",
-    fields: ["id", "currency_code"],
-    filters: { currency_code: currency },
+    fields: ["id", "currency_code", "countries.iso_2"],
   })
-  if (regions.length > 0) {
-    return regions[0].id
+
+  const countriesOf = (r: any): string[] =>
+    (r.countries ?? []).map((c: { iso_2: string }) => c.iso_2)
+
+  // Detaches `norm` from whatever region currently owns it (other than
+  // `keepRegionId`), keeping the local `regions` cache in sync so a later
+  // iteration sees the removal. Returns true if it had to move it.
+  const freeCountry = async (norm: string, keepRegionId?: string): Promise<void> => {
+    const owner = regions.find(
+      (r) => r.id !== keepRegionId && countriesOf(r).includes(norm)
+    )
+    if (!owner) {
+      return
+    }
+    const remaining = countriesOf(owner).filter((c) => c !== norm)
+    await setRegionCountries(container, owner.id, remaining)
+    owner.countries = remaining.map((iso_2: string) => ({ iso_2 }))
+    logger.warn(
+      `Moved country '${norm}' off region ${owner.id} (${owner.currency_code}) ` +
+        `to the ${currency} region`
+    )
+  }
+
+  const byCurrency = regions.find((r) => r.currency_code === currency)
+
+  if (byCurrency) {
+    const have = new Set(countriesOf(byCurrency))
+    const missing = wanted.filter((c) => !have.has(c))
+    if (missing.length > 0) {
+      for (const norm of missing) {
+        await freeCountry(norm, byCurrency.id)
+      }
+      await setRegionCountries(container, byCurrency.id, [...have, ...missing])
+      logger.info(
+        `Added countries '${missing.join(",")}' to shared region ${byCurrency.id} (${currency})`
+      )
+    }
+    return byCurrency.id
+  }
+
+  // No region for this currency yet: free every wanted country from existing
+  // owners so creation doesn't hit the one-country->one-region constraint.
+  for (const norm of wanted) {
+    await freeCountry(norm)
   }
 
   const {
@@ -151,19 +216,19 @@ async function ensureSharedRegion(
         {
           name: `Selfkart ${currency.toUpperCase()}`,
           currency_code: currency,
-          countries: [country],
+          countries: wanted,
           payment_providers: [MANUAL_PAYMENT_PROVIDER_ID],
           automatic_taxes: false,
         },
       ],
     },
   })
-  logger.info(`Created shared region ${region.id} (${currency}/${country})`)
+  logger.info(`Created shared region ${region.id} (${currency}/${wanted.join(",")})`)
   return region.id
 }
 
 /** Returns the default shipping profile id, creating one if none exists. */
-async function ensureShippingProfileId(container: any): Promise<string> {
+export async function ensureShippingProfileId(container: any): Promise<string> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY) as Query
   const { data: profiles } = await query.graph({
     entity: "shipping_profile",
@@ -304,7 +369,8 @@ async function ensureManualFulfillmentProviderLink(
 /** Returns the tenant's fulfillment set id for the location, creating it if needed. */
 async function ensureFulfillmentSetId(
   container: any,
-  stockLocationId: string
+  stockLocationId: string,
+  tenantId: string
 ): Promise<string> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY) as Query
 
@@ -327,7 +393,10 @@ async function ensureFulfillmentSetId(
   await createLocationFulfillmentSetWorkflow(container).run({
     input: {
       location_id: stockLocationId,
-      fulfillment_set_data: { name: "Shipping", type: "shipping" },
+      // fulfillment_set.name has a GLOBAL unique index (Medusa core,
+      // IDX_fulfillment_set_name_unique) — not tenant-scoped — so a fixed
+      // "Shipping" collides for the second tenant onward. Namespace it per tenant.
+      fulfillment_set_data: { name: `Shipping ${tenantId}`, type: "shipping" },
     },
   })
 
@@ -338,11 +407,16 @@ async function ensureFulfillmentSetId(
   return created
 }
 
-/** Returns a service zone id for the fulfillment set, creating it (country geo zone) if needed. */
+/**
+ * Returns a service zone id for the fulfillment set, creating it with a country
+ * geo-zone for EVERY market country if needed (so a shipping option on the zone
+ * is available to a buyer in any of them — e.g. all Core EU countries).
+ */
 async function ensureServiceZoneId(
   container: any,
   fulfillmentSetId: string,
-  country: string
+  countries: string[],
+  tenantId: string
 ): Promise<string> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY) as Query
   const { data: sets } = await query.graph({
@@ -355,15 +429,25 @@ async function ensureServiceZoneId(
     return existing.id
   }
 
+  const geoCountries = Array.from(
+    new Set(countries.map((c) => c.trim().toLowerCase()).filter(Boolean))
+  )
+
   const {
     result: [zone],
   } = await createServiceZonesWorkflow(container).run({
     input: {
       data: [
         {
-          name: country.toUpperCase(),
+          // service_zone.name also has a GLOBAL unique index
+          // (IDX_service_zone_name_unique), so a fixed/country name collides when
+          // two tenants share a country. Namespace it per tenant.
+          name: `Zone ${tenantId}`,
           fulfillment_set_id: fulfillmentSetId,
-          geo_zones: [{ type: "country", country_code: country }],
+          geo_zones: geoCountries.map((country_code) => ({
+            type: "country" as const,
+            country_code,
+          })),
         },
       ],
     },
@@ -420,7 +504,7 @@ async function ensureShippingOption(
  * the tenant context (RLS scopes `product` to this tenant, and the
  * product_shipping_profile insert satisfies the tenant-derived WITH CHECK).
  */
-async function linkProductsToShippingProfile(
+export async function linkProductsToShippingProfile(
   knex: Knex,
   tenantId: string,
   shippingProfileId: string
@@ -462,8 +546,12 @@ export async function provisionTenantCommerceWith(
   const knex = container.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
 
   // --- Platform-shared setup (no tenant context) ---
+  // A market may span several countries (e.g. the EUR region serves the Core EU
+  // set); the region + shipping zone cover all of them. Falls back to the single
+  // provisioning country for an unknown/custom currency.
+  const marketCountries = countriesForCurrency(input.currency, input.country)
   await ensureStoreCurrency(container, input.currency)
-  const regionId = await ensureSharedRegion(container, input.currency, input.country)
+  const regionId = await ensureSharedRegion(container, input.currency, marketCountries)
   const shippingProfileId = await ensureShippingProfileId(container)
 
   // --- Tenant-scoped setup (RLS stamps tenant_id on every write) ---
@@ -477,8 +565,17 @@ export async function provisionTenantCommerceWith(
       await provisionVariantPrices(container, input.currency, input.priceAmount)
     }
 
-    const fulfillmentSetId = await ensureFulfillmentSetId(container, stockLocationId)
-    const serviceZoneId = await ensureServiceZoneId(container, fulfillmentSetId, input.country)
+    const fulfillmentSetId = await ensureFulfillmentSetId(
+      container,
+      stockLocationId,
+      input.tenantId
+    )
+    const serviceZoneId = await ensureServiceZoneId(
+      container,
+      fulfillmentSetId,
+      marketCountries,
+      input.tenantId
+    )
     await ensureShippingOption(container, {
       serviceZoneId,
       shippingProfileId,

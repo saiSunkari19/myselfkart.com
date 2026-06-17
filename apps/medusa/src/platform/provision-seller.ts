@@ -57,6 +57,25 @@ export async function provisionSellerFromApplication(
   const slug = application.desired_subdomain
   const tempPassword = generateTempPassword()
 
+  // Create the tenant registry row up front (as 'draft') so the FK from
+  // seller_applications.tenant_id is satisfiable before we stamp it below.
+  // provisionTenantStorefrontWith (step 4) re-upserts this row and flips it to
+  // 'active', so this is idempotent and safe to re-run on a failed re-approval.
+  await knex("tenants")
+    .insert({
+      id: tenantId,
+      name: sellerName,
+      slug,
+      status: "draft",
+      updated_at: knex.fn.now(),
+    })
+    .onConflict("id")
+    .merge({
+      name: sellerName,
+      slug,
+      updated_at: knex.fn.now(),
+    })
+
   await updateApplication(knex, application.id, {
     status: "provisioning",
     tenant_id: tenantId,
@@ -93,12 +112,15 @@ export async function provisionSellerFromApplication(
     })
 
     // 4. Storefront: publishable key + key<->channel link + tenants/tenant_domains.
+    //    Stamp the tenant's market so the storefront resolves the right region.
     await provisionTenantStorefrontWith(container, {
       tenantId,
       host,
       sellerName,
       slug,
       status: "active",
+      currency: application.currency,
+      country: application.country,
     })
 
     await updateApplication(knex, application.id, {
@@ -112,7 +134,7 @@ export async function provisionSellerFromApplication(
 
     return { tenantId, host, adminEmail: application.owner_email, tempPassword }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = serializeError(error)
     await updateApplication(knex, application.id, {
       status: "failed",
       provisioning_error: message,
@@ -120,6 +142,35 @@ export async function provisionSellerFromApplication(
     logger.error(
       `Provisioning failed for application ${application.id} (tenant ${tenantId}): ${message}`
     )
+    if (error instanceof Error && error.stack) {
+      logger.error(error.stack)
+    }
     throw error
   }
+}
+
+/**
+ * Extracts a human-readable message from anything that may be thrown. Medusa
+ * sometimes rejects with a plain object (e.g. validation/remote-query errors)
+ * rather than an Error, which previously stringified to "[object Object]".
+ */
+function serializeError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (typeof error === "string") {
+    return error
+  }
+  if (error && typeof error === "object") {
+    const obj = error as Record<string, unknown>
+    if (typeof obj.message === "string") {
+      return obj.message
+    }
+    try {
+      return JSON.stringify(error)
+    } catch {
+      return String(error)
+    }
+  }
+  return String(error)
 }

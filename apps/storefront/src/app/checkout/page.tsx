@@ -8,6 +8,7 @@ import {
 import { getCartId } from "../../lib/cart/cookie"
 import { formatMoney } from "../../lib/format"
 import { getCart, listShippingOptions } from "../../lib/medusa/cart"
+import { getRegion } from "../../lib/medusa/region"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 
 export const dynamic = "force-dynamic"
@@ -45,6 +46,8 @@ export default async function CheckoutPage({
   const hasShipping = cart.shipping_methods.length > 0
   const shippingOptions = hasAddress ? await listShippingOptions(tenant, cart.id) : []
   const addr = cart.shipping_address
+  const region = await getRegion(tenant)
+  const countries = region?.countries ?? []
 
   return (
     <main>
@@ -62,7 +65,16 @@ export default async function CheckoutPage({
           <input name="city" placeholder="City" required defaultValue={addr?.city ?? ""} />
           <input name="province" placeholder="State / Province" defaultValue={addr?.province ?? ""} />
           <input name="postal_code" placeholder="Postal code" required defaultValue={addr?.postal_code ?? ""} />
-          <input name="country_code" placeholder="Country code (e.g. us)" required defaultValue={addr?.country_code ?? ""} />
+          <select name="country_code" required defaultValue={addr?.country_code ?? (countries[0]?.iso_2 ?? "")}>
+            <option value="" disabled>
+              Select country
+            </option>
+            {countries.map((c) => (
+              <option key={c.iso_2} value={c.iso_2}>
+                {c.display_name ?? c.iso_2.toUpperCase()}
+              </option>
+            ))}
+          </select>
           <input name="phone" placeholder="Phone" defaultValue={addr?.phone ?? ""} />
           <button type="submit">Save details</button>
         </form>

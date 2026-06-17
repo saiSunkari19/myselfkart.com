@@ -219,6 +219,335 @@ export async function listTenants(knex: Knex): Promise<TenantRow[]> {
     )
 }
 
+export async function findTenantById(
+  knex: Knex,
+  id: string
+): Promise<TenantRow | undefined> {
+  return knex<TenantRow>("tenants as t")
+    .leftJoin("tenant_domains as d", function join() {
+      this.on("d.tenant_id", "t.id").andOn("d.is_primary", knex.raw("true"))
+    })
+    .where("t.id", id)
+    .first(
+      "t.id",
+      "t.name",
+      "t.slug",
+      "t.status",
+      "t.plan",
+      "t.created_at",
+      "d.host"
+    )
+}
+
+export type TenantDomainRow = {
+  id: string
+  host: string
+  is_primary: boolean
+  created_at: string
+}
+
+/** Every domain mapped to a tenant, primary first. */
+export async function listTenantDomains(
+  knex: Knex,
+  tenantId: string
+): Promise<TenantDomainRow[]> {
+  return knex<TenantDomainRow>("tenant_domains")
+    .where({ tenant_id: tenantId })
+    .orderBy([
+      { column: "is_primary", order: "desc" },
+      { column: "created_at", order: "asc" },
+    ])
+    .select("id", "host", "is_primary", "created_at")
+}
+
+export type TenantStats = {
+  products: number
+  orders: number
+  customers: number
+}
+
+/**
+ * Counts a tenant's catalog/commerce rows. The product/order/customer tables are
+ * RLS-scoped, so we open a transaction and set `app.current_tenant` (local to the
+ * txn) before counting — exactly how the provisioning scripts read tenant data
+ * from a platform (no-context) entry point.
+ */
+export async function getTenantStats(
+  knex: Knex,
+  tenantId: string
+): Promise<TenantStats> {
+  return knex.transaction(async (trx) => {
+    await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+
+    const [products] = await trx("product")
+      .whereNull("deleted_at")
+      .count<{ count: string }[]>("* as count")
+    const [orders] = await trx("order").count<{ count: string }[]>("* as count")
+    const [customers] = await trx("customer")
+      .whereNull("deleted_at")
+      .count<{ count: string }[]>("* as count")
+
+    return {
+      products: Number(products?.count ?? 0),
+      orders: Number(orders?.count ?? 0),
+      customers: Number(customers?.count ?? 0),
+    }
+  })
+}
+
+/**
+ * The seller admin's login email for a tenant. Read from the RLS-scoped `user`
+ * table under the tenant context (set on the txn), so it returns the actual
+ * account email the seller signs in with — falling back to the application owner
+ * email is left to the caller.
+ */
+export async function getTenantAdminEmail(
+  knex: Knex,
+  tenantId: string
+): Promise<string | null> {
+  return knex.transaction(async (trx) => {
+    await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+    const row = await trx("user")
+      .whereNull("deleted_at")
+      .orderBy("created_at", "asc")
+      .first("email")
+    return (row?.email as string | undefined) ?? null
+  })
+}
+
+/** The seller application a tenant was provisioned from (owner contact, etc.). */
+export async function findApplicationByTenantId(
+  knex: Knex,
+  tenantId: string
+): Promise<SellerApplication | undefined> {
+  return knex<SellerApplication>("seller_applications")
+    .where({ tenant_id: tenantId })
+    .orderBy("created_at", "desc")
+    .first()
+}
+
+/**
+ * Sets a tenant's lifecycle status. 'suspended' takes the storefront offline
+ * immediately (the domain resolver returns the status and the storefront refuses
+ * to render anything but a "store unavailable" notice); 'active' restores it.
+ */
+export async function updateTenantStatus(
+  knex: Knex,
+  id: string,
+  status: "active" | "suspended"
+): Promise<void> {
+  await knex("tenants")
+    .where({ id })
+    .update({ status, updated_at: knex.fn.now() })
+}
+
+export class HostInUseError extends Error {
+  constructor(host: string) {
+    super(`Host '${host}' is already mapped to another store`)
+    this.name = "HostInUseError"
+  }
+}
+
+/**
+ * Repoints a tenant's PRIMARY storefront host. Updates the existing primary
+ * tenant_domains row in place (preserving its publishable_key), or inserts a
+ * primary row if the tenant somehow has none. Hosts are globally unique
+ * (case-insensitive), so a collision with another store throws HostInUseError.
+ */
+export async function updateTenantPrimaryHost(
+  knex: Knex,
+  tenantId: string,
+  host: string
+): Promise<void> {
+  const normalized = host.trim().toLowerCase()
+
+  // Reject a host already claimed by a DIFFERENT tenant before we attempt the
+  // write, so we can return a clean 409 instead of a raw unique-violation.
+  const clash = await knex("tenant_domains")
+    .whereRaw("lower(host) = ?", [normalized])
+    .andWhereNot({ tenant_id: tenantId })
+    .first("id")
+  if (clash) {
+    throw new HostInUseError(normalized)
+  }
+
+  const primary = await knex("tenant_domains")
+    .where({ tenant_id: tenantId, is_primary: true })
+    .first("id")
+
+  if (primary) {
+    await knex("tenant_domains")
+      .where({ id: primary.id })
+      .update({ host: normalized, updated_at: knex.fn.now() })
+    return
+  }
+
+  await knex("tenant_domains").insert({
+    id: `tdom_${normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`,
+    tenant_id: tenantId,
+    host: normalized,
+    is_primary: true,
+    updated_at: knex.fn.now(),
+  })
+}
+
+/** Number of real orders a tenant has placed — the guard for hard deletion. */
+export async function countTenantOrders(knex: Knex, tenantId: string): Promise<number> {
+  return knex.transaction(async (trx) => {
+    await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+    const [row] = await trx("order").count<{ count: string }[]>("* as count")
+    return Number(row?.count ?? 0)
+  })
+}
+
+export class TenantHasOrdersError extends Error {
+  constructor(public readonly orders: number) {
+    super(`Tenant has ${orders} order(s); refusing to delete without force`)
+    this.name = "TenantHasOrdersError"
+  }
+}
+
+export type TeardownResult = {
+  tenantId: string
+  ordersDeleted: number
+  productsDeleted: number
+}
+
+/**
+ * Hard-deletes a tenant and ALL of its data. Irreversible.
+ *
+ * Runs in one transaction with the tenant's RLS context set, so every
+ * tenant-scoped delete is auto-filtered to this tenant (FORCE RLS) — it is
+ * impossible to delete another tenant's rows. Link/auth/platform tables aren't
+ * RLS'd, so those deletes are explicitly scoped by ids/emails gathered up front.
+ *
+ * Deletion leans on Postgres ON DELETE CASCADE (verified in schema): deleting a
+ * `product` removes its variants/options/values/images/tag+category links;
+ * `inventory_item` removes its levels; `price_set` removes prices+rules;
+ * `fulfillment_set` removes service zones, geo zones, shipping options+rules;
+ * `cart`/`customer`/`payment_collection`/`fulfillment` remove their children.
+ * The remaining link tables (no cascade from the parent) are deleted first.
+ *
+ * Region/region_country are intentionally LEFT ALONE — they are platform-shared
+ * across every tenant of that currency.
+ *
+ * @throws TenantHasOrdersError if the tenant has orders and `force` is false.
+ */
+export async function teardownTenant(
+  knex: Knex,
+  tenantId: string,
+  opts: { force?: boolean } = {}
+): Promise<TeardownResult> {
+  const orders = await countTenantOrders(knex, tenantId)
+  if (orders > 0 && !opts.force) {
+    throw new TenantHasOrdersError(orders)
+  }
+
+  return knex.transaction(async (trx) => {
+    await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+
+    const ids = async (table: string, col = "id"): Promise<string[]> =>
+      (await trx(table).where({ tenant_id: tenantId }).pluck(col)) as string[]
+
+    // --- gather tenant-owned ids before deleting their parents ---
+    const productIds = await ids("product")
+    const variantIds = (await trx("product_variant")
+      .where({ tenant_id: tenantId })
+      .pluck("id")) as string[]
+    const salesChannelIds = await ids("sales_channel")
+    const stockLocationIds = await ids("stock_location")
+    const apiKeyIds = await ids("api_key")
+    const userEmails = (await trx("user")
+      .where({ tenant_id: tenantId })
+      .whereNotNull("email")
+      .pluck("email")) as string[]
+
+    const inSet = (col: string, values: string[]) => (qb: Knex.QueryBuilder) =>
+      values.length ? qb.whereIn(col, values) : qb.whereRaw("false")
+
+    // --- 1. link tables (no cascade from parent) ---
+    if (variantIds.length) {
+      await trx("product_variant_inventory_item").where(inSet("variant_id", variantIds)).del()
+      await trx("product_variant_price_set").where(inSet("variant_id", variantIds)).del()
+    }
+    if (productIds.length) {
+      await trx("product_sales_channel").where(inSet("product_id", productIds)).del()
+      await trx("product_shipping_profile").where(inSet("product_id", productIds)).del()
+    }
+    if (salesChannelIds.length) {
+      await trx("sales_channel_stock_location").where(inSet("sales_channel_id", salesChannelIds)).del()
+      await trx("publishable_api_key_sales_channel").where(inSet("sales_channel_id", salesChannelIds)).del()
+    }
+    if (stockLocationIds.length) {
+      await trx("location_fulfillment_set").where(inSet("stock_location_id", stockLocationIds)).del()
+    }
+
+    // --- 2. commerce (mostly empty for fresh sellers); child-first, rest cascades ---
+    await trx("credit_line").where({ tenant_id: tenantId }).del()
+    await trx("cart").where({ tenant_id: tenantId }).del() // cascades line items / shipping methods
+    await trx("cart_address").where({ tenant_id: tenantId }).del()
+    for (const t of [
+      "order_line_item_adjustment", "order_line_item_tax_line", "order_line_item",
+      "order_shipping_method_adjustment", "order_shipping_method_tax_line", "order_shipping_method",
+      "order_shipping", "order_item", "order_transaction", "order_credit_line",
+      "order_change_action", "order_change", "order_summary",
+      "order_claim_item_image", "order_claim_item", "order_claim",
+      "order_exchange_item", "order_exchange", "return_item", "return",
+      "fulfillment", "fulfillment_address",
+      "payment", "payment_session", "payment_collection",
+      "order_address", "order",
+    ]) {
+      await trx(t).where({ tenant_id: tenantId }).del()
+    }
+
+    // --- 3. pricing / inventory (cascade to prices/rules and levels) ---
+    await trx("price_set").where({ tenant_id: tenantId }).del()
+    await trx("inventory_item").where({ tenant_id: tenantId }).del()
+
+    // --- 4. catalog (product cascades variants/options/images/tag+cat links) ---
+    await trx("product").where({ tenant_id: tenantId }).del()
+    for (const t of ["product_category", "product_collection", "product_type", "product_tag"]) {
+      await trx(t).where({ tenant_id: tenantId }).del()
+    }
+
+    // --- 5. fulfillment + locations (fulfillment_set cascades zones/options) ---
+    await trx("fulfillment_set").where({ tenant_id: tenantId }).del()
+    await trx("shipping_option").where({ tenant_id: tenantId }).del()
+    await trx("stock_location").where({ tenant_id: tenantId }).del()
+    await trx("stock_location_address").where({ tenant_id: tenantId }).del()
+
+    // --- 6. channels + keys + customers + misc ---
+    await trx("sales_channel").where({ tenant_id: tenantId }).del()
+    if (apiKeyIds.length) {
+      await trx("api_key").where({ tenant_id: tenantId }).del()
+    }
+    await trx("customer").where({ tenant_id: tenantId }).del() // cascades address / group links
+    await trx("customer_group").where({ tenant_id: tenantId }).del()
+    await trx("notification").where({ tenant_id: tenantId }).del()
+    await trx("invite").where({ tenant_id: tenantId }).del()
+
+    // --- 7. seller admin user + auth identity (frees the owner email) ---
+    await trx("user").where({ tenant_id: tenantId }).del()
+    if (userEmails.length) {
+      const authIds = (await trx("provider_identity")
+        .whereIn("entity_id", userEmails)
+        .pluck("auth_identity_id")) as string[]
+      // auth_identity cascades provider_identity; delete by gathered ids.
+      if (authIds.length) {
+        await trx("auth_identity").whereIn("id", authIds).del()
+      }
+      await trx("provider_identity").whereIn("entity_id", userEmails).del()
+    }
+
+    // --- 8. platform registry (host resolver + application + tenant row) ---
+    await trx("tenant_domains").where({ tenant_id: tenantId }).del()
+    await trx("seller_applications").where({ tenant_id: tenantId }).del()
+    await trx("tenants").where({ id: tenantId }).del()
+
+    return { tenantId, ordersDeleted: orders, productsDeleted: productIds.length }
+  })
+}
+
 export async function dashboardCounts(knex: Knex): Promise<{
   pendingApplications: number
   activeTenants: number

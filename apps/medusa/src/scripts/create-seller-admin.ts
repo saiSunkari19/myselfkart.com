@@ -100,7 +100,21 @@ export async function provisionSellerAdmin(
       )
     }
     authIdentityId = existingIdentity.auth_identity_id
-    logger.info(`Reusing existing emailpass identity for ${email}`)
+
+    // register() does NOT touch the password when the identity already exists, so
+    // a retry would otherwise return a tempPassword that doesn't actually work.
+    // Reset it to the requested password so re-provisioning yields a usable
+    // credential. Safe: only pending/failed applications can be (re-)approved.
+    const { success: updated, error: updateError } = await authService.updateProvider(
+      PROVIDER,
+      { entity_id: email, password }
+    )
+    if (!updated) {
+      throw new Error(
+        `Could not reset password for existing emailpass identity ${email}: ${updateError ?? "unknown error"}`
+      )
+    }
+    logger.info(`Reusing existing emailpass identity for ${email} (password reset)`)
   }
 
   // 3. Link actor + tenant on the auth identity (this is what the JWT carries).

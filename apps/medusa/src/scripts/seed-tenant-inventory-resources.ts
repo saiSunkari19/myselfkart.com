@@ -208,6 +208,83 @@ async function ensureInventoryLevels(
   }
 }
 
+/**
+ * Backfills inventory levels for specific variants at the tenant's stock
+ * location, **creating only what is missing**. Unlike {@link ensureInventoryLevels}
+ * (a bootstrap that resets every level to a flat value), this never touches an
+ * existing level, so it is safe to run on every variant creation — it only fills
+ * variants that have none. Returns the number of levels created.
+ *
+ * No-ops (returns 0) when the tenant has no seeded stock location yet
+ * (onboarding owns location creation), so creating a product before provisioning
+ * never errors here.
+ */
+export async function ensureVariantInventoryLevels(
+  knex: Knex,
+  input: { tenantId: string; variantIds: string[]; stockedQuantity: number }
+): Promise<number> {
+  const { tenantId, variantIds } = input
+  const stockedQuantity =
+    Number.isFinite(input.stockedQuantity) && input.stockedQuantity > 0
+      ? input.stockedQuantity
+      : 100
+  if (variantIds.length === 0) {
+    return 0
+  }
+
+  let created = 0
+  await runWithTenantContext({ tenantId, source: "session" }, async () => {
+    await knex.transaction(async (trx) => {
+      await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+
+      const stockLocationId = stableId("sloc_selfkart", tenantId)
+      const location = await trx("stock_location")
+        .where({ id: stockLocationId })
+        .whereNull("deleted_at")
+        .first("id")
+      if (!location) {
+        return
+      }
+
+      // variant -> inventory item, scoped to this tenant's own products.
+      const itemRows = await trx("product_variant_inventory_item as pvii")
+        .join("product_variant as pv", "pv.id", "pvii.variant_id")
+        .join("product as p", "p.id", "pv.product_id")
+        .whereIn("pvii.variant_id", variantIds)
+        .where("p.tenant_id", tenantId)
+        .whereNull("pvii.deleted_at")
+        .whereNull("pv.deleted_at")
+        .whereNull("p.deleted_at")
+        .distinct("pvii.inventory_item_id as inventory_item_id")
+
+      for (const { inventory_item_id } of itemRows) {
+        const existing = await trx("inventory_level")
+          .where({ inventory_item_id, location_id: stockLocationId })
+          .first("id")
+        if (existing) {
+          continue
+        }
+
+        await trx("inventory_level").insert({
+          id: stableId("ilev_selfkart", inventory_item_id, stockLocationId),
+          inventory_item_id,
+          location_id: stockLocationId,
+          stocked_quantity: stockedQuantity,
+          reserved_quantity: 0,
+          incoming_quantity: 0,
+          raw_stocked_quantity: rawQuantity(stockedQuantity),
+          raw_reserved_quantity: rawQuantity(0),
+          raw_incoming_quantity: rawQuantity(0),
+          metadata: seededMetadata("inventory_level", tenantId),
+        })
+        created += 1
+      }
+    })
+  })
+
+  return created
+}
+
 export async function ensureTenantInventoryResources(
   knex: Knex,
   input: Input

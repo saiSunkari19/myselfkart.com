@@ -14,6 +14,11 @@ type Input = {
   sellerName: string
   slug: string
   status: string
+  /** Market currency (iso 4217, lowercase) — stamped on the tenant so the
+   *  storefront resolves the matching region. Optional on the CLI path. */
+  currency?: string
+  /** Primary market country (iso 3166-1 alpha-2). */
+  country?: string
 }
 
 function slugify(value: string): string {
@@ -40,8 +45,10 @@ function readInput(): Input {
   }
 
   const slug = process.env.TENANT_SLUG ? slugify(process.env.TENANT_SLUG) : slugify(sellerName)
+  const currency = process.env.SELFKART_CURRENCY?.trim().toLowerCase() || undefined
+  const country = process.env.SELFKART_COUNTRY?.trim().toLowerCase() || undefined
 
-  return { tenantId, host, sellerName, slug, status }
+  return { tenantId, host, sellerName, slug, status, currency, country }
 }
 
 /**
@@ -131,12 +138,22 @@ export async function provisionTenantStorefrontWith(
   const apiKeyModule = container.resolve(Modules.API_KEY)
 
   // Upsert the tenant registry row first so tenant_domains FK is satisfiable.
+  // currency/country are only written when provided, so a re-run without them
+  // (CLI path missing the envs) never nulls out a previously-stamped market.
+  const market: { currency?: string; country?: string } = {}
+  if (input.currency) {
+    market.currency = input.currency
+  }
+  if (input.country) {
+    market.country = input.country
+  }
   await knex("tenants")
     .insert({
       id: input.tenantId,
       name: input.sellerName,
       slug: input.slug,
       status: input.status,
+      ...market,
       updated_at: knex.fn.now(),
     })
     .onConflict("id")
@@ -144,6 +161,7 @@ export async function provisionTenantStorefrontWith(
       name: input.sellerName,
       slug: input.slug,
       status: input.status,
+      ...market,
       updated_at: knex.fn.now(),
     })
 

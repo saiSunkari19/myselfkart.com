@@ -158,6 +158,7 @@ whose checkout breaks, just re-run, no manual SQL:
 - Cross-linked publishable key / `POST /store/carts` 500 → re-run **`provision:storefront`**.
 - Checkout fails *"shipping profiles not satisfied"* → re-run **`provision:commerce`**.
 - Storefront shows zero products → products unpublished, or re-run **`seed-tenant-inventory-resources`** (links products to the channel).
+- Add-to-cart fails with *"Sales channel … is not associated with any stock location for variant …"* → that variant's inventory item has **no inventory level** at the tenant's stock location. Happens to **products created by hand in Admin** (the CSV-import path seeds levels automatically; ad-hoc admin creation does not). Re-run **`seed-tenant-inventory-resources`** — it creates missing levels for every tenant inventory item (idempotent, won't clobber existing stock).
 
 ---
 
@@ -174,5 +175,19 @@ whose checkout breaks, just re-run, no manual SQL:
 - **R2 media** keys aren't tenant-prefixed yet.
 - **Payments/shipping are "manual"** (`pp_system_default` / `manual_manual`) for the
   pilot — real Razorpay/Shiprocket per tenant are later phases.
+- ~~**Admin-created products don't get inventory levels automatically.**~~ —
+  **FIXED** by the `productVariantsCreated` workflow hook
+  (`src/workflows/hooks/ensure-variant-inventory.ts`). Previously only the
+  CSV-import path seeded levels, so a product added by hand in Admin got an
+  inventory *item* but no *level* and add-to-cart failed (see §2). The hook now
+  runs on every variant creation — inside the seller's request, so tenant context
+  + the RLS read patch are active (a plain subscriber runs out of context and RLS
+  fails closed) — and calls `ensureVariantInventoryLevels` to **create-if-missing**
+  a level at the tenant's stock location (default `STOCKED_QUANTITY`, never
+  overwriting stock the seller set). `createProductsWorkflow` runs the variant
+  workflow as a step, so the one hook covers both product-with-variants and
+  add-variant-later. No-ops if the tenant has no stock location yet (onboarding
+  owns that). Re-running `seed-tenant-inventory-resources` remains the recovery
+  path for products created before this hook shipped.
 
 See `Medusa neon rls multitenant implementation plan · MD.md` for the full status.

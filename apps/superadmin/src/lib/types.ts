@@ -36,6 +36,32 @@ export type Tenant = {
   host: string | null
 }
 
+export type TenantDomain = {
+  id: string
+  host: string
+  is_primary: boolean
+  created_at: string
+}
+
+export type TenantStats = {
+  products: number
+  orders: number
+  customers: number
+}
+
+export type TenantDetail = {
+  tenant: Tenant
+  domains: TenantDomain[]
+  stats: TenantStats
+  admin_email: string | null
+  owner: {
+    name: string
+    email: string
+    phone: string | null
+    applied_at: string
+  } | null
+}
+
 export type PlatformAdmin = {
   id: string
   email: string

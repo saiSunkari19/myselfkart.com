@@ -35,7 +35,7 @@ export async function GET(
   const knex = req.scope.resolve<KnexLike>(ContainerRegistrationKeys.PG_CONNECTION)
   const result = await knex.raw(
     `
-      select t."id" as tenant_id, t."status", d."publishable_key"
+      select t."id" as tenant_id, t."status", t."currency", d."publishable_key"
       from "tenant_domains" d
       join "tenants" t on t."id" = d."tenant_id"
       where lower(d."host") = ?
@@ -53,6 +53,10 @@ export async function GET(
   res.json({
     tenant_id: row.tenant_id,
     status: row.status,
+    // The tenant's market currency — lets the storefront pick the matching
+    // shared region when several markets are live. May be null for older tenants
+    // until they are re-provisioned.
+    currency: row.currency ?? null,
     publishable_key: row.publishable_key,
   })
 }

@@ -34,9 +34,24 @@ function Field({
 const inputClass =
   "rounded-[var(--radius-md)] border border-line bg-surface px-4 py-3 text-ink outline-none focus:border-line-strong"
 
+// Supported markets. Picking a market implies its currency and the region the
+// store sells into — the seller never picks a bare country/currency. The full
+// country set (e.g. the Core EU set for Europe) is derived server-side from the
+// currency at provisioning time; `country` here is just the primary country.
+const MARKETS = [
+  { key: "india", label: "India", currency: "inr", country: "in" },
+  { key: "us", label: "United States", currency: "usd", country: "us" },
+  { key: "uae", label: "United Arab Emirates", currency: "aed", country: "ae" },
+  { key: "europe", label: "Europe", currency: "eur", country: "de" },
+] as const
+
+const DEFAULT_MARKET = "india"
+
 export function ApplyForm({ baseDomain }: { baseDomain: string }) {
   const [state, action, pending] = useActionState(submitApplicationAction, applyInitial)
   const [subdomain, setSubdomain] = useState("")
+  const [marketKey, setMarketKey] = useState<string>(DEFAULT_MARKET)
+  const market = MARKETS.find((m) => m.key === marketKey) ?? MARKETS[0]
 
   if (state.ok) {
     return (
@@ -93,26 +108,32 @@ export function ApplyForm({ baseDomain }: { baseDomain: string }) {
         </div>
       </Field>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="Country (ISO-2)" name="country" error={state.errors.country}>
-          <input
-            id="country"
-            name="country"
-            defaultValue="us"
-            maxLength={2}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Currency (ISO-3)" name="currency" error={state.errors.currency}>
-          <input
-            id="currency"
-            name="currency"
-            defaultValue="usd"
-            maxLength={3}
-            className={inputClass}
-          />
-        </Field>
-      </div>
+      <Field
+        label="Market"
+        name="market"
+        error={state.errors.country || state.errors.currency}
+      >
+        <select
+          id="market"
+          name="market"
+          value={marketKey}
+          onChange={(e) => setMarketKey(e.target.value)}
+          className={inputClass}
+        >
+          {MARKETS.map((m) => (
+            <option key={m.key} value={m.key}>
+              {m.label} ({m.currency.toUpperCase()})
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-ink-subtle">
+          Sets your store currency and the countries you sell to.
+        </span>
+        {/* Currency + primary country are implied by the market, submitted as
+            hidden fields the public application endpoint expects. */}
+        <input type="hidden" name="currency" value={market.currency} />
+        <input type="hidden" name="country" value={market.country} />
+      </Field>
 
       <Field label="Anything we should know? (optional)" name="notes">
         <textarea id="notes" name="notes" rows={3} className={inputClass} />

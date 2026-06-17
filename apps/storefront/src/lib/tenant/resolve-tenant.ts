@@ -11,6 +11,7 @@ type ResolveResponse = {
   tenant_id: string
   status: TenantStatus
   publishable_key: string | null
+  currency: string | null
 }
 
 /**
@@ -58,6 +59,7 @@ export const resolveTenant = cache(async (): Promise<TenantResolution | null> =>
       tenantId: data.tenant_id,
       status: data.status,
       publishableKey: data.publishable_key ?? null,
+      currency: data.currency ?? null,
     }
   } catch {
     // Unknown host (404), bad signature (403), or backend unavailable: fail
