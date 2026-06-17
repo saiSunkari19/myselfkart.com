@@ -13,9 +13,15 @@ services:
     region: singapore
     rootDir: apps/medusa
     healthCheckPath: /health
-    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm run build
-    preDeployCommand: DATABASE_URL="$MIGRATOR_DATABASE_URL" corepack pnpm db:migrate
-    startCommand: cd .medusa/server && npm install && npm run start
+    # Build the source (patched node_modules), then copy the pnpm patches into the
+    # standalone .medusa/server output and reinstall there with pnpm so the RLS
+    # tenant-context patches actually apply at runtime. npm would ignore
+    # pnpm.patchedDependencies, silently shipping unpatched Medusa.
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm run build && cp -r patches .medusa/server/ && cd .medusa/server && corepack pnpm install --prod
+    # Migrations and start must run from .medusa/server (compiled medusa-config.js
+    # lives there; the source dir only has medusa-config.ts which prod can't load).
+    preDeployCommand: cd .medusa/server && DATABASE_URL="$MIGRATOR_DATABASE_URL" corepack pnpm run db:migrate
+    startCommand: cd .medusa/server && corepack pnpm run start
     envVars:
       - key: NODE_ENV
         value: production
