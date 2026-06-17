@@ -2,7 +2,7 @@ diff --git a/dist/repositories/inventory-level.js b/dist/repositories/inventory-
 index 29a2ecb2566ab58b9924d26886350affad563c29..a9f34a01d91240f1a8f61dad5d4973435bec6750 100644
 --- a/dist/repositories/inventory-level.js
 +++ b/dist/repositories/inventory-level.js
-@@ -3,39 +3,57 @@ Object.defineProperty(exports, "__esModule", { value: true });
+@@ -3,39 +3,60 @@ Object.defineProperty(exports, "__esModule", { value: true });
  exports.InventoryLevelRepository = void 0;
  const utils_1 = require("@medusajs/framework/utils");
  const _models_1 = require("../models");

@@ -6,16 +6,16 @@ settings:
 
 patchedDependencies:
   '@medusajs/inventory@2.15.5':
-    hash: 4jx35czkjikoyrsp4bn3sqjplm
+    hash: 56px3cslejtjc7xrzganfwom2i
     path: patches/@medusajs__inventory@2.15.5.patch
   '@medusajs/pricing@2.15.5':
-    hash: gzl7eg42vqkhhqs6xeuoqlxvfe
+    hash: 2wu3d7dubhhptf7hwduurd735e
     path: patches/@medusajs__pricing@2.15.5.patch
   '@medusajs/utils@2.15.5':
     hash: mtaxfmsymlrigwspkqds4x4r7e
     path: patches/@medusajs__utils@2.15.5.patch
   '@mikro-orm/knex@6.6.12':
-    hash: 6dy64wk2rdhbr5dpmx3hud7xwe
+    hash: uqp6j3xvhqzmuyij4rgnavv64e
     path: patches/@mikro-orm__knex@6.6.12.patch
 
 importers:
@@ -58,7 +58,7 @@ importers:
     devDependencies:
       knex:
         specifier: 3.2.8
-        version: 3.2.8(pg@8.20.0)
+        version: 3.2.8(pg@8.21.0)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -6188,7 +6188,7 @@ snapshots:
     dependencies:
       '@mikro-orm/cli': 6.6.12(pg@8.21.0)
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(patch_hash=6dy64wk2rdhbr5dpmx3hud7xwe)(@mikro-orm/core@6.6.12)(pg@8.21.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=uqp6j3xvhqzmuyij4rgnavv64e)(@mikro-orm/core@6.6.12)(pg@8.21.0)
       '@mikro-orm/migrations': 6.6.12(@mikro-orm/core@6.6.12)(@types/node@25.9.3)(pg@8.21.0)
       '@mikro-orm/postgresql': 6.6.12(@mikro-orm/core@6.6.12)
       '@opentelemetry/api': 1.9.1
@@ -6329,7 +6329,7 @@ snapshots:
     dependencies:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
 
-  '@medusajs/inventory@2.15.5(patch_hash=4jx35czkjikoyrsp4bn3sqjplm)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
+  '@medusajs/inventory@2.15.5(patch_hash=56px3cslejtjc7xrzganfwom2i)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
     dependencies:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
 
@@ -6389,7 +6389,7 @@ snapshots:
       '@medusajs/fulfillment': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/fulfillment-manual': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/index': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
-      '@medusajs/inventory': 2.15.5(patch_hash=4jx35czkjikoyrsp4bn3sqjplm)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
+      '@medusajs/inventory': 2.15.5(patch_hash=56px3cslejtjc7xrzganfwom2i)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/link-modules': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/locking': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/locking-postgres': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
@@ -6400,7 +6400,7 @@ snapshots:
       '@medusajs/order': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/payment': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))(@types/node@25.9.3)
       '@medusajs/payment-stripe': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
-      '@medusajs/pricing': 2.15.5(patch_hash=gzl7eg42vqkhhqs6xeuoqlxvfe)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
+      '@medusajs/pricing': 2.15.5(patch_hash=2wu3d7dubhhptf7hwduurd735e)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/product': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/promotion': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
       '@medusajs/rbac': 2.15.5(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))
@@ -6530,7 +6530,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@medusajs/pricing@2.15.5(patch_hash=gzl7eg42vqkhhqs6xeuoqlxvfe)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
+  '@medusajs/pricing@2.15.5(patch_hash=2wu3d7dubhhptf7hwduurd735e)(@medusajs/framework@2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0))':
     dependencies:
       '@medusajs/framework': 2.15.5(@medusajs/cli@2.15.5(@types/node@25.9.3))(@types/node@25.9.3)(ioredis@5.11.1)(vite@5.4.21(@types/node@25.9.3))(zod@4.2.0)
 
@@ -6699,7 +6699,7 @@ snapshots:
     dependencies:
       '@jercle/yargonaut': 1.1.5
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(patch_hash=6dy64wk2rdhbr5dpmx3hud7xwe)(@mikro-orm/core@6.6.12)(pg@8.21.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=uqp6j3xvhqzmuyij4rgnavv64e)(@mikro-orm/core@6.6.12)(pg@8.21.0)
       fs-extra: 11.3.3
       tsconfig-paths: 4.2.0
       yargs: 17.7.2
@@ -6726,7 +6726,7 @@ snapshots:
       mikro-orm: 6.6.12
       reflect-metadata: 0.2.2
 
-  '@mikro-orm/knex@6.6.12(patch_hash=6dy64wk2rdhbr5dpmx3hud7xwe)(@mikro-orm/core@6.6.12)(pg@8.20.0)':
+  '@mikro-orm/knex@6.6.12(patch_hash=uqp6j3xvhqzmuyij4rgnavv64e)(@mikro-orm/core@6.6.12)(pg@8.20.0)':
     dependencies:
       '@mikro-orm/core': 6.6.12
       fs-extra: 11.3.3
@@ -6742,7 +6742,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/knex@6.6.12(patch_hash=6dy64wk2rdhbr5dpmx3hud7xwe)(@mikro-orm/core@6.6.12)(pg@8.21.0)':
+  '@mikro-orm/knex@6.6.12(patch_hash=uqp6j3xvhqzmuyij4rgnavv64e)(@mikro-orm/core@6.6.12)(pg@8.21.0)':
     dependencies:
       '@mikro-orm/core': 6.6.12
       fs-extra: 11.3.3
@@ -6761,7 +6761,7 @@ snapshots:
   '@mikro-orm/migrations@6.6.12(@mikro-orm/core@6.6.12)(@types/node@25.9.3)(pg@8.21.0)':
     dependencies:
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(patch_hash=6dy64wk2rdhbr5dpmx3hud7xwe)(@mikro-orm/core@6.6.12)(pg@8.21.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=uqp6j3xvhqzmuyij4rgnavv64e)(@mikro-orm/core@6.6.12)(pg@8.21.0)
       fs-extra: 11.3.3
       umzug: 3.8.2(@types/node@25.9.3)
     transitivePeerDependencies:
@@ -6781,7 +6781,7 @@ snapshots:
   '@mikro-orm/postgresql@6.6.12(@mikro-orm/core@6.6.12)':
     dependencies:
       '@mikro-orm/core': 6.6.12
-      '@mikro-orm/knex': 6.6.12(patch_hash=6dy64wk2rdhbr5dpmx3hud7xwe)(@mikro-orm/core@6.6.12)(pg@8.20.0)
+      '@mikro-orm/knex': 6.6.12(patch_hash=uqp6j3xvhqzmuyij4rgnavv64e)(@mikro-orm/core@6.6.12)(pg@8.20.0)
       pg: 8.20.0
       postgres-array: 3.0.4
       postgres-date: 2.1.0

@@ -2,7 +2,7 @@ diff --git a/AbstractSqlConnection.js b/AbstractSqlConnection.js
 index e3a855871..00118e405 100644
 --- a/AbstractSqlConnection.js
 +++ b/AbstractSqlConnection.js
-@@ -128,6 +128,19 @@ class AbstractSqlConnection extends core_1.Connection {
+@@ -128,6 +128,22 @@ class AbstractSqlConnection extends core_1.Connection {
      }
      async execute(queryOrKnex, params = [], method = 'all', ctx, loggerContext) {
          await this.ensureConnection();

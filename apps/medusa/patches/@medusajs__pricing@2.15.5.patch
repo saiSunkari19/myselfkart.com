@@ -13,7 +13,7 @@ index 850a85819b4509920a065f8321ebb7de25e948d7..7dfd052228a2a0521c3f30d2a2665640
  class PricingRepository extends utils_1.MikroOrmBase {
      constructor() {
          // @ts-ignore
-@@ -192,6 +197,13 @@ class PricingRepository extends utils_1.MikroOrmBase {
+@@ -192,6 +197,16 @@ class PricingRepository extends utils_1.MikroOrmBase {
              .orderByRaw("price.price_list_id IS NOT NULL DESC")
              .orderByRaw("price.rules_count + COALESCE(pl.rules_count, 0) DESC")
              .orderBy("price.amount", "asc");
