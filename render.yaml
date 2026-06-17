@@ -13,12 +13,14 @@ services:
     region: singapore
     rootDir: apps/medusa
     healthCheckPath: /health
-    buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm build
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm run build
     preDeployCommand: DATABASE_URL="$MIGRATOR_DATABASE_URL" corepack pnpm db:migrate
     startCommand: cd .medusa/server && npm install && npm run start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: COREPACK_ENABLE_DOWNLOAD_PROMPT
+        value: "0"
       - key: PORT
         value: 9000
       - key: MEDUSA_WORKER_MODE
