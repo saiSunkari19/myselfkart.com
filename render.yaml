@@ -71,6 +71,12 @@ services:
         generateValue: true
       - key: SELFKART_STOREFRONT_SECRET
         sync: false
+      # Apex domain new seller subdomains hang off. Provisioning derives each
+      # tenant host as `<subdomain>.<this>` (e.g. ticket.myselfkart.com). Unset,
+      # it defaults to `localhost`, which stores `ticket.localhost` and breaks
+      # both the admin store link and the storefront's host->tenant resolver.
+      - key: SELFKART_STOREFRONT_BASE_DOMAIN
+        value: myselfkart.com
       - key: R2_FILE_URL
         sync: false
       - key: R2_ACCESS_KEY_ID

@@ -27,6 +27,7 @@ export async function submitApplicationAction(
     country: String(formData.get("country") ?? "us"),
     currency: String(formData.get("currency") ?? "usd"),
     phone: String(formData.get("phone") ?? ""),
+    selling_on: String(formData.get("selling_on") ?? ""),
     notes: String(formData.get("notes") ?? ""),
   }
 

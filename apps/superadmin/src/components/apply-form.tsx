@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { Check, Instagram, ShoppingBag, Store, MoreHorizontal } from "lucide-react"
 import { useActionState, useState } from "react"
 
 import { submitApplicationAction, type ApplyState } from "@/actions/apply"
@@ -47,9 +47,20 @@ const MARKETS = [
 
 const DEFAULT_MARKET = "india"
 
+// Where the seller currently sells. Tells the operator where a lead originates;
+// stored as a stable key on the application (see backend `selling_on`). The icon
+// is decorative — the label carries the meaning.
+const SELLING_ON = [
+  { key: "instagram_whatsapp", label: "Instagram / WhatsApp", icon: Instagram },
+  { key: "flipkart_amazon", label: "Flipkart / Amazon", icon: ShoppingBag },
+  { key: "offline_retail", label: "Offline retail", icon: Store },
+  { key: "other", label: "Somewhere else", icon: MoreHorizontal },
+] as const
+
 export function ApplyForm({ baseDomain }: { baseDomain: string }) {
   const [state, action, pending] = useActionState(submitApplicationAction, applyInitial)
   const [subdomain, setSubdomain] = useState("")
+  const [sellingOn, setSellingOn] = useState<string>("")
   const [marketKey, setMarketKey] = useState<string>(DEFAULT_MARKET)
   const market = MARKETS.find((m) => m.key === marketKey) ?? MARKETS[0]
 
@@ -68,6 +79,38 @@ export function ApplyForm({ baseDomain }: { baseDomain: string }) {
 
   return (
     <form action={action} className="flex flex-col gap-6">
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-sm text-ink-muted">Where do you sell today?</legend>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {SELLING_ON.map((option) => {
+            const selected = sellingOn === option.key
+            const Icon = option.icon
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setSellingOn(option.key)}
+                aria-pressed={selected}
+                className={`flex items-center gap-3 rounded-[var(--radius-md)] border px-4 py-3 text-left transition-colors ${
+                  selected
+                    ? "border-line-strong bg-surface-2 text-ink"
+                    : "border-line bg-surface text-ink-muted hover:border-line-strong hover:text-ink"
+                }`}
+              >
+                <Icon className="size-5 shrink-0" aria-hidden />
+                <span className="text-sm font-medium">{option.label}</span>
+              </button>
+            )
+          })}
+        </div>
+        {state.errors.selling_on ? (
+          <span className="text-xs text-red-ink" role="alert">
+            {state.errors.selling_on}
+          </span>
+        ) : null}
+        <input type="hidden" name="selling_on" value={sellingOn} />
+      </fieldset>
+
       <Field label="Store name" name="store_name" error={state.errors.store_name}>
         <input id="store_name" name="store_name" required className={inputClass} />
       </Field>
@@ -161,7 +204,8 @@ export function ApplyForm({ baseDomain }: { baseDomain: string }) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !sellingOn}
+        title={!sellingOn ? "Pick where you sell today first" : undefined}
         className="mt-2 cursor-pointer self-start rounded-[var(--radius-md)] bg-ink px-8 py-3 font-medium text-canvas transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Submitting…" : "Apply to sell"}

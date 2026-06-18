@@ -6,6 +6,12 @@ export type ApplicationStatus =
   | "rejected"
   | "failed"
 
+export type SellingOn =
+  | "instagram_whatsapp"
+  | "flipkart_amazon"
+  | "offline_retail"
+  | "other"
+
 export type SellerApplication = {
   id: string
   store_name: string
@@ -15,6 +21,7 @@ export type SellerApplication = {
   country: string
   currency: string
   phone: string | null
+  selling_on: SellingOn | null
   notes: string | null
   status: ApplicationStatus
   tenant_id: string | null

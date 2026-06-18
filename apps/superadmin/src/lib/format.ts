@@ -9,6 +9,20 @@ export function storefrontUrl(host: string): string {
   return isLocal ? `http://${host}:3000` : `https://${host}`
 }
 
+import type { SellingOn } from "./types"
+
+/** Human label for the channel a seller said they sell on. */
+const SELLING_ON_LABELS: Record<SellingOn, string> = {
+  instagram_whatsapp: "Instagram / WhatsApp",
+  flipkart_amazon: "Flipkart / Amazon",
+  offline_retail: "Offline retail",
+  other: "Somewhere else",
+}
+
+export function sellingOnLabel(value: SellingOn | null): string {
+  return value ? SELLING_ON_LABELS[value] : "Not specified"
+}
+
 export function formatDate(value: string | null): string {
   if (!value) return "—"
   const d = new Date(value)

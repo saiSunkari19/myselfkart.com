@@ -22,6 +22,16 @@ export type PlatformAdmin = {
   disabled_at: string | null
 }
 
+/**
+ * Channel a seller says they currently sell on, captured on the public apply
+ * form. Stored as a stable key; the human label lives in the UI layer.
+ */
+export type SellingOn =
+  | "instagram_whatsapp"
+  | "flipkart_amazon"
+  | "offline_retail"
+  | "other"
+
 export type SellerApplication = {
   id: string
   store_name: string
@@ -31,6 +41,7 @@ export type SellerApplication = {
   country: string
   currency: string
   phone: string | null
+  selling_on: SellingOn | null
   notes: string | null
   status: "pending" | "approved" | "provisioning" | "active" | "rejected" | "failed"
   tenant_id: string | null
@@ -144,6 +155,7 @@ export async function insertApplication(
     country: string
     currency: string
     phone: string | null
+    sellingOn?: SellingOn | null
     notes: string | null
   }
 ): Promise<void> {
@@ -156,6 +168,7 @@ export async function insertApplication(
     country: app.country,
     currency: app.currency,
     phone: app.phone,
+    selling_on: app.sellingOn ?? null,
     notes: app.notes,
     status: "pending",
     updated_at: knex.fn.now(),

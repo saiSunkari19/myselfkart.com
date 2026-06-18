@@ -11,7 +11,14 @@ import {
   normalizeSubdomain,
   RESERVED_SUBDOMAINS,
 } from "../../../platform/auth"
-import { insertApplication } from "../../../platform/repository"
+import { insertApplication, type SellingOn } from "../../../platform/repository"
+
+const SELLING_ON_VALUES: ReadonlySet<SellingOn> = new Set<SellingOn>([
+  "instagram_whatsapp",
+  "flipkart_amazon",
+  "offline_retail",
+  "other",
+])
 
 /**
  * Public "become a seller" funnel. Lives OUTSIDE /selfkart/platform* so it needs
@@ -30,6 +37,10 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
   const currency = (typeof body.currency === "string" ? body.currency : "usd").trim().toLowerCase()
   const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : ""
   const phone = phoneRaw || null
+  const sellingOnRaw = typeof body.selling_on === "string" ? body.selling_on.trim() : ""
+  const sellingOn = SELLING_ON_VALUES.has(sellingOnRaw as SellingOn)
+    ? (sellingOnRaw as SellingOn)
+    : null
   const notes = typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null
 
   const errors: Record<string, string> = {}
@@ -46,6 +57,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
   }
   if (country.length !== 2) errors.country = "Country must be a 2-letter ISO code"
   if (currency.length !== 3) errors.currency = "Currency must be a 3-letter ISO code"
+  if (!sellingOn) errors.selling_on = "Tell us where you sell today"
 
   if (Object.keys(errors).length > 0) {
     res.status(422).json({ message: "Validation failed", errors })
@@ -92,6 +104,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
       country,
       currency,
       phone,
+      sellingOn,
       notes,
     })
   } catch (error) {
