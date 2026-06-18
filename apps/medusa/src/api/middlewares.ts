@@ -26,10 +26,17 @@ export default defineMiddlewares({
       matcher: "/admin*",
       middlewares: [tenantContextMiddleware],
     },
+    // multer parses the multipart upload by reading the request as a stream.
+    // The stream's end/finish events fire in the root async context (the socket
+    // predates our middleware), so multer's next() escapes the AsyncLocalStorage
+    // run started by the global /admin* tenantContextMiddleware — the route then
+    // runs with no tenant context and requireTenantContext() throws. Re-run
+    // tenantContextMiddleware AFTER multer to re-establish the ALS context from
+    // req.auth_context before the handler executes.
     {
       method: ["POST"],
       matcher: "/admin/selfkart/product-imports/prepare",
-      middlewares: [upload.single("file")],
+      middlewares: [upload.single("file"), tenantContextMiddleware],
     },
     // /store* tenant is derived from the request DOMAIN: the Next.js storefront
     // resolves it from Host server-side and sends the tenant_id with an HMAC
