@@ -9,7 +9,7 @@ import { TenantHostForm } from "@/components/tenant-host-form"
 import { TenantLoginPanel } from "@/components/tenant-login-panel"
 import { TenantRazorpayForm } from "@/components/tenant-razorpay-form"
 import { TenantStatusToggle } from "@/components/tenant-status-toggle"
-import { formatDate } from "@/lib/format"
+import { formatDate, storefrontUrl } from "@/lib/format"
 import { platformFetch, PlatformApiError } from "@/lib/medusa"
 import type { TenantDetail } from "@/lib/types"
 
@@ -58,7 +58,7 @@ export default async function TenantDetailPage({
         action={
           tenant.host ? (
             <a
-              href={`http://${tenant.host}:3000`}
+              href={storefrontUrl(tenant.host)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] border border-line px-4 py-2 text-sm text-ink-muted transition-colors hover:border-line-strong hover:text-ink"

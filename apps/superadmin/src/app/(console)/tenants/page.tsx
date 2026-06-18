@@ -4,7 +4,7 @@ import Link from "next/link"
 import { DeleteDisabledButton } from "@/components/delete-disabled-button"
 import { EmptyState, PageHeader, Panel } from "@/components/primitives"
 import { StatusBadge } from "@/components/status-badge"
-import { formatDate } from "@/lib/format"
+import { formatDate, storefrontUrl } from "@/lib/format"
 import { platformFetch } from "@/lib/medusa"
 import type { Tenant } from "@/lib/types"
 
@@ -53,7 +53,7 @@ export default async function TenantsPage() {
 
                   {t.host ? (
                     <a
-                      href={`http://${t.host}:3000`}
+                      href={storefrontUrl(t.host)}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex shrink-0 items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
