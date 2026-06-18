@@ -87,6 +87,20 @@ export function ApplyForm({ baseDomain }: { baseDomain: string }) {
         </Field>
       </div>
 
+      <Field label="Phone" name="phone" error={state.errors.phone}>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          required
+          placeholder="+91 98765 43210"
+          className={inputClass}
+        />
+        <span className="text-xs text-ink-subtle">
+          So our team can reach you about your application.
+        </span>
+      </Field>
+
       <Field
         label="Store address"
         name="desired_subdomain"

@@ -4,6 +4,7 @@ import type { Knex } from "knex"
 
 import {
   isValidEmail,
+  isValidPhone,
   isValidSubdomain,
   newId,
   normalizeEmail,
@@ -27,13 +28,16 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
   const desiredSubdomain = normalizeSubdomain(body.desired_subdomain)
   const country = (typeof body.country === "string" ? body.country : "us").trim().toLowerCase()
   const currency = (typeof body.currency === "string" ? body.currency : "usd").trim().toLowerCase()
-  const phone = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null
+  const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : ""
+  const phone = phoneRaw || null
   const notes = typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null
 
   const errors: Record<string, string> = {}
   if (storeName.length < 2) errors.store_name = "Store name is required"
   if (ownerName.length < 2) errors.owner_name = "Your name is required"
   if (!isValidEmail(ownerEmail)) errors.owner_email = "A valid email is required"
+  if (!phoneRaw) errors.phone = "A phone number is required"
+  else if (!isValidPhone(phoneRaw)) errors.phone = "Enter a valid phone number"
   if (!isValidSubdomain(desiredSubdomain)) {
     errors.desired_subdomain =
       "Subdomain must be 2-40 chars: lowercase letters, numbers, hyphens"
@@ -49,6 +53,33 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
   }
 
   const knex = req.scope.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
+
+  // An email maps to exactly one seller admin: a single global emailpass identity
+  // bound to one tenant (auth tables are intentionally NOT tenant-RLS'd). So the
+  // same email cannot open a second store. Reject it here with a clear field
+  // error instead of letting provisioning later crash on the global
+  // `IDX_user_email_unique` constraint. We block both an email that already has
+  // an account and one with another live application in flight.
+  const [existingIdentity, existingApplication] = await Promise.all([
+    knex("provider_identity")
+      .where({ provider: "emailpass", entity_id: ownerEmail })
+      .first("id"),
+    knex("seller_applications")
+      .whereRaw("lower(owner_email) = ?", [ownerEmail])
+      .whereIn("status", ["pending", "provisioning", "active"])
+      .first("id"),
+  ])
+  if (existingIdentity || existingApplication) {
+    res.status(409).json({
+      message: "Validation failed",
+      errors: {
+        owner_email:
+          "This email is already in use. Each store needs its own email address.",
+      },
+    })
+    return
+  }
+
   const id = newId("sapp")
 
   try {

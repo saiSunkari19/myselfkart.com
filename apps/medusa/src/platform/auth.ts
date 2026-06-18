@@ -88,6 +88,16 @@ export function isValidSubdomain(value: string): boolean {
   return SUBDOMAIN_PATTERN.test(value)
 }
 
+/**
+ * Loose international phone check: we only care that the operator can actually
+ * dial it back, so we count digits (ignoring spaces, hyphens, parens and a
+ * leading +) and accept anything in the E.164 range of 7-15 digits.
+ */
+export function isValidPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, "")
+  return digits.length >= 7 && digits.length <= 15
+}
+
 /** Reserved hosts that must never be claimed by a seller subdomain. */
 export const RESERVED_SUBDOMAINS = new Set([
   "www",
