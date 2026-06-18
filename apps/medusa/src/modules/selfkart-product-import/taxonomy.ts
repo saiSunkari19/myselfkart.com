@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 
 import type { Knex } from "knex"
 
-import type { CsvRow } from "./csv"
+import { toUrlSafeHandle, type CsvRow } from "./csv"
 
 export type CollectionSeed = {
   id: string
@@ -89,7 +89,7 @@ export function extractSellerImportSeeds(
       .map(([, value]) => value)
     const parentCategoryId = row["Parent Category Id"] ?? ""
     const categoryId = row["Category Id"] ?? ""
-    const productHandle = row["Product Handle"] ?? ""
+    const productHandle = toUrlSafeHandle(row["Product Handle"] ?? "")
     const scopedCollectionId = collectionId ? scopedImportId(tenantId, collectionId) : ""
     const scopedTypeId = typeId ? scopedImportId(tenantId, typeId) : ""
     const scopedTagIds = tagValues.map((tag) => scopedImportId(tenantId, tag))

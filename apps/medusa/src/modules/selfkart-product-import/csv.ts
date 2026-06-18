@@ -1,3 +1,5 @@
+import { toHandle } from "@medusajs/framework/utils"
+
 export type CsvRow = Record<string, string>
 
 const RAW_ID_COLUMNS = [
@@ -91,6 +93,23 @@ export function parseCsv(csv: string): CsvRow[] {
     })
 }
 
+/**
+ * Medusa rejects product handles that aren't URL-safe (isValidHandle checks
+ * /^[a-z0-9]+(?:-[a-z0-9]+)*$/). Seller CSVs carry handles straight from their
+ * catalog — e.g. "women's-heels" (apostrophe) — so normalise to Medusa's own
+ * slug rules (`toHandle`) and trim stray leading/trailing hyphens. Returns ""
+ * when nothing usable remains, which lets Medusa auto-generate from the title.
+ *
+ * MUST be applied consistently to the import CSV (the handle the product is
+ * created with) AND to extractSellerImportSeeds' productHandle (the key the
+ * post-import taxonomy linking looks the product up by) or the link silently
+ * misses. It is idempotent, so running it on either the original or prepared
+ * CSV yields the same handle.
+ */
+export function toUrlSafeHandle(value: string): string {
+  return toHandle(value ?? "").replace(/^-+|-+$/g, "")
+}
+
 export function toMedusaImportRows(rows: CsvRow[]): CsvRow[] {
   return rows.map((row) => {
     return Object.entries(row).reduce<CsvRow>((safeRow, [header, value]) => {
@@ -98,7 +117,8 @@ export function toMedusaImportRows(rows: CsvRow[]): CsvRow[] {
         return safeRow
       }
 
-      safeRow[header] = value
+      safeRow[header] =
+        header === "Product Handle" ? toUrlSafeHandle(value) : value
       return safeRow
     }, {})
   })
