@@ -3,6 +3,13 @@
   --fg: #16181d;
   --muted: #6b7280;
   --border: #e5e7eb;
+
+  /* Store-config driven — overridden per-tenant via <html style="..."> */
+  --store-primary: #111111;
+  --store-accent: #374151;
+  --store-secondary: #ffffff;
+  --store-font-heading: ui-sans-serif, system-ui, sans-serif;
+  --store-font-body: ui-sans-serif, system-ui, sans-serif;
 }
 
 * {

@@ -856,3 +856,169 @@ export async function dashboardCounts(knex: Knex): Promise<{
     totalTenants: Number(total?.count ?? 0),
   }
 }
+
+// --- store_config ------------------------------------------------------------
+
+export type TrustBadge = {
+  icon: string
+  title: string
+  description: string
+}
+
+export type HeroCta = {
+  primary_label: string
+  primary_link: string
+  secondary_label?: string
+  secondary_link?: string
+}
+
+export type FilterConfig = {
+  enabled: string[]
+  order: string[]
+  labels: Record<string, string>
+}
+
+export type StoreConfig = {
+  tenant_id: string
+  template_id: string | null
+  // Branding
+  logo_url: string | null
+  store_name: string | null
+  tagline: string | null
+  favicon_url: string | null
+  // Theme
+  primary_color: string | null
+  secondary_color: string | null
+  accent_color: string | null
+  color_mode: "light" | "dark"
+  font_heading: string | null
+  font_body: string | null
+  // Homepage
+  announcement_enabled: boolean
+  announcement_text: string | null
+  hero_image_url: string | null
+  hero_heading: string | null
+  hero_subtext: string | null
+  hero_cta: HeroCta | null
+  trust_badges: TrustBadge[] | null
+  // Policies
+  return_policy: string | null
+  shipping_policy: string | null
+  privacy_policy: string | null
+  terms_policy: string | null
+  // Contact
+  about_text: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  whatsapp_number: string | null
+  instagram_url: string | null
+  youtube_url: string | null
+  gst_number: string | null
+  business_address: string | null
+  // SEO
+  seo_title: string | null
+  seo_description: string | null
+  seo_og_image_url: string | null
+  // Commerce / Settings
+  free_shipping_threshold: number | null
+  cod_enabled: boolean
+  whatsapp_notifications_enabled: boolean
+  custom_domain: string | null
+  is_published: boolean
+  // Filters
+  filter_config: FilterConfig | null
+  created_at: string
+  updated_at: string
+}
+
+export type StoreCustomizationFields = Partial<
+  Omit<StoreConfig, "tenant_id" | "template_id" | "created_at" | "updated_at">
+>
+
+/** Returns the tenant's store config, or null if they haven't saved anything yet. */
+export async function getStoreConfig(
+  knex: Knex,
+  tenantId: string
+): Promise<StoreConfig | null> {
+  const row = await knex<StoreConfig>("store_config").where({ tenant_id: tenantId }).first()
+  return row ?? null
+}
+
+export class TemplateAlreadySetError extends Error {
+  constructor() {
+    super("A template has already been selected and cannot be changed.")
+    this.name = "TemplateAlreadySetError"
+  }
+}
+
+/**
+ * Sets the tenant's template for the first time. Throws TemplateAlreadySetError
+ * if a template is already locked in. Upserts the config row so it works even
+ * if the seller has never saved customization settings before.
+ */
+export async function setTemplateId(
+  knex: Knex,
+  tenantId: string,
+  templateId: string
+): Promise<StoreConfig> {
+  const existing = await knex<StoreConfig>("store_config")
+    .where({ tenant_id: tenantId })
+    .first("template_id")
+
+  if (existing?.template_id) {
+    throw new TemplateAlreadySetError()
+  }
+
+  await knex("store_config")
+    .insert({ tenant_id: tenantId, template_id: templateId, updated_at: knex.fn.now() })
+    .onConflict("tenant_id")
+    .merge({ template_id: templateId, updated_at: knex.fn.now() })
+
+  const updated = await knex<StoreConfig>("store_config")
+    .where({ tenant_id: tenantId })
+    .first()
+
+  if (!updated) {
+    throw new Error("Could not read saved store config")
+  }
+
+  return updated
+}
+
+/**
+ * Updates only the customization fields — never touches template_id.
+ * Upserts the row so it works even if the seller hasn't saved before.
+ */
+const JSON_FIELDS = ["hero_cta", "trust_badges", "filter_config"] as const
+
+function serializeJsonFields(fields: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...fields }
+  for (const key of JSON_FIELDS) {
+    if (key in out && out[key] !== null && typeof out[key] === "object") {
+      out[key] = JSON.stringify(out[key])
+    }
+  }
+  return out
+}
+
+export async function updateStoreCustomization(
+  knex: Knex,
+  tenantId: string,
+  fields: StoreCustomizationFields
+): Promise<StoreConfig> {
+  const serialized = serializeJsonFields(fields as Record<string, unknown>)
+  await knex("store_config")
+    .insert({ tenant_id: tenantId, ...serialized, updated_at: knex.fn.now() })
+    .onConflict("tenant_id")
+    .merge({ ...serialized, updated_at: knex.fn.now() })
+
+  const updated = await knex<StoreConfig>("store_config")
+    .where({ tenant_id: tenantId })
+    .first()
+
+  if (!updated) {
+    throw new Error("Could not read saved store config")
+  }
+
+  return updated
+}

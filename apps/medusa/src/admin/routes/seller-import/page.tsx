@@ -50,7 +50,7 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
   return body as T
 }
 
-const SellerImportPage = () => {
+const ProductUploadPage = () => {
   const [file, setFile] = useState<File | null>(null)
   const [sellerName, setSellerName] = useState("Selfkart Seller")
   const [stockedQuantity, setStockedQuantity] = useState("100")
@@ -143,9 +143,9 @@ const SellerImportPage = () => {
     <Container className="divide-y p-0">
       <div className="flex items-center justify-between px-6 py-4">
         <div>
-          <Heading level="h1">Seller Import</Heading>
+          <Heading level="h1">Product Upload</Heading>
           <Text className="text-ui-fg-subtle" size="small">
-            Upload products, catalogue links, and starter inventory in one flow.
+            Upload a product CSV file and set the starting stock quantity.
           </Text>
         </div>
         <Badge color={status === "Failed" ? "red" : status === "Imported" ? "green" : "grey"}>
@@ -228,8 +228,8 @@ const SummaryItem = ({ label, value }: { label: string; value: number }) => {
 }
 
 export const config = defineRouteConfig({
-  label: "Seller Import",
+  label: "Product Upload",
   icon: ArrowUpTray,
 })
 
-export default SellerImportPage
+export default ProductUploadPage

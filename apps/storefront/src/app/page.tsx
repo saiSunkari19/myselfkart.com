@@ -1,12 +1,12 @@
 import Link from "next/link"
 
 import { StorefrontStatePage } from "../components/storefront-state"
+import { GlowLivePage } from "./preview/glow/_live"
 import { formatMoney } from "../lib/format"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
+import { fetchStoreConfig } from "../lib/store-config"
 
-// The tenant is derived from the request Host, so this page is per-tenant and
-// must never be statically cached or shared across tenants.
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
@@ -24,11 +24,108 @@ export default async function HomePage() {
     return <StorefrontStatePage state="suspended" />
   }
 
-  const products = await listTenantProducts(tenant)
+  const [products, config] = await Promise.all([
+    listTenantProducts(tenant),
+    fetchStoreConfig(tenant),
+  ])
+
+  if (config?.template_id === "glow") return <GlowLivePage config={config} products={products} />
+
+  const heroCta = config?.hero_cta
+  const freeShipping = config?.free_shipping_threshold
 
   return (
     <main>
-      <h1>Shop</h1>
+      {/* Hero */}
+      {(config?.hero_heading || config?.hero_subtext) && (
+        <section
+          style={{
+            background: config.hero_image_url
+              ? `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${config.hero_image_url}) center/cover no-repeat`
+              : "var(--store-primary)",
+            color: "#fff",
+            borderRadius: 12,
+            padding: "clamp(2.5rem, 8vw, 5rem) clamp(1.5rem, 5vw, 3rem)",
+            marginBottom: "2rem",
+          }}
+        >
+          {config.hero_heading && (
+            <h1
+              style={{
+                margin: "0 0 0.5rem",
+                fontSize: "clamp(1.75rem, 5vw, 3rem)",
+                fontWeight: 700,
+                fontFamily: "var(--store-font-heading)",
+                lineHeight: 1.1,
+              }}
+            >
+              {config.hero_heading}
+            </h1>
+          )}
+          {config.hero_subtext && (
+            <p
+              style={{
+                margin: "0 0 1.5rem",
+                fontSize: "clamp(0.95rem, 2vw, 1.15rem)",
+                opacity: 0.9,
+              }}
+            >
+              {config.hero_subtext}
+            </p>
+          )}
+          {heroCta && (
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link
+                href={heroCta.primary_link}
+                style={{
+                  background: "#fff",
+                  color: "var(--store-primary)",
+                  padding: "0.6rem 1.4rem",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  fontSize: "0.95rem",
+                }}
+              >
+                {heroCta.primary_label}
+              </Link>
+              {heroCta.secondary_label && heroCta.secondary_link && (
+                <Link
+                  href={heroCta.secondary_link}
+                  style={{
+                    border: "2px solid rgba(255,255,255,0.7)",
+                    color: "#fff",
+                    padding: "0.6rem 1.4rem",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  {heroCta.secondary_label}
+                </Link>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Products */}
+      <h2
+        style={{
+          fontFamily: "var(--store-font-heading)",
+          fontWeight: 700,
+          margin: "0 0 0.25rem",
+        }}
+      >
+        Products
+      </h2>
+      {freeShipping != null && (
+        <p style={{ margin: "0 0 1rem", color: "var(--store-primary)", fontWeight: 500, fontSize: "0.9rem" }}>
+          Free shipping on orders above ₹{freeShipping.toLocaleString("en-IN")}
+        </p>
+      )}
+
       {products.length === 0 ? (
         <p className="state">No products are available yet.</p>
       ) : (
