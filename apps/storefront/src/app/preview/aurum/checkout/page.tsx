@@ -51,7 +51,6 @@ export default function CheckoutPage() {
                   width: 32, height: 32, border: `1.5px solid ${isDone ? "#b8962e" : isActive ? "#1a1410" : "#e8e0d4"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 12, fontWeight: 600,
-                  color: isDone ? "#b8962e" : isActive ? "#1a1410" : "#a09080",
                   background: isDone ? "#fdf9f4" : isActive ? "#1a1410" : "#fff",
                   color: isDone ? "#b8962e" : isActive ? "#fff" : "#a09080",
                 }}>
