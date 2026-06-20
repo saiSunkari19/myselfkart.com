@@ -372,10 +372,12 @@ const LogoUpload = ({
 const TemplateCard = ({
   template,
   isDefault,
+  storefrontBase,
   onSelect,
 }: {
   template: Template
   isDefault: boolean
+  storefrontBase: string
   onSelect: (t: Template) => void
 }) => (
   <div
@@ -387,7 +389,7 @@ const TemplateCard = ({
   >
     <div className="relative overflow-hidden rounded-md bg-ui-bg-subtle" style={{ height: 144 }}>
       <iframe
-        src={`${STOREFRONT_BASE}${template.preview_path}`}
+        src={`${storefrontBase}${template.preview_path}`}
         title={`${template.name} preview`}
         scrolling="no"
         style={{
@@ -425,7 +427,7 @@ const TemplateCard = ({
       <Button
         variant="secondary"
         size="small"
-        onClick={() => window.open(`${STOREFRONT_BASE}${template.preview_path}`, "_blank")}
+        onClick={() => window.open(`${storefrontBase}${template.preview_path}`, "_blank")}
       >
         Preview
       </Button>
@@ -442,9 +444,11 @@ const TemplateCard = ({
 
 const TemplatePicker = ({
   templates,
+  storefrontBase,
   onConfirmed,
 }: {
   templates: Template[]
+  storefrontBase: string
   onConfirmed: (config: StoreConfig) => void
 }) => {
   const [pending, setPending] = useState<Template | null>(null)
@@ -490,6 +494,7 @@ const TemplatePicker = ({
               key={t.id}
               template={t}
               isDefault={t.is_default}
+              storefrontBase={storefrontBase}
               onSelect={(tpl) => {
                 setPending(tpl)
                 setError(null)
@@ -1581,9 +1586,11 @@ const FiltersTab = ({ config }: { config: StoreConfig }) => {
 const CustomizeView = ({
   initialConfig,
   templates,
+  storefrontBase,
 }: {
   initialConfig: StoreConfig
   templates: Template[]
+  storefrontBase: string
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>("branding")
   const [config] = useState<StoreConfig>(initialConfig)
@@ -1621,13 +1628,7 @@ const CustomizeView = ({
           <Button
             variant="secondary"
             size="small"
-            onClick={() =>
-              selectedTemplate &&
-              window.open(
-                `${STOREFRONT_BASE}${selectedTemplate.preview_path}`,
-                "_blank"
-              )
-            }
+            onClick={() => window.open(storefrontBase || "/", "_blank")}
           >
             Preview store
           </Button>
@@ -1717,11 +1718,16 @@ const SellerTemplatesPage = () => {
     )
   }
 
+  // Prefer the tenant's real storefront origin (e.g. https://cloth.myselfkart.com)
+  // returned by the API; fall back to the dev default only when it's missing.
+  const storefrontBase = storefrontUrl || STOREFRONT_BASE
+
   // State 1: no template yet → pick one
   if (!config?.template_id || showPicker) {
     return (
       <TemplatePicker
         templates={templates}
+        storefrontBase={storefrontBase}
         onConfirmed={(updated) => { setConfig(updated); setShowPicker(false) }}
       />
     )
@@ -1740,7 +1746,13 @@ const SellerTemplatesPage = () => {
   }
 
   // State 3: fully set up → tabbed advanced settings
-  return <CustomizeView initialConfig={config} templates={templates} />
+  return (
+    <CustomizeView
+      initialConfig={config}
+      templates={templates}
+      storefrontBase={storefrontBase}
+    />
+  )
 }
 
 export const config = defineRouteConfig({

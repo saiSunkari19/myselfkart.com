@@ -40,6 +40,31 @@ function shouldUseReadTransaction(req: MedusaRequest): boolean {
   return READ_TRANSACTION_METHODS.has(req.method.toUpperCase())
 }
 
+/**
+ * Core /admin routes that opt out of authentication (`export AUTHENTICATE =
+ * false`). The framework never runs the user-auth middleware for them, so
+ * req.auth_context is always empty — there is no session to derive a tenant
+ * from. They also read no tenant-scoped data (feature flags live in memory;
+ * invite acceptance predates a session), so requiring a tenant would only break
+ * them. The admin dashboard fetches /admin/feature-flags on every load, so a 403
+ * here breaks the whole shell. Let these through with no tenant context; RLS
+ * still fails closed for any tenant table (which they don't touch anyway).
+ */
+const TENANT_EXEMPT_ADMIN_PATHS = new Set([
+  "/admin/feature-flags",
+  "/admin/invites/accept",
+])
+
+function isTenantExemptAdminPath(req: MedusaRequest): boolean {
+  // This middleware is mounted via `app.use("/admin*", ...)`, so Express strips
+  // the matched prefix from req.path — match the full original URL instead,
+  // dropping the query string and any trailing slash.
+  const pathname = (req.originalUrl || req.url)
+    .split("?")[0]
+    .replace(/\/+$/, "")
+  return TENANT_EXEMPT_ADMIN_PATHS.has(pathname)
+}
+
 function resolvePgConnection(req: MedusaRequest): PgConnectionLike | undefined {
   const scope = (req as MedusaRequest & {
     scope?: { resolve?: (key: string) => unknown }
@@ -146,6 +171,12 @@ export function tenantContextMiddleware(
   res: MedusaResponse,
   next: MedusaNextFunction
 ) {
+  // Auth-exempt core routes carry no session/tenant by design — let them run
+  // without tenant context instead of 403'ing the admin shell.
+  if (isTenantExemptAdminPath(req)) {
+    return next()
+  }
+
   const testTenantId = resolveTestTenant(req)
   if (testTenantId) {
     return runWithTenantRequestContext(

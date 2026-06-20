@@ -2,6 +2,10 @@ import Link from "next/link"
 
 import { StorefrontStatePage } from "../components/storefront-state"
 import { GlowLivePage } from "./preview/glow/_live"
+import { VoltLivePage } from "./preview/volt/_live"
+import { ThreadLivePage } from "./preview/thread/_live"
+import { AurumLivePage } from "./preview/aurum/_live"
+import { EventpassLivePage } from "./preview/eventpass/_live"
 import { formatMoney } from "../lib/format"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
@@ -29,7 +33,16 @@ export default async function HomePage() {
     fetchStoreConfig(tenant),
   ])
 
-  if (config?.template_id === "glow") return <GlowLivePage config={config} products={products} />
+  // Each picked template renders its own live design at the tenant root, fed the
+  // tenant's real products + store config. No template (null) falls through to
+  // the generic hero + product grid below.
+  switch (config?.template_id) {
+    case "glow":      return <GlowLivePage config={config} products={products} />
+    case "volt":      return <VoltLivePage config={config} products={products} />
+    case "thread":    return <ThreadLivePage config={config} products={products} />
+    case "aurum":     return <AurumLivePage config={config} products={products} />
+    case "eventpass": return <EventpassLivePage config={config} products={products} />
+  }
 
   const heroCta = config?.hero_cta
   const freeShipping = config?.free_shipping_threshold

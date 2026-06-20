@@ -7,6 +7,17 @@ import "./globals.css"
 
 export const dynamic = "force-dynamic"
 
+// Templates that ship their own nav + announcement bar; the default chrome below
+// must stay hidden for these so it doesn't double up. A null template_id (no
+// template picked yet) still gets the default header.
+const SELF_CHROME_TEMPLATES = new Set([
+  "glow",
+  "volt",
+  "thread",
+  "aurum",
+  "eventpass",
+])
+
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await resolveTenant()
   const config = tenant ? await fetchStoreConfig(tenant) : null
@@ -53,7 +64,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body style={{ fontFamily: "var(--store-font-body)" }}>
         {/* Templates with their own nav/announcement handle this themselves */}
-        {config?.template_id !== "glow" && (
+        {!SELF_CHROME_TEMPLATES.has(config?.template_id ?? "") && (
           <>
             {config?.announcement_enabled && config.announcement_text && (
               <div
