@@ -4,6 +4,7 @@ import Link from "next/link"
 import { PageLoader, Footer } from "./_components"
 import { VoltNav } from "./_live"
 import { RazorpayCheckout } from "../../../components/razorpay-checkout"
+import { SavedAddressPicker } from "../../../components/storefront/account/saved-address-picker"
 import {
   removeLineItemAction,
   updateLineItemAction,
@@ -119,7 +120,7 @@ export function VoltCartLivePage({ config, cart }: CartProps) {
 }
 
 /* ---- Checkout ---- */
-export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error }: CheckoutProps) {
+export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   const storeName = config?.store_name ?? "VOLT"
 
   if (!cart || cart.items.length === 0) {
@@ -169,6 +170,9 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
                   <div className={s.formCardHeadTitle}>Shipping Information</div>
                 </div>
                 <div className={s.formCardBody}>
+                  {savedAddresses && savedAddresses.length > 0 ? (
+                    <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? undefined} />
+                  ) : null}
                   <form action={setAddressAction} className={s.formGrid}>
                     <div className={s.formGroup}><label className={s.formLabel}>First Name</label><input name="first_name" className={s.formInput} defaultValue={addr?.first_name ?? ""} required /></div>
                     <div className={s.formGroup}><label className={s.formLabel}>Last Name</label><input name="last_name" className={s.formInput} defaultValue={addr?.last_name ?? ""} required /></div>

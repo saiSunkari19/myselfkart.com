@@ -29,3 +29,11 @@ export type {
 } from "../medusa/cart"
 
 export type { StoreOrder as OrderView } from "../medusa/order"
+
+// Customer view models (account, addresses, order history). Surfaced through the
+// views barrel so themes depend on it, not the Medusa data layer.
+export type {
+  CustomerView,
+  CustomerAddressView,
+  CustomerOrderListItem,
+} from "../medusa/customer"

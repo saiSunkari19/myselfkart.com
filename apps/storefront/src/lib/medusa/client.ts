@@ -25,13 +25,18 @@ export const baseMedusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL })
  * middleware sets `app.current_tenant` and Postgres RLS scopes every query). The
  * browser never sees either value — this client only runs server-side.
  */
-export function getTenantMedusa(tenant: TenantResolution): Medusa {
+export function getTenantMedusa(tenant: TenantResolution, customerToken?: string | null): Medusa {
   return new Medusa({
     baseUrl: MEDUSA_BACKEND_URL,
     publishableKey: tenant.publishableKey ?? undefined,
     globalHeaders: {
       "x-selfkart-tenant-id": tenant.tenantId,
       "x-selfkart-tenant-sig": signStorefrontValue(tenant.tenantId),
+      // When the buyer is signed in, carry their tenant-scoped customer token so
+      // /store/customers/me* + order/address calls resolve the right customer.
+      // The token's actor is bound to this tenant, and Postgres RLS still scopes
+      // every read — a token from another tenant simply resolves to nothing here.
+      ...(customerToken ? { authorization: `Bearer ${customerToken}` } : {}),
     },
   })
 }

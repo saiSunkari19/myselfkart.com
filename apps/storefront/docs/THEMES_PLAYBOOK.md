@@ -66,10 +66,20 @@ export interface StoreTheme {
   Checkout(p: CheckoutProps): ReactNode
   Deals(p: DealsProps): ReactNode
   Order(p: OrderProps): ReactNode
+  Login(p: LoginProps): ReactNode      // sign in / register / forgot-password
+  Account(p: AccountProps): ReactNode  // overview / orders / addresses (by section)
   Nav(p: NavProps): ReactNode
   Footer(p: FooterProps): ReactNode
 }
 ```
+
+> **Login/Account are implemented once, skinned per theme.** The shared logic
+> lives in `components/storefront/account/*` (`LoginForm`, `AccountContent`, …);
+> a theme's `Login`/`Account` slots are thin wrappers in `preview/<t>/_account-live.tsx`
+> that drop those into the theme's nav/footer chrome (see any theme for the pattern).
+> Checkout also gets a saved-address picker: `CheckoutProps.savedAddresses` +
+> `<SavedAddressPicker>` above the address form. Customer auth + the per-store
+> account model are documented in the project memory `multitenant-customer-auth`.
 
 ```ts
 // lib/themes/index.ts

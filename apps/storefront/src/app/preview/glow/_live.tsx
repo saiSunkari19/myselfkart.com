@@ -72,6 +72,7 @@ export function GlowLiveNav({ config, hasDeals }: NavProps) {
         <ul className={s.navLinks}>
           <li><Link href="/shop" className={s.navLink}>Shop</Link></li>
           {hasDeals && <li><Link href="/deals" className={s.navLink}>Offers</Link></li>}
+          <li><Link href="/account" className={s.navLink}>Account</Link></li>
         </ul>
         <div className={s.navActions}>
           <Link href="/cart" className={s.navCart}>

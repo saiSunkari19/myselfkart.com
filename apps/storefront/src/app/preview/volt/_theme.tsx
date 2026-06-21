@@ -4,6 +4,7 @@ import { VoltShopLivePage } from "./_shop-live"
 import { VoltDealsLivePage } from "./_deals-live"
 import { VoltPdpLivePage } from "./_pdp-live"
 import { VoltCartLivePage, VoltCheckoutLivePage, VoltOrderLivePage } from "./_functional-live"
+import { VoltLoginPage, VoltAccountPage } from "./_account-live"
 import { Footer } from "./_components"
 
 /**
@@ -21,4 +22,6 @@ export const VoltTheme: StoreTheme = {
   Cart: VoltCartLivePage,
   Checkout: VoltCheckoutLivePage,
   Order: VoltOrderLivePage,
+  Login: VoltLoginPage,
+  Account: VoltAccountPage,
 }

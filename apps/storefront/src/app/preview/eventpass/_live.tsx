@@ -1,21 +1,52 @@
 "use client"
 
 import Link from "next/link"
-import React, { useState } from "react"
+import React from "react"
 import type { StoreConfig } from "../../../lib/store-config"
-import type { StoreProduct } from "../../../lib/medusa/products"
-import { NavBar, Footer, EventCard, SectionHeader, T } from "./_components"
-import { EVENTS, CATEGORIES, CITIES, type Event } from "./_data"
+import type { ProductView } from "../../../lib/views"
+import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
 
-/* ---------------------------------------------------------------------------
- * Map a real Medusa StoreProduct → eventpass's EVENT shape.
+/**
+ * Eventpass theme — live slots. The Eventpass (events vertical) preview design
+ * fed REAL Medusa view models and wired to live routes (`/shop`, `/deals`,
+ * `/products/<handle>`, `/cart`). No mock data, no legacy preview links, no
+ * `useTemplateConfig` — config arrives as props from the server route.
  *
- * eventpass is built around EVENTS (not products): each real product becomes
- * one "event / ticket". Medusa lacks event-specific fields (date, venue, city,
- * category, time) so we fill those with sensible cycling placeholders — same
- * strategy glow used for unknown fields. The handle is stashed on `id` so the
- * card can deep-link to the real product page `/products/<handle>`.
- * ------------------------------------------------------------------------- */
+ * Eventpass has no CSS module: it styles everything inline from the `T` design
+ * token object. We redefine `T` here (rather than import the preview
+ * `_components.tsx`, which pulls in `useTemplateConfig`/mock `_data`) and export
+ * it for the other slot files to share. ProductView fields map to event
+ * language: title → event title, thumbnail → event image, price → ticket "from"
+ * price, description → blurb, tags[0] → category label.
+ */
+
+// ---------------------------------------------------------------------------
+// Design tokens (mirrors preview _components.tsx `T`, token-only)
+// ---------------------------------------------------------------------------
+export const T = {
+  bg: "#ffffff",
+  bgSubtle: "#f8f8fc",
+  bgCard: "#ffffff",
+  border: "#e5e7eb",
+  borderSubtle: "#f0f0f6",
+  text: "#0f0f0f",
+  textMuted: "#6b7280",
+  textLight: "#9ca3af",
+  accent: "#6366f1",
+  accentLight: "#eef2ff",
+  accentHover: "#4f46e5",
+  danger: "#ef4444",
+  success: "#10b981",
+  warning: "#f59e0b",
+  shadow: "0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)",
+  shadowMd: "0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+  shadowLg: "0 12px 40px rgba(0,0,0,0.1)",
+  radius: 14,
+  radiusSm: 10,
+  radiusLg: 20,
+}
+
+const FONT_FAMILY = "'Inter', ui-sans-serif, system-ui, sans-serif"
 
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
@@ -26,67 +57,38 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1531243269054-5ebf6f34081e?w=800&q=80",
 ]
 
-const TAGS: { tag: string; tagColor: string }[] = [
-  { tag: "Trending", tagColor: "#f59e0b" },
-  { tag: "Featured", tagColor: "#6366f1" },
-  { tag: "New", tagColor: "#10b981" },
-  { tag: "Almost Full", tagColor: "#ef4444" },
-]
-
-const PLACEHOLDER_DATES = [
-  "Aug 12, 2026",
-  "Sep 03, 2026",
-  "Oct 19, 2026",
-  "Nov 07, 2026",
-  "Dec 21, 2026",
-]
-
-// Real-product events stash the handle on `id` so the card can link to it.
-type LiveEvent = Event & { handle: string | null }
-
-function toEventpassEvent(p: StoreProduct, index: number): LiveEvent {
-  const price = p.variants?.find(v => v.calculated_price?.calculated_amount != null)
-    ?.calculated_price?.calculated_amount ?? 0
-  const img = p.thumbnail ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
-  const city = CITIES[index % CITIES.length].name
-  const cat = CATEGORIES[index % CATEGORIES.length]
-  const tag = TAGS[index % TAGS.length]
-  const date = PLACEHOLDER_DATES[index % PLACEHOLDER_DATES.length]
-  const desc = p.description ?? "Book your tickets now — limited availability."
-
-  return {
-    id: p.id,
-    handle: p.handle,
-    title: p.title,
-    category: cat.name,
-    date,
-    time: "7:00 PM onwards",
-    city,
-    venue: `${city} Arena, ${city}`,
-    price,
-    image: img,
-    heroImage: img,
-    tag: tag.tag,
-    tagColor: tag.tagColor,
-    description: desc,
-    highlights: ["Instant Booking", "Guest Checkout", "QR Tickets"],
-    artists: [],
-    gallery: [img],
-    tickets: [{ type: "General Admission", price, available: 500 }],
-    faqs: [],
-  }
+export function eventImage(p: ProductView, index = 0): string {
+  return p.thumbnail ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
 }
 
-/* ---------------------------------------------------------------------------
- * Live event card — visually mirrors the template's EventCard but links to the
- * real product page `/products/<handle>` so checkout works. Falls back to the
- * template's EventCard (mock-data deep links) when there's no real handle.
- * ------------------------------------------------------------------------- */
+function inr(amount: number | null | undefined): string {
+  return `₹${(amount ?? 0).toLocaleString("en-IN")}`
+}
 
-function LiveEventCard({ event, accent }: { event: LiveEvent; accent: string }) {
-  if (!event.handle) return <EventCard event={event} />
+/** The accent colour: seller brand first, then Eventpass indigo. */
+export function eventAccent(config: StoreConfig | null): string {
+  return config?.primary_color || config?.accent_color || T.accent
+}
+
+/** Shared page wrapper (background + font). */
+export function pageShell(): React.CSSProperties {
+  return { background: T.bg, minHeight: "100vh", fontFamily: FONT_FAMILY }
+}
+
+// ---------------------------------------------------------------------------
+// Live event card → real PDP (`/products/<handle>`)
+// ---------------------------------------------------------------------------
+export function EventpassEventCard({
+  product,
+  index = 0,
+  accent,
+}: {
+  product: ProductView
+  index?: number
+  accent: string
+}) {
   return (
-    <Link href={`/products/${event.handle}`} style={{ textDecoration: "none" }}>
+    <Link href={product.href} style={{ textDecoration: "none" }}>
       <div
         style={{
           borderRadius: T.radiusLg, overflow: "hidden",
@@ -105,41 +107,48 @@ function LiveEventCard({ event, accent }: { event: LiveEvent; accent: string }) 
       >
         <div style={{ position: "relative", paddingTop: "60%" }}>
           <img
-            src={event.image}
-            alt={event.title}
+            src={eventImage(product, index)}
+            alt={product.title}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
-          <span style={{
-            position: "absolute", top: 12, left: 12,
-            background: event.tagColor, color: "#fff",
-            fontSize: 11, fontWeight: 700, borderRadius: 6, padding: "3px 10px",
-          }}>{event.tag}</span>
-          <span style={{
-            position: "absolute", top: 12, right: 12,
-            background: "rgba(255,255,255,0.95)", color: T.textMuted,
-            fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "4px 10px",
-          }}>{event.category}</span>
+          {product.isOnSale && (
+            <span style={{
+              position: "absolute", top: 12, left: 12,
+              background: T.danger, color: "#fff",
+              fontSize: 11, fontWeight: 700, borderRadius: 6, padding: "3px 10px",
+            }}>Offer</span>
+          )}
+          {product.tags[0] && (
+            <span style={{
+              position: "absolute", top: 12, right: 12,
+              background: "rgba(255,255,255,0.95)", color: T.textMuted,
+              fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "4px 10px",
+            }}>{product.tags[0]}</span>
+          )}
         </div>
         <div style={{ padding: "18px 20px 20px" }}>
-          <h3 style={{ color: T.text, margin: "0 0 8px", fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>
-            {event.title}
+          <h3 style={{ color: T.text, margin: "0 0 12px", fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>
+            {product.title}
           </h3>
-          <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-            <span style={{ color: T.textMuted, fontSize: 13 }}>📅 {event.date}</span>
-            <span style={{ color: T.textMuted, fontSize: 13 }}>📍 {event.city}</span>
-          </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ color: T.textLight, fontSize: 11, marginBottom: 2 }}>STARTING FROM</div>
-              <div style={{ color: T.text, fontWeight: 800, fontSize: 20 }}>₹{event.price.toLocaleString()}</div>
+              <div style={{ color: T.text, fontWeight: 800, fontSize: 20 }}>
+                {inr(product.price)}
+                {product.originalPrice && (
+                  <span style={{ color: T.textLight, fontSize: 13, fontWeight: 600, textDecoration: "line-through", marginLeft: 8 }}>
+                    {inr(product.originalPrice)}
+                  </span>
+                )}
+              </div>
             </div>
-            <button style={{
+            <span style={{
               background: accent,
               color: "#fff", border: "none", borderRadius: T.radiusSm,
-              padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              padding: "10px 20px", fontSize: 13, fontWeight: 700,
             }}>
               Book Now →
-            </button>
+            </span>
           </div>
         </div>
       </div>
@@ -147,135 +156,261 @@ function LiveEventCard({ event, accent }: { event: LiveEvent; accent: string }) 
   )
 }
 
-/* ---------------------------------------------------------------------------
- * Hero — config-aware. Keeps the eventpass search-bar hero but renders the
- * seller's hero_heading / hero_subtext / hero_image_url when provided.
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Nav (live routes) — fresh, config from props, no useTemplateConfig
+// ---------------------------------------------------------------------------
+export function EventpassNav({ config, hasDeals }: NavProps) {
+  const storeName = config?.store_name ?? "EventPass"
+  return (
+    <nav style={{
+      position: "sticky", top: 0, left: 0, right: 0, zIndex: 100,
+      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)",
+      borderBottom: `1px solid ${T.border}`,
+    }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 clamp(16px, 4vw, 40px)", height: 64,
+      }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
+          {config?.logo_url ? (
+            <img src={config.logo_url} alt={storeName} style={{ height: 28, objectFit: "contain" }} />
+          ) : (
+            <>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 15, fontWeight: 800, color: "#fff",
+              }}>{storeName.charAt(0).toUpperCase()}</div>
+              <span style={{ color: T.text, fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
+                {storeName}
+              </span>
+            </>
+          )}
+        </Link>
 
-function HeroSection({ config, accent }: { config: StoreConfig | null; accent: string }) {
-  const [search, setSearch] = useState("")
-  const [city, setCity] = useState("All Cities")
+        <div className="ep-nav-links" style={{ display: "flex", gap: 28 }}>
+          <Link href="/shop" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Discover</Link>
+          {hasDeals && (
+            <Link href="/deals" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Offers</Link>
+          )}
+        </div>
 
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <Link href="/account" style={{
+            color: T.textMuted, textDecoration: "none",
+            fontSize: 14, fontWeight: 500, padding: "8px 14px",
+          }}>
+            Account
+          </Link>
+          <Link href="/cart" style={{
+            display: "flex", alignItems: "center", gap: 6,
+            color: T.textMuted, textDecoration: "none",
+            fontSize: 14, fontWeight: 500, padding: "8px 14px",
+            borderRadius: T.radiusSm, border: `1px solid ${T.border}`,
+          }}>
+            🛒 Cart
+          </Link>
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .ep-nav-links { display: none !important; }
+        }
+      `}</style>
+    </nav>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Footer (live routes) — satisfies Footer(p: FooterProps)
+// ---------------------------------------------------------------------------
+export function EventpassFooter({ config }: FooterProps & { hasDeals?: boolean }) {
+  const storeName = config?.store_name ?? "EventPass"
+  const tagline = config?.tagline ?? "Premium event discovery and ticket booking. No account needed. Just great experiences."
+  return (
+    <footer style={{
+      background: T.bgSubtle, borderTop: `1px solid ${T.border}`,
+      padding: "64px 40px 40px",
+    }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div className="ep-footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 48, marginBottom: 56 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 15, fontWeight: 800, color: "#fff",
+              }}>{storeName.charAt(0).toUpperCase()}</div>
+              <span style={{ color: T.text, fontWeight: 800, fontSize: 17 }}>{storeName}</span>
+            </div>
+            <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, maxWidth: 280, margin: 0 }}>
+              {tagline}
+            </p>
+            <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+              {config?.instagram_url && <a href={config.instagram_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>Instagram</a>}
+              {config?.youtube_url && <a href={config.youtube_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>YouTube</a>}
+            </div>
+          </div>
+          <div>
+            <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 20 }}>Discover</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Link href="/shop" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>All Events</Link>
+              <Link href="/cart" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Your Cart</Link>
+            </div>
+          </div>
+          <div>
+            <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 20 }}>Checkout</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Link href="/checkout" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Book Tickets</Link>
+            </div>
+          </div>
+        </div>
+        <div style={{
+          borderTop: `1px solid ${T.border}`, paddingTop: 24,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <span style={{ color: T.textLight, fontSize: 13 }}>
+            © 2026 {storeName}. All rights reserved.
+          </span>
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .ep-footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+        }
+      `}</style>
+    </footer>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Section header (token-styled, no mock dependency)
+// ---------------------------------------------------------------------------
+function SectionHeader({
+  label, title, subtitle, action,
+}: { label: string; title: string; subtitle?: string; action?: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: T.accentLight, borderRadius: 100,
+        padding: "5px 14px",
+      }}>
+        <span style={{ color: T.accent, fontSize: 12, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginTop: 10 }}>
+        <h2 style={{ color: T.text, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, margin: 0, letterSpacing: "-0.5px" }}>{title}</h2>
+        {action && <div style={{ flexShrink: 0 }}>{action}</div>}
+      </div>
+      {subtitle && <p style={{ color: T.textMuted, fontSize: 16, margin: "10px 0 0" }}>{subtitle}</p>}
+    </div>
+  )
+}
+
+function ViewAllLink({ href, accent }: { href: string; accent: string }) {
+  return (
+    <Link href={href} style={{ color: accent, textDecoration: "none", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>
+      View all →
+    </Link>
+  )
+}
+
+/** Real-event grid section; renders nothing when there are no events. */
+export function EventGridSection({
+  label, title, subtitle, products, accent, cta,
+}: {
+  label: string; title: string; subtitle?: string
+  products: ProductView[]; accent: string; cta?: { href: string }
+}) {
+  if (products.length === 0) return null
+  return (
+    <section style={{ padding: "72px 40px", background: T.bg }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <SectionHeader
+          label={label} title={title} subtitle={subtitle}
+          action={cta ? <ViewAllLink href={cta.href} accent={accent} /> : undefined}
+        />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
+          {products.map((p, i) => <EventpassEventCard key={p.id} product={p} index={i} accent={accent} />)}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Hero (config-aware brand chrome)
+// ---------------------------------------------------------------------------
+function HeroSection({ config, accent, hasDeals }: { config: StoreConfig | null; accent: string; hasDeals: boolean }) {
   const heroImage = config?.hero_image_url
     || "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=80"
   const heroHeading = config?.hero_heading
   const heroSub = config?.hero_subtext
-  const badgeText = config?.tagline ?? "500+ events happening across India"
-
-  const handleSearch = () => {
-    const params = new URLSearchParams()
-    if (search.trim()) params.set("q", search.trim())
-    if (city !== "All Cities") params.set("city", city)
-    window.location.href = `/events?${params.toString()}`
-  }
+  const badgeText = config?.tagline ?? "Curated events you won't want to miss"
+  const heroCta = config?.hero_cta
 
   return (
-    <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden", paddingTop: 64 }}>
-      <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: `url(${heroImage})`,
-        backgroundSize: "cover", backgroundPosition: "center",
-      }} />
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(to right, rgba(255,255,255,0.96) 38%, rgba(255,255,255,0.15) 70%, rgba(255,255,255,0) 100%)",
-      }} />
-
+    <section style={{ position: "relative", minHeight: "min(80vh, 640px)", display: "flex", alignItems: "center", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(255,255,255,0.96) 38%, rgba(255,255,255,0.15) 70%, rgba(255,255,255,0) 100%)" }} />
       <div style={{ position: "relative", zIndex: 1, padding: "60px 40px", maxWidth: 680 }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8,
           background: T.accentLight, borderRadius: 100, padding: "6px 16px", marginBottom: 28,
         }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: accent, display: "inline-block" }} />
-          <span style={{ color: accent, fontSize: 13, fontWeight: 600 }}>
-            {badgeText}
-          </span>
+          <span style={{ color: accent, fontSize: 13, fontWeight: 600 }}>{badgeText}</span>
         </div>
-
-        {heroHeading ? (
-          <h1 style={{
-            color: T.text, fontSize: "clamp(36px, 5vw, 64px)",
-            fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px", letterSpacing: "-2px",
-          }}>
-            {heroHeading}
-          </h1>
-        ) : (
-          <h1 style={{
-            color: T.text, fontSize: "clamp(36px, 5vw, 64px)",
-            fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px", letterSpacing: "-2px",
-          }}>
-            Discover<br />
-            experiences<br />
-            <span style={{ color: accent }}>worth living for</span>
-          </h1>
-        )}
-        <p style={{ color: T.textMuted, fontSize: 18, margin: "0 0 40px", lineHeight: 1.6, maxWidth: 420 }}>
+        <h1 style={{ color: T.text, fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px", letterSpacing: "-2px" }}>
+          {heroHeading ?? (
+            <>Discover<br />experiences<br /><span style={{ color: accent }}>worth living for</span></>
+          )}
+        </h1>
+        <p style={{ color: T.textMuted, fontSize: 18, margin: "0 0 36px", lineHeight: 1.6, maxWidth: 440 }}>
           {heroSub ?? "Premium events, zero friction. Browse, pick, book — no account needed."}
         </p>
-
-        <div style={{
-          display: "flex", background: "#fff",
-          borderRadius: 16, border: `1.5px solid ${T.border}`,
-          boxShadow: T.shadowMd, overflow: "hidden", maxWidth: 600,
-        }}>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 16px" }}>
-            <span style={{ marginRight: 10, fontSize: 16 }}>🔍</span>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSearch()}
-              placeholder="Search events, artists, venues…"
-              style={{
-                border: "none", outline: "none", width: "100%",
-                fontSize: 14, color: T.text, background: "transparent", padding: "16px 0",
-              }}
-            />
-          </div>
-          <div style={{
-            borderLeft: `1px solid ${T.border}`,
-            display: "flex", alignItems: "center", padding: "0 16px", gap: 6, minWidth: 130,
-          }}>
-            <span style={{ fontSize: 14 }}>📍</span>
-            <select
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              style={{ border: "none", outline: "none", fontSize: 13, color: T.textMuted, background: "transparent", cursor: "pointer" }}
-            >
-              <option>All Cities</option>
-              <option>Mumbai</option>
-              <option>Delhi</option>
-              <option>Bangalore</option>
-              <option>Pune</option>
-            </select>
-          </div>
-          <button
-            onClick={handleSearch}
-            style={{
-              background: accent,
-              color: "#fff", border: "none",
-              padding: "0 28px", fontSize: 14, fontWeight: 700,
-              cursor: "pointer", margin: 8, borderRadius: 10, whiteSpace: "nowrap",
-            }}>
-            Search
-          </button>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <Link href={heroCta?.primary_link ?? "/shop"} style={{
+            background: accent, color: "#fff", textDecoration: "none",
+            borderRadius: T.radiusSm, padding: "14px 28px", fontSize: 15, fontWeight: 700,
+          }}>{heroCta?.primary_label ?? "Browse Events"}</Link>
+          {hasDeals && (
+            <Link href="/deals" style={{
+              background: "#fff", color: T.text, textDecoration: "none",
+              border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
+              padding: "14px 28px", fontSize: 15, fontWeight: 700,
+            }}>See Offers</Link>
+          )}
         </div>
+      </div>
+    </section>
+  )
+}
 
-        <div style={{ display: "flex", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
-          {[
-            { label: "🎵 Music", q: "Music" },
-            { label: "🎤 Conferences", q: "Conference" },
-            { label: "😂 Comedy", q: "Comedy" },
-            { label: "🎨 Art & Culture", q: "Art" },
-          ].map(tag => (
-            <button
-              key={tag.label}
-              onClick={() => { window.location.href = `/events?q=${tag.q}` }}
-              style={{
-                background: "#fff", border: `1px solid ${T.border}`,
-                color: T.textMuted, borderRadius: 100,
-                padding: "6px 16px", fontSize: 13, cursor: "pointer",
-                boxShadow: T.shadow,
-              }}>{tag.label}</button>
+/** Categories (real categories; hidden when none). */
+function CategoriesSection({ categories, accent }: { categories: HomeProps["categories"]; accent: string }) {
+  if (categories.length === 0) return null
+  return (
+    <section style={{ padding: "72px 40px", background: T.bgSubtle }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <SectionHeader label="Browse by type" title="Explore Categories" subtitle="Find exactly what you're in the mood for" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
+          {categories.map(cat => (
+            <Link key={cat.id} href={cat.href} style={{ textDecoration: "none" }}>
+              <div style={{
+                background: T.bgCard, border: `1px solid ${T.border}`,
+                borderRadius: T.radiusLg, padding: "24px 16px", textAlign: "center",
+                cursor: "pointer", boxShadow: T.shadow,
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 10, color: accent }}>🎟️</div>
+                <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{cat.name}</div>
+                <div style={{ color: T.textLight, fontSize: 12 }}>{cat.count} event{cat.count !== 1 ? "s" : ""}</div>
+              </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -283,275 +418,71 @@ function HeroSection({ config, accent }: { config: StoreConfig | null; accent: s
   )
 }
 
-/* ---- StatsBar (config accent) ---- */
-const StatsBar = ({ accent }: { accent: string }) => (
-  <div style={{ background: accent, padding: "20px 40px" }}>
-    <div style={{
-      maxWidth: 1200, margin: "0 auto",
-      display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-    }}>
-      {[
-        { value: "500+", label: "Events Listed" },
-        { value: "50K+", label: "Tickets Booked" },
-        { value: "20+", label: "Cities Covered" },
-        { value: "4.9★", label: "Average Rating" },
-      ].map(s => (
-        <div key={s.label} style={{ textAlign: "center" }}>
-          <div style={{ color: "#fff", fontWeight: 800, fontSize: 24 }}>{s.value}</div>
-          <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>{s.label}</div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
-
-const ViewAllLink = ({ href, accent }: { href: string; accent: string }) => (
-  <Link href={href} style={{ color: accent, textDecoration: "none", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>
-    View all →
-  </Link>
-)
-
-/* ---- Event grids (real events, mock fallback) ---- */
-const TrendingSection = ({ events, accent }: { events: LiveEvent[]; accent: string }) => (
-  <section style={{ padding: "80px 40px", background: T.bg }}>
-    <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <SectionHeader
-        label="Hot right now"
-        title="Trending Events"
-        subtitle="Events everyone's talking about this week"
-        action={<ViewAllLink href="/events" accent={accent} />}
-      />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
-        {events.slice(0, 3).map(event => <LiveEventCard key={event.id} event={event} accent={accent} />)}
-      </div>
-    </div>
-  </section>
-)
-
-const FeaturedSection = ({ events, accent }: { events: LiveEvent[]; accent: string }) => (
-  <section style={{ padding: "0 40px 80px", background: T.bg }}>
-    <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <SectionHeader
-        label="Editor's picks"
-        title="Featured Events"
-        action={<ViewAllLink href="/events" accent={accent} />}
-      />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
-        {(events.length > 3 ? events.slice(3) : events).map(event => (
-          <LiveEventCard key={event.id} event={event} accent={accent} />
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
-/* ---- Decorative sections (mock data kept) ---- */
-const CategoriesSection = () => (
-  <section style={{ padding: "80px 40px", background: T.bgSubtle }}>
-    <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <SectionHeader label="Browse by type" title="Explore Categories" subtitle="Find exactly what you're in the mood for" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
-        {CATEGORIES.map(cat => (
-          <Link key={cat.name} href={`/events?cat=${encodeURIComponent(cat.name)}`} style={{ textDecoration: "none" }}>
-            <div style={{
-              background: T.bgCard, border: `1px solid ${T.border}`,
-              borderRadius: T.radiusLg, padding: "24px 16px", textAlign: "center",
-              cursor: "pointer", boxShadow: T.shadow,
-              transition: "transform 0.15s, box-shadow 0.15s",
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = "translateY(-2px)"
-                e.currentTarget.style.boxShadow = T.shadowMd
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = "translateY(0)"
-                e.currentTarget.style.boxShadow = T.shadow
-              }}
-            >
-              <div style={{ fontSize: 32, marginBottom: 10 }}>{cat.icon}</div>
-              <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{cat.name}</div>
-              <div style={{ color: T.textLight, fontSize: 12 }}>{cat.count} events</div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
-const CitiesSection = () => (
-  <section style={{ padding: "80px 40px", background: T.bg }}>
-    <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <SectionHeader label="Explore locally" title="Browse by City" subtitle="Events happening near you right now" />
-      <div className="ep-cities-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
-        {CITIES.map(city => (
-          <Link key={city.name} href={`/events?city=${encodeURIComponent(city.name)}`} style={{ textDecoration: "none" }}>
-            <div style={{
-              position: "relative", borderRadius: T.radiusLg, overflow: "hidden",
-              cursor: "pointer", aspectRatio: "3/4",
-              boxShadow: T.shadow, transition: "transform 0.2s",
-            }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-            >
-              <img src={city.image} alt={city.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
-              <div style={{ position: "absolute", bottom: 20, left: 20 }}>
-                <div style={{ color: "#fff", fontWeight: 800, fontSize: 20, marginBottom: 2 }}>{city.name}</div>
-                <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>{city.count} events</div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
-const HowItWorksSection = () => (
-  <section style={{ padding: "80px 40px", background: T.bgSubtle }}>
-    <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-      <SectionHeader label="Simple process" title="How it works" />
-      <div className="ep-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
-        {[
-          { step: "01", title: "Discover", desc: "Browse hundreds of curated events across categories, cities, and dates.", icon: "🔍" },
-          { step: "02", title: "Choose tickets", desc: "Pick your ticket type — GA, VIP, or Early Bird. Set quantity. Done.", icon: "🎟️" },
-          { step: "03", title: "Book instantly", desc: "Guest checkout. Name, email, phone. QR ticket delivered in seconds.", icon: "⚡" },
-        ].map(item => (
-          <div key={item.step}>
-            <div style={{
-              width: 64, height: 64, borderRadius: 18,
-              background: T.accentLight, margin: "0 auto 20px",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
-            }}>{item.icon}</div>
-            <div style={{ color: T.accent, fontSize: 11, fontWeight: 700, letterSpacing: "1px", marginBottom: 10 }}>STEP {item.step}</div>
-            <div style={{ color: T.text, fontWeight: 700, fontSize: 17, marginBottom: 10 }}>{item.title}</div>
-            <div style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.7 }}>{item.desc}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
-const TestimonialsSection = () => (
-  <section style={{ padding: "80px 40px", background: T.bg }}>
-    <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <SectionHeader label="What people say" title="Loved by event-goers" subtitle="Real feedback from real people" />
-      <div className="ep-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-        {[
-          { name: "Priya S.", city: "Mumbai", text: "Booked tickets in under 2 minutes. Seamless experience — no signups, just straight to the event.", rating: 5 },
-          { name: "Arjun M.", city: "Bangalore", text: "Found three amazing events I didn't even know about. The discovery is genuinely different.", rating: 5 },
-          { name: "Sneha R.", city: "Delhi", text: "Guest checkout is a game changer. Got my QR tickets on email instantly. Will definitely use again.", rating: 5 },
-        ].map((t, i) => (
-          <div key={i} style={{
-            background: T.bgCard, border: `1px solid ${T.border}`,
-            borderRadius: T.radiusLg, padding: 28, boxShadow: T.shadow,
-          }}>
-            <div style={{ color: T.warning, fontSize: 16, marginBottom: 16 }}>{"★".repeat(t.rating)}</div>
-            <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, margin: "0 0 20px", fontStyle: "italic" }}>
-              "{t.text}"
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: "50%",
-                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontWeight: 700, fontSize: 16,
-              }}>{t.name[0]}</div>
-              <div>
-                <div style={{ color: T.text, fontWeight: 700, fontSize: 14 }}>{t.name}</div>
-                <div style={{ color: T.textLight, fontSize: 13 }}>{t.city}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
-const NewsletterSection = ({ accent }: { accent: string }) => {
-  const [email, setEmail] = useState("")
+/** How it works — static brand chrome. */
+function HowItWorksSection() {
   return (
-    <section style={{ padding: "80px 40px", background: accent }}>
-      <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontSize: 44, marginBottom: 20 }}>📬</div>
-        <h2 style={{ color: "#fff", fontSize: 32, fontWeight: 800, margin: "0 0 12px", letterSpacing: "-0.5px" }}>
-          Never miss an event
-        </h2>
-        <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 16, margin: "0 0 36px" }}>
-          Curated event recommendations delivered to your inbox weekly.
-        </p>
-        <div style={{
-          display: "flex", background: "#fff",
-          borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-        }}>
-          <input
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            style={{
-              flex: 1, background: "transparent", border: "none",
-              outline: "none", padding: "16px 20px", color: T.text, fontSize: 14,
-            }}
-          />
-          <button style={{
-            background: T.text, color: "#fff", border: "none",
-            padding: "12px 24px", margin: 8, borderRadius: 10,
-            fontSize: 14, fontWeight: 700, cursor: "pointer",
-          }}>Subscribe</button>
+    <section style={{ padding: "72px 40px", background: T.bg }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", background: T.accentLight, borderRadius: 100, padding: "5px 14px", marginBottom: 12 }}>
+          <span style={{ color: T.accent, fontSize: 12, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>Simple process</span>
         </div>
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 14 }}>No spam. Unsubscribe anytime.</p>
+        <h2 style={{ color: T.text, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, margin: "0 0 40px", letterSpacing: "-0.5px" }}>How it works</h2>
+        <div className="ep-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
+          {[
+            { step: "01", title: "Discover", desc: "Browse curated events across categories and dates.", icon: "🔍" },
+            { step: "02", title: "Choose tickets", desc: "Pick your ticket type and set quantity. Done.", icon: "🎟️" },
+            { step: "03", title: "Book instantly", desc: "Guest checkout. E-tickets delivered in seconds.", icon: "⚡" },
+          ].map(item => (
+            <div key={item.step}>
+              <div style={{
+                width: 64, height: 64, borderRadius: 18,
+                background: T.accentLight, margin: "0 auto 20px",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
+              }}>{item.icon}</div>
+              <div style={{ color: T.accent, fontSize: 11, fontWeight: 700, letterSpacing: "1px", marginBottom: 10 }}>STEP {item.step}</div>
+              <div style={{ color: T.text, fontWeight: 700, fontSize: 17, marginBottom: 10 }}>{item.title}</div>
+              <div style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.7 }}>{item.desc}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )
 }
 
-/* ---------------------------------------------------------------------------
- * Main export
- * ------------------------------------------------------------------------- */
-
-export function EventpassLivePage({
-  config,
-  products: rawProducts = [],
-}: {
-  config: StoreConfig | null
-  products?: StoreProduct[]
-}) {
-  // Real events with mock fallback. The mock EVENTS satisfy the LiveEvent shape
-  // once we attach `handle: null` (so they fall back to the template card).
-  const events: LiveEvent[] = rawProducts.length > 0
-    ? rawProducts.map(toEventpassEvent)
-    : EVENTS.map(e => ({ ...e, handle: null }))
-
-  // eventpass uses inline styles around `T.accent` (#6366f1) for hero CTA,
-  // section accents, stats/newsletter backgrounds and "Book Now" buttons.
-  // Thread the seller's primary color into those accent spots.
-  const accent = config?.primary_color || config?.accent_color || T.accent
+// ---------------------------------------------------------------------------
+// Home slot
+// ---------------------------------------------------------------------------
+export function EventpassLivePage({ config, products, newArrivals, deals, categories }: HomeProps) {
+  const hasDeals = deals.length > 0
+  const accent = eventAccent(config)
+  const trending = newArrivals.length > 0 ? newArrivals : products
+  const featured = products.length > 3 ? products.slice(3) : products
 
   return (
-    <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+    <div style={pageShell()}>
       <style>{`
-        @media (max-width: 768px) {
-          .ep-cities-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .ep-3col { grid-template-columns: 1fr !important; gap: 24px !important; }
-        }
-        @media (max-width: 480px) {
-          .ep-cities-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
-        }
+        @media (max-width: 768px) { .ep-3col { grid-template-columns: 1fr !important; gap: 24px !important; } }
       `}</style>
-      <NavBar />
-      <HeroSection config={config} accent={accent} />
-      <StatsBar accent={accent} />
-      <TrendingSection events={events} accent={accent} />
-      <FeaturedSection events={events} accent={accent} />
-      <CategoriesSection />
-      <CitiesSection />
+      <EventpassNav config={config} hasDeals={hasDeals} categories={categories} />
+      <HeroSection config={config} accent={accent} hasDeals={hasDeals} />
+      <EventGridSection
+        label="Hot right now" title="Trending Events"
+        subtitle="Events everyone's talking about this week"
+        products={trending.slice(0, 6)} accent={accent} cta={{ href: "/shop" }}
+      />
+      <CategoriesSection categories={categories} accent={accent} />
+      <EventGridSection
+        label="Editor's picks" title="Featured Events"
+        products={featured.slice(0, 6)} accent={accent} cta={{ href: "/shop" }}
+      />
       <HowItWorksSection />
-      <TestimonialsSection />
-      <NewsletterSection accent={accent} />
-      <Footer />
+      <EventGridSection
+        label="Limited time" title="Special Offers"
+        subtitle="Tickets at honest prices — book before they're gone."
+        products={deals.slice(0, 3)} accent={accent} cta={{ href: "/deals" }}
+      />
+      <EventpassFooter config={config} />
     </div>
   )
 }

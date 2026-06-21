@@ -2,6 +2,9 @@ import type { StoreTheme } from "./types"
 import { DefaultTheme } from "./default"
 import { VoltTheme } from "../../app/preview/volt/_theme"
 import { GlowTheme } from "../../app/preview/glow/_theme"
+import { ThreadTheme } from "../../app/preview/thread/_theme"
+import { AurumTheme } from "../../app/preview/aurum/_theme"
+import { EventpassTheme } from "../../app/preview/eventpass/_theme"
 
 /**
  * Theme registry. Each storefront design implements `StoreTheme` and is
@@ -16,6 +19,9 @@ import { GlowTheme } from "../../app/preview/glow/_theme"
 export const THEMES = {
   volt: VoltTheme,
   glow: GlowTheme,
+  thread: ThreadTheme,
+  aurum: AurumTheme,
+  eventpass: EventpassTheme,
 } satisfies Record<string, StoreTheme>
 
 export function getTheme(templateId?: string | null): StoreTheme {

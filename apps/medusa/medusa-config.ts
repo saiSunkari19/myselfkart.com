@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from "@medusajs/utils"
+import { defineConfig, loadEnv, Modules } from "@medusajs/utils"
 
 import {
   assertTenantReadPathPatchApplied,
@@ -49,6 +49,39 @@ const r2ConfigValues = [
 const hasR2Config = r2ConfigValues.every(Boolean)
 const hasPartialR2Config = r2ConfigValues.some(Boolean) && !hasR2Config
 
+// Customer Google OAuth. One Google client for the whole platform; the callback
+// URL is a single registered host that hands the session back to the originating
+// storefront (see src/api/store/auth). Registered only when fully configured so
+// local dev without Google creds still boots (mirrors the R2 conditional).
+const googleAuth = {
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+}
+const googleAuthValues = [googleAuth.clientId, googleAuth.clientSecret, googleAuth.callbackUrl]
+const hasGoogleAuth = googleAuthValues.every(Boolean)
+const hasPartialGoogleAuth = googleAuthValues.some(Boolean) && !hasGoogleAuth
+
+// SendGrid notification provider — only used so far for customer password-reset
+// emails. Registered only when configured; the reset subscriber no-ops otherwise.
+const sendgrid = {
+  apiKey: process.env.SENDGRID_API_KEY,
+  from: process.env.SENDGRID_FROM,
+}
+const hasSendgrid = Boolean(sendgrid.apiKey && sendgrid.from)
+const hasPartialSendgrid = (sendgrid.apiKey || sendgrid.from) && !hasSendgrid
+
+// Storefront tenants live on subdomains of SELFKART_STOREFRONT_BASE_DOMAIN (plus
+// optional custom domains). The storefront server makes the /store* + /store/auth
+// SDK calls, so its origins must be allowed by CORS. A regex covers every
+// subdomain of the base domain without enumerating tenants.
+const storefrontBaseDomain = process.env.SELFKART_STOREFRONT_BASE_DOMAIN
+const baseDomainCorsRegex = storefrontBaseDomain
+  ? `/^https?:\\/\\/([a-z0-9-]+\\.)*${storefrontBaseDomain.replace(/[.]/g, "\\.")}$/`
+  : null
+const withBaseDomain = (csv: string): string =>
+  baseDomainCorsRegex ? `${csv},${baseDomainCorsRegex}` : csv
+
 if (process.env.NODE_ENV === "production") {
   if (!process.env.JWT_SECRET || jwtSecret === KNOWN_BAD_JWT) {
     throw new Error("JWT_SECRET must be set to a strong secret in production")
@@ -77,6 +110,16 @@ if (hasPartialR2Config) {
   )
 }
 
+if (hasPartialGoogleAuth) {
+  throw new Error(
+    "Google customer auth is incomplete. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL (or none)."
+  )
+}
+
+if (hasPartialSendgrid) {
+  throw new Error("SendGrid is incomplete. Set both SENDGRID_API_KEY and SENDGRID_FROM (or neither).")
+}
+
 const modules: any[] = [
   {
     resolve: "./src/modules/tenant-context",
@@ -97,6 +140,61 @@ const modules: any[] = [
     },
   },
 ]
+
+// Redis-backed cache when REDIS_URL is set. The auth providers (Google OAuth
+// state) + our OAuth handoff stash short-lived entries in the cache; an in-memory
+// cache only works on a single instance, so back it with Redis in production so
+// the flow survives restarts and horizontal scaling. (Packages already installed.)
+if (process.env.REDIS_URL) {
+  modules.push({
+    resolve: "@medusajs/medusa/cache-redis",
+    options: { redisUrl: process.env.REDIS_URL },
+  })
+}
+
+// Auth module — customers sign in with emailpass + Google; seller admins stay on
+// emailpass (enforced by authMethodsPerActor in http below). We override Medusa's
+// default auth module so the Google provider can be registered. The per-tenant
+// customer resolution + token minting lives in src/api/store/auth/* (auth_identity
+// is global; customers are tenant-RLS), so this just wires the providers.
+const authProviders: any[] = [
+  { resolve: "@medusajs/medusa/auth-emailpass", id: "emailpass" },
+]
+if (hasGoogleAuth) {
+  authProviders.push({
+    resolve: "@medusajs/medusa/auth-google",
+    id: "google",
+    options: {
+      clientId: googleAuth.clientId,
+      clientSecret: googleAuth.clientSecret,
+      callbackUrl: googleAuth.callbackUrl,
+    },
+  })
+}
+modules.push({
+  resolve: "@medusajs/medusa/auth",
+  dependencies: [Modules.CACHE],
+  options: { providers: authProviders },
+})
+
+if (hasSendgrid) {
+  modules.push({
+    resolve: "@medusajs/medusa/notification",
+    options: {
+      providers: [
+        {
+          resolve: "@medusajs/medusa/notification-sendgrid",
+          id: "sendgrid",
+          options: {
+            channels: ["email"],
+            api_key: sendgrid.apiKey,
+            from: sendgrid.from,
+          },
+        },
+      ],
+    },
+  })
+}
 
 if (hasR2Config) {
   modules.push({
@@ -151,11 +249,17 @@ module.exports = defineConfig({
     redisUrl: process.env.REDIS_URL,
     workerMode,
     http: {
-      storeCors: process.env.STORE_CORS || "http://localhost:8000,http://localhost:3000",
+      storeCors: withBaseDomain(process.env.STORE_CORS || "http://localhost:8000,http://localhost:3000"),
       adminCors: process.env.ADMIN_CORS || "http://localhost:7001,http://localhost:9000",
-      authCors: process.env.AUTH_CORS || "http://localhost:7001,http://localhost:9000",
+      authCors: withBaseDomain(process.env.AUTH_CORS || "http://localhost:7001,http://localhost:9000"),
       jwtSecret,
       cookieSecret,
+      // Customers may use Google + email/password; seller admins are emailpass-only
+      // so a Google identity can never mint an admin token.
+      authMethodsPerActor: {
+        user: ["emailpass"],
+        customer: ["emailpass", "google"],
+      },
     },
   },
   admin: {

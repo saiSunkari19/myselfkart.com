@@ -4,6 +4,8 @@ import { AddToCart } from "../../components/add-to-cart"
 import { CartContents } from "../../components/storefront/cart-contents"
 import { CheckoutFlow } from "../../components/storefront/checkout-flow"
 import { OrderSummary } from "../../components/storefront/order-summary"
+import { LoginForm } from "../../components/storefront/account/login-form"
+import { AccountContent } from "../../components/storefront/account/account-content"
 import { formatMoney } from "../format"
 import type { ProductView } from "../views"
 import type {
@@ -15,6 +17,8 @@ import type {
   CartProps,
   CheckoutProps,
   OrderProps,
+  LoginProps,
+  AccountProps,
   NavProps,
   FooterProps,
 } from "./types"
@@ -56,6 +60,7 @@ function Nav({ config, hasDeals }: NavProps) {
       <nav style={{ display: "flex", gap: "1rem" }}>
         <Link href="/shop">Shop</Link>
         {hasDeals && <Link href="/deals">Deals</Link>}
+        <Link href="/account">Account</Link>
         <Link href="/cart">Cart</Link>
       </nav>
     </header>
@@ -130,7 +135,7 @@ export const DefaultTheme: StoreTheme = {
     return <main><CartContents cart={cart} /></main>
   },
 
-  Checkout({ cart, shippingOptions, countries, hasRazorpay, error }: CheckoutProps) {
+  Checkout({ cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
     return (
       <main>
         <CheckoutFlow
@@ -139,6 +144,8 @@ export const DefaultTheme: StoreTheme = {
           countries={countries}
           hasRazorpay={hasRazorpay}
           error={error}
+          savedAddresses={savedAddresses}
+          customerEmail={customer?.email}
         />
       </main>
     )
@@ -146,5 +153,21 @@ export const DefaultTheme: StoreTheme = {
 
   Order({ order }: OrderProps) {
     return <main><OrderSummary order={order} /></main>
+  },
+
+  Login({ config, next, error, notice }: LoginProps) {
+    return (
+      <main style={{ padding: "48px 0" }}>
+        <LoginForm next={next} error={error} notice={notice} accent={config?.accent_color ?? undefined} />
+      </main>
+    )
+  },
+
+  Account(props: AccountProps) {
+    return (
+      <main style={{ padding: "32px 0" }}>
+        <AccountContent {...props} accent={props.config?.accent_color ?? undefined} />
+      </main>
+    )
   },
 }

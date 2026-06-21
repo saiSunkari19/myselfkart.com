@@ -125,7 +125,14 @@ Legend: `[ ]` todo · `[x]` done · `[~]` partial/interim
 
 - [x] Glow (live: Ticket Store) — all 9 slots via `GlowTheme` (`preview/glow/_theme.tsx`); registered; removed from the home `switch`. Live nav/PDP-linking cards; mock skincare-product sections dropped, decorative chrome kept.
 - [x] `DefaultTheme` for tenants with `template_id = null` (e.g. flyr) — fallback in place since Phase 0
-- [ ] Thread, Aurum, Eventpass — implement `StoreTheme` (compiler-enforced); still on the legacy `switch`
+- [x] Thread, Aurum, Eventpass — all 9 slots each via `ThreadTheme`/`AurumTheme`/`EventpassTheme`
+  (`preview/<t>/{_live,_shop-live,_pdp-live,_deals-live,_functional-live,_theme}.tsx`),
+  view-model driven, real server actions (address/shipping/place-order/Razorpay) +
+  `AddToCart`. Registered; the home `switch` is **removed entirely** — every template
+  now routes through `getTheme()`. Eventpass maps `ProductView → event` (no event VM;
+  date/venue placeholders dropped). PDPs use the real `AddToCart` (mock size/colour/
+  ticket-tier state removed); checkouts use the real server-action flow, not the
+  preview's mock `router.push` wizard.
 
 ### Phase 5 — Demote `/preview/*` to preview-only ✅ DONE (isolation locked)
 
@@ -140,9 +147,9 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
   file links to `/preview/`, and checks the file list stays in sync with the registry.
 - [keep] Static `/preview/<t>/*` pages retained intentionally as the onboarding
   preview; they are not buyer-reachable (no live route or live slot links to them).
-- [known] Unported themes (thread/aurum/eventpass) still link to `/preview/*` from
-  their legacy live components — fixed when they are ported (Phase 4 remainder); no
-  tenant uses them today.
+- [x] All five themes (volt/glow/thread/aurum/eventpass) are now ported; the isolation
+  test covers every live slot file and the registry-sync check asserts all five. No
+  live render file links to `/preview/*`.
 
 ### Phase 6 — Data integrity & guarantees (import)
 
@@ -215,6 +222,18 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
   (`taxonomy.ts`); `prepare` route reports existing-vs-new product handles; admin
   Product Upload page shows it + a stock-reset note. Added
   `outputs/product-import-template-with-categories.csv`. `apps/medusa` `tsc` green.
+
+- 2026-06-21 — **Phase 4 complete (thread / aurum / eventpass).** All three ported to
+  full `StoreTheme` implementations (9 slots each) following the volt/glow "best of
+  both" pattern: the template's visual language fed real Medusa view models + wired to
+  the real server actions (`setAddressAction`/`setShippingMethodAction`/`placeOrderAction`/
+  Razorpay) and `AddToCart`. Registered in `lib/themes/index.ts`; the home `switch` and
+  its legacy `*LivePage(config, products)` imports are **removed** — every template now
+  renders via `getTheme()`. Styled checkout (the original ask) replaces the previews'
+  mock `router.push` wizards. `live-path-isolation.test.ts` extended to cover all 15 new
+  slot files + assert all five themes registered. `tsc --noEmit`, `next build`, and all
+  13 tests green. Thread built inline as the reference; aurum + eventpass built by
+  parallel agents against it and reviewed.
 
 ## 6. Risks / open questions
 

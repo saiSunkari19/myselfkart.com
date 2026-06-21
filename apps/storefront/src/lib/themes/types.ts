@@ -8,6 +8,9 @@ import type {
   ShippingOptionView,
   VariantView,
   OrderView,
+  CustomerView,
+  CustomerAddressView,
+  CustomerOrderListItem,
 } from "../views"
 
 /**
@@ -64,6 +67,29 @@ export type CheckoutProps = ThemeContext & {
   countries: { iso_2: string; display_name?: string | null }[]
   hasRazorpay: boolean
   error?: string | null
+  /** The signed-in buyer (checkout is gated, so normally present). */
+  customer?: CustomerView | null
+  /** Saved addresses to offer as a picker above the address form. */
+  savedAddresses?: CustomerAddressView[]
+}
+
+export type LoginProps = ThemeContext & {
+  /** Same-origin path to return to after a successful sign-in. */
+  next: string
+  /** Error surfaced from a failed OAuth round-trip (?error=). */
+  error?: string | null
+  /** Notice surfaced after e.g. a successful password reset (?reset=1). */
+  notice?: string | null
+}
+
+export type AccountSection = "overview" | "orders" | "addresses"
+
+export type AccountProps = ThemeContext & {
+  customer: CustomerView
+  section: AccountSection
+  orders: CustomerOrderListItem[]
+  addresses: CustomerAddressView[]
+  countries: { iso_2: string; display_name?: string | null }[]
 }
 
 export type OrderProps = ThemeContext & {
@@ -86,6 +112,10 @@ export interface StoreTheme {
   Cart(p: CartProps): ReactNode
   Checkout(p: CheckoutProps): ReactNode
   Order(p: OrderProps): ReactNode
+  /** Sign in / register / forgot-password entry. */
+  Login(p: LoginProps): ReactNode
+  /** Account dashboard — overview / orders / addresses (driven by `section`). */
+  Account(p: AccountProps): ReactNode
   Nav(p: NavProps): ReactNode
   Footer(p: FooterProps): ReactNode
 }

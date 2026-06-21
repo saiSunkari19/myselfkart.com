@@ -1,9 +1,6 @@
 import Link from "next/link"
 
 import { StorefrontStatePage } from "../components/storefront-state"
-import { ThreadLivePage } from "./preview/thread/_live"
-import { AurumLivePage } from "./preview/aurum/_live"
-import { EventpassLivePage } from "./preview/eventpass/_live"
 import { formatMoney } from "../lib/format"
 import { THEMES, getTheme } from "../lib/themes"
 import { mapProducts, resolveCategories } from "../lib/views"
@@ -34,9 +31,10 @@ export default async function HomePage() {
     fetchStoreConfig(tenant),
   ])
 
-  // Themes migrated into the registry render via getTheme() + view models.
-  // Remaining templates still use their legacy live components until they are
-  // ported (see docs/themed-routes-architecture.md, Phase 4).
+  // Every storefront template is now ported into the theme registry (volt, glow,
+  // thread, aurum, eventpass), so they render via getTheme() + view models. The
+  // generic hero below is only reached by tenants with no template_id (e.g. flyr),
+  // for which getTheme() would otherwise fall back to DefaultTheme's bare grid.
   if (config?.template_id && config.template_id in THEMES) {
     const Theme = getTheme(config.template_id)
     return (
@@ -48,12 +46,6 @@ export default async function HomePage() {
         newArrivals={mapProducts(getNewArrivals(products))}
       />
     )
-  }
-
-  switch (config?.template_id) {
-    case "thread":    return <ThreadLivePage config={config} products={products} />
-    case "aurum":     return <AurumLivePage config={config} products={products} />
-    case "eventpass": return <EventpassLivePage config={config} products={products} />
   }
 
   const heroCta = config?.hero_cta

@@ -9,7 +9,8 @@ import {
 } from "../../lib/cart/actions"
 import { formatMoney } from "../../lib/format"
 import { RazorpayCheckout } from "../razorpay-checkout"
-import type { CartView, ShippingOptionView } from "../../lib/views"
+import { SavedAddressPicker } from "./account/saved-address-picker"
+import type { CartView, ShippingOptionView, CustomerAddressView } from "../../lib/views"
 
 /**
  * Theme-agnostic checkout flow — address → shipping → review/pay. The Razorpay
@@ -22,12 +23,18 @@ export function CheckoutFlow({
   countries,
   hasRazorpay,
   error,
+  savedAddresses = [],
+  customerEmail,
+  accent,
 }: {
   cart: CartView | null
   shippingOptions: ShippingOptionView[]
   countries: { iso_2: string; display_name?: string | null }[]
   hasRazorpay: boolean
   error?: string | null
+  savedAddresses?: CustomerAddressView[]
+  customerEmail?: string | null
+  accent?: string
 }) {
   if (!cart || cart.items.length === 0) {
     return (
@@ -53,6 +60,13 @@ export function CheckoutFlow({
       {/* Step 1: contact + shipping address */}
       <section>
         <h2>1. Shipping details</h2>
+        {savedAddresses.length > 0 ? (
+          <SavedAddressPicker
+            addresses={savedAddresses}
+            email={customerEmail ?? cart.email ?? ""}
+            accent={accent}
+          />
+        ) : null}
         <form action={setAddressAction} className="address-form">
           <input name="email" type="email" placeholder="Email" required defaultValue={cart.email ?? ""} />
           <input name="first_name" placeholder="First name" required defaultValue={addr?.first_name ?? ""} />

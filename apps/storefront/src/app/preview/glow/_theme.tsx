@@ -4,6 +4,7 @@ import { GlowShopLivePage } from "./_shop-live"
 import { GlowDealsLivePage } from "./_deals-live"
 import { GlowPdpLivePage } from "./_pdp-live"
 import { GlowCartLivePage, GlowCheckoutLivePage, GlowOrderLivePage } from "./_functional-live"
+import { GlowLoginPage, GlowAccountPage } from "./_account-live"
 import { Footer } from "./_components"
 
 /** GlowTheme — the Glow (skincare) design as a `StoreTheme`. */
@@ -17,4 +18,6 @@ export const GlowTheme: StoreTheme = {
   Cart: GlowCartLivePage,
   Checkout: GlowCheckoutLivePage,
   Order: GlowOrderLivePage,
+  Login: GlowLoginPage,
+  Account: GlowAccountPage,
 }

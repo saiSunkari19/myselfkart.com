@@ -118,6 +118,7 @@ export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = fa
           <div className={s.navLinks}>
             <Link href="/shop" className={s.navLink}>Shop</Link>
             {hasDeals && <Link href="/deals" className={s.navLink}>Deals</Link>}
+            <Link href="/account" className={s.navLink}>Account</Link>
             <Link href="/cart" className={s.navCart}>🛒 Cart</Link>
           </div>
         </div>

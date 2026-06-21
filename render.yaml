@@ -77,6 +77,27 @@ services:
       # both the admin store link and the storefront's host->tenant resolver.
       - key: SELFKART_STOREFRONT_BASE_DOMAIN
         value: myselfkart.com
+      # Customer Google OAuth (optional — emailpass works without it). Set ALL
+      # THREE in the Render dashboard, or leave all blank: a partial config makes
+      # the server refuse to boot. GOOGLE_CALLBACK_URL is the single registered
+      # redirect URI on the storefront broker host (must byte-match Google Console
+      # AND the storefront's GOOGLE_CALLBACK_URL), e.g.
+      # https://storefront.myselfkart.com/auth/google/callback
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      # SendGrid — only needed to actually deliver customer password-reset emails.
+      # Without it the reset subscriber logs the reset URL instead. Set both keys
+      # (and the dynamic-template id) together, or leave all blank.
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM
+        sync: false
+      - key: SENDGRID_PASSWORD_RESET_TEMPLATE
+        sync: false
       - key: R2_FILE_URL
         sync: false
       - key: R2_ACCESS_KEY_ID

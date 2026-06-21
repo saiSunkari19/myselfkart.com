@@ -35,12 +35,11 @@ function resolveHost(headerHost: string | null): string {
  * render a safe "store not found" page. Memoized per request with React
  * `cache()` so the layout and page share one lookup.
  */
-export const resolveTenant = cache(async (): Promise<TenantResolution | null> => {
-  const headerList = await headers()
-  const host = resolveHost(
-    headerList.get("x-forwarded-host") || headerList.get("host")
-  )
-
+/** Resolve a tenant for an explicit host (e.g. the Google OAuth origin store). */
+export async function resolveTenantForHost(
+  rawHost: string | null
+): Promise<TenantResolution | null> {
+  const host = resolveHost(rawHost)
   if (!host) {
     return null
   }
@@ -66,4 +65,11 @@ export const resolveTenant = cache(async (): Promise<TenantResolution | null> =>
     // closed to "no tenant" so the caller renders a safe page.
     return null
   }
+}
+
+export const resolveTenant = cache(async (): Promise<TenantResolution | null> => {
+  const headerList = await headers()
+  return resolveTenantForHost(
+    headerList.get("x-forwarded-host") || headerList.get("host")
+  )
 })

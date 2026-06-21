@@ -1,4 +1,4 @@
-import { defineMiddlewares } from "@medusajs/framework/http"
+import { authenticate, defineMiddlewares } from "@medusajs/framework/http"
 
 import {
   domainTenantContextMiddleware,
@@ -45,6 +45,14 @@ export default defineMiddlewares({
     {
       matcher: "/store*",
       middlewares: [domainTenantContextMiddleware],
+    },
+    // /store/auth/refresh re-mints a customer token, so it must run AFTER the
+    // bearer is verified. domainTenantContextMiddleware (above) still sets the
+    // tenant context; this adds customer authentication on top.
+    {
+      method: ["POST"],
+      matcher: "/store/auth/refresh",
+      middlewares: [authenticate("customer", ["bearer"])],
     },
   ],
 })

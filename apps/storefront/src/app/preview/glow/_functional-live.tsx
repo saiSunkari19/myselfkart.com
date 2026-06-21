@@ -28,10 +28,19 @@ export function GlowCartLivePage({ config, cart }: CartProps) {
   return <GlowShell config={config}><CartContents cart={cart} /></GlowShell>
 }
 
-export function GlowCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error }: CheckoutProps) {
+export function GlowCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   return (
     <GlowShell config={config}>
-      <CheckoutFlow cart={cart} shippingOptions={shippingOptions} countries={countries} hasRazorpay={hasRazorpay} error={error} />
+      <CheckoutFlow
+        cart={cart}
+        shippingOptions={shippingOptions}
+        countries={countries}
+        hasRazorpay={hasRazorpay}
+        error={error}
+        savedAddresses={savedAddresses}
+        customerEmail={customer?.email}
+        accent={config?.accent_color ?? undefined}
+      />
     </GlowShell>
   )
 }
