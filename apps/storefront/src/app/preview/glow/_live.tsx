@@ -1,93 +1,125 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useState } from "react"
+import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
-import type { StoreProduct } from "../../../lib/medusa/products"
+import type { ProductView } from "../../../lib/views"
+import type { HomeProps, NavProps } from "../../../lib/themes/types"
 import {
-  NavBar, TrustStrip, GoldDivider, PageLoader,
-  Reveal, ProductCard, BeforeAfterSlider, Footer,
+  AnnouncementBar, TrustStrip, GoldDivider, PageLoader,
+  Reveal, BeforeAfterSlider, Footer,
 } from "./_components"
-import {
-  PRODUCTS, COLLECTIONS, TESTIMONIALS,
-  INGREDIENTS, SKIN_CONCERNS, HERO_SLIDES,
-  type Product,
-} from "./_data"
+import { TESTIMONIALS, INGREDIENTS, HERO_SLIDES } from "./_data"
 import s from "./_styles.module.css"
 
-/* ---- Convert Medusa StoreProduct → Glow Product shape ---- */
-function toGlowProduct(p: StoreProduct, index: number): Product {
-  const price = p.variants?.find(v => v.calculated_price?.calculated_amount != null)
-    ?.calculated_price?.calculated_amount ?? 0
-  const FALLBACK_IMAGES = [
-    "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
-    "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=600&q=80",
-    "https://images.unsplash.com/photo-1570194065650-d99fb4abbd90?w=600&q=80",
-    "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?w=600&q=80",
-    "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=600&q=80",
-    "https://images.unsplash.com/photo-1631390783071-1c11b9edadf5?w=600&q=80",
-  ]
-  const img = p.thumbnail ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
-  return {
-    id: p.id,
-    name: p.title,
-    subtitle: p.description?.slice(0, 60) ?? "",
-    category: "Skincare",
-    price,
-    image: img,
-    hoverImage: img,
-    rating: 4.5,
-    reviews: 128,
-    skinTypes: [],
-    concerns: [],
-    description: p.description ?? "",
-    keyIngredients: [],
-    size: "",
-  }
+const FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
+  "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=600&q=80",
+  "https://images.unsplash.com/photo-1570194065650-d99fb4abbd90?w=600&q=80",
+  "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?w=600&q=80",
+]
+
+function cardImage(v: ProductView, index: number): string {
+  return v.thumbnail ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
 }
 
-/* ---- Hero (config-aware) ---- */
+/* ---- Live product card: links to the real PDP ---- */
+export function GlowLiveProductCard({ product, index = 0 }: { product: ProductView; index?: number }) {
+  const img = cardImage(product, index)
+  return (
+    <Link href={product.href} className={s.productCard} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+      <div className={s.productImageWrap}>
+        <img src={img} alt={product.title} className={s.productImg} loading="lazy" />
+        <img src={img} alt={product.title} className={`${s.productImg} ${s.productImgHover}`} loading="lazy" />
+        {product.isOnSale && <span className={`${s.productBadge} ${s.badgeLimited}`}>Sale</span>}
+      </div>
+      <div className={s.productCategory}>{product.tags[0] ?? "Featured"}</div>
+      <div className={s.productName}>{product.title}</div>
+      <div className={s.productSub}>{product.description.slice(0, 60)}</div>
+      <div className={s.productFooter}>
+        <div>
+          <span className={s.productPrice}>₹{(product.price ?? 0).toLocaleString("en-IN")}</span>
+          {product.originalPrice && (
+            <span className={s.productOriginal}>₹{product.originalPrice.toLocaleString("en-IN")}</span>
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+/* ---- Live nav (links to live routes, not the /preview demo) ---- */
+export function GlowLiveNav({ config, hasDeals }: NavProps) {
+  const storeName = config?.store_name ?? "glow."
+  const logoUrl = config?.logo_url ?? null
+  const announcementEnabled = config?.announcement_enabled ?? true
+  const announcementText = announcementEnabled ? (config?.announcement_text ?? undefined) : undefined
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+  return (
+    <div className={s.stickyHeader}>
+      <AnnouncementBar text={announcementText} />
+      <nav className={`${s.navbar} ${scrolled ? s.navbarScrolled : ""}`}>
+        <Link href="/" className={s.navLogo}>
+          {logoUrl
+            ? <img src={logoUrl} alt={storeName} style={{ height: 32, objectFit: "contain" }} />
+            : storeName}
+        </Link>
+        <ul className={s.navLinks}>
+          <li><Link href="/shop" className={s.navLink}>Shop</Link></li>
+          {hasDeals && <li><Link href="/deals" className={s.navLink}>Offers</Link></li>}
+        </ul>
+        <div className={s.navActions}>
+          <Link href="/cart" className={s.navCart}>
+            <svg className={s.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </Link>
+        </div>
+      </nav>
+    </div>
+  )
+}
+
+/* ---- Hero (config-aware; generic marketing fallback) ---- */
 const Hero = ({ config }: { config: StoreConfig | null }) => {
   const [current, setCurrent] = useState(0)
   const total = HERO_SLIDES.length
+  const hasCustomHero = !!config?.hero_heading
 
   useEffect(() => {
+    if (hasCustomHero) return
     const t = setInterval(() => setCurrent(c => (c + 1) % total), 5000)
     return () => clearInterval(t)
-  }, [total])
-
-  const prev = () => setCurrent(c => (c - 1 + total) % total)
-  const next = () => setCurrent(c => (c + 1) % total)
-
-  // If seller set a custom hero heading, show a single config-driven slide
-  const hasCustomHero = !!(config?.hero_heading)
-  const heroImage = config?.hero_image_url || HERO_SLIDES[current].image
-  const heroHeading = config?.hero_heading || HERO_SLIDES[current].heading
-  const heroSub = config?.hero_subtext || HERO_SLIDES[current].sub
-  const heroCta = config?.hero_cta
+  }, [total, hasCustomHero])
 
   if (hasCustomHero) {
+    const heroImage = config?.hero_image_url || HERO_SLIDES[0].image
+    const heroCta = config?.hero_cta
     return (
       <section className={s.hero}>
         <div className={`${s.heroSlide} ${s.heroSlideActive}`}>
-          <img src={heroImage} alt={heroHeading} className={s.heroBg} />
+          <img src={heroImage} alt={config?.hero_heading ?? ""} className={s.heroBg} />
           <div className={s.heroOverlay} />
         </div>
         <div className={s.heroContent}>
           <div className={s.heroLabel}>{config?.tagline ?? "Your Skin. Your Story."}</div>
-          <h1 className={s.heroTitle}>{heroHeading}</h1>
-          {heroSub && <p className={s.heroSub}>{heroSub}</p>}
+          <h1 className={s.heroTitle}>{config?.hero_heading}</h1>
+          {config?.hero_subtext && <p className={s.heroSub}>{config.hero_subtext}</p>}
           <div className={s.heroCtas}>
-            <a
-              href={heroCta?.primary_link ?? "/shop"}
-              className={`${s.btn} ${s.btnDark}`}
-              style={{ background: "rgba(250,248,244,0.95)", color: "#2A2A2A" }}
-            >
+            <Link href={heroCta?.primary_link ?? "/shop"} className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#2A2A2A" }}>
               {heroCta?.primary_label ?? "Shop Now"}
-            </a>
+            </Link>
             {heroCta?.secondary_label && (
-              <a href={heroCta.secondary_link ?? "#"} className={`${s.btn} ${s.btnOutlineLight}`}>
+              <Link href={heroCta.secondary_link ?? "/shop"} className={`${s.btn} ${s.btnOutlineLight}`}>
                 {heroCta.secondary_label}
-              </a>
+              </Link>
             )}
           </div>
         </div>
@@ -95,7 +127,6 @@ const Hero = ({ config }: { config: StoreConfig | null }) => {
     )
   }
 
-  // Default: carousel from _data.ts
   return (
     <section className={s.hero}>
       {HERO_SLIDES.map((slide, i) => (
@@ -109,27 +140,16 @@ const Hero = ({ config }: { config: StoreConfig | null }) => {
         <h1 className={s.heroTitle}>{HERO_SLIDES[current].heading}</h1>
         <p className={s.heroSub}>{HERO_SLIDES[current].sub}</p>
         <div className={s.heroCtas}>
-          <a href="#" className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#2A2A2A" }}>
+          <Link href="/shop" className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#2A2A2A" }}>
             {HERO_SLIDES[current].cta}
-          </a>
-          <a href="#" className={`${s.btn} ${s.btnOutlineLight}`}>Find My Routine</a>
+          </Link>
         </div>
       </div>
-      <div className={s.heroDots}>
-        {HERO_SLIDES.map((_, i) => (
-          <div key={i} className={`${s.heroDot} ${i === current ? s.heroDotActive : ""}`} onClick={() => setCurrent(i)} />
-        ))}
-      </div>
-      <div className={s.heroControls}>
-        <button className={s.heroArrow} onClick={prev}>←</button>
-        <button className={s.heroArrow} onClick={next}>→</button>
-      </div>
-      <div className={s.heroProgress} key={current} />
     </section>
   )
 }
 
-/* ---- Static sections (same as page.tsx) ---- */
+/* ---- Decorative chrome (kept as template identity) ---- */
 const BrandStory = () => (
   <div className={s.storySection}>
     <div className={s.storyImage}>
@@ -138,96 +158,10 @@ const BrandStory = () => (
     <Reveal className={s.storyContent}>
       <span className={s.sectionLabel}>Our Philosophy</span>
       <h2 className={s.sectionTitle} style={{ textAlign: "left" }}>Skin science<br />should feel like poetry.</h2>
-      <div className={s.storyQuote}>"Beauty rooted in transparency, powered by science."</div>
+      <div className={s.storyQuote}>&quot;Beauty rooted in transparency, powered by science.&quot;</div>
       <p className={s.sectionSub}>We believe every skin has a story. Clean, clinical skincare that delivers visible results.</p>
-      <div className={s.storyStats}>
-        {[{ num: "30+", label: "Active Ingredients" }, { num: "2.4L+", label: "Happy Skin Stories" }, { num: "4.8★", label: "Average Rating" }, { num: "100%", label: "Dermatologist Approved" }].map(({ num, label }) => (
-          <div key={label} className={s.storyStat}>
-            <div className={s.storyStatNum}>{num}</div>
-            <div className={s.storyStatLabel}>{label}</div>
-          </div>
-        ))}
-      </div>
     </Reveal>
   </div>
-)
-
-const FeaturedCollections = () => (
-  <section className={s.section}>
-    <div className={s.container}>
-      <Reveal><div className={s.sectionCenter}><span className={s.sectionLabel}>Curated Edits</span><h2 className={s.sectionTitle}>Shop by Skin Goal</h2><GoldDivider /></div></Reveal>
-      <div className={s.collectionsGrid}>
-        {COLLECTIONS.map((col, i) => (
-          <Reveal key={col.id} delay={(i % 4) as 0|1|2|3|4|5}>
-            <a href="/preview/glow/shop" className={s.collectionCard}>
-              <img src={col.image} alt={col.name} className={s.collectionImg} loading="lazy" />
-              <div className={s.collectionOverlay}>
-                <div className={s.collectionName}>{col.name}</div>
-                <div className={s.collectionTagline}>{col.tagline}</div>
-                <div className={s.collectionCount}>{col.count} Products →</div>
-              </div>
-            </a>
-          </Reveal>
-        ))}
-      </div>
-    </div>
-  </section>
-)
-
-const SkinConcernFinder = () => {
-  const [active, setActive] = useState("brightening")
-  const concern = SKIN_CONCERNS.find(c => c.id === active)!
-  const products = concern.products.map(id => PRODUCTS.find(p => p.id === id)!).filter(Boolean)
-  return (
-    <section className={`${s.section} ${s.concernSection}`}>
-      <div className={s.container}>
-        <Reveal><div className={s.sectionCenter}><span className={s.sectionLabel} style={{ color: "rgba(250,248,244,0.5)" }}>Personalised For You</span><h2 className={s.sectionTitle} style={{ color: "var(--ivory)" }}>What's your skin concern?</h2><GoldDivider /></div></Reveal>
-        <div className={s.concernTabs}>
-          {SKIN_CONCERNS.map(c => <button key={c.id} className={`${s.concernTab} ${active === c.id ? s.concernTabActive : ""}`} onClick={() => setActive(c.id)}>{c.icon} {c.label}</button>)}
-        </div>
-        <div className={s.concernProducts}>
-          {products.map(p => (
-            <div key={p.id} className={s.concernProductCard}>
-              <img src={p.image} alt={p.name} className={s.concernProductImg} loading="lazy" />
-              <div>
-                <div className={s.concernProductName}>{p.name}</div>
-                <div style={{ fontSize: 12, color: "rgba(250,248,244,0.5)", marginBottom: 8 }}>{p.subtitle}</div>
-                <div className={s.concernProductPrice}>₹{p.price.toLocaleString("en-IN")}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-const BestSellers = ({ products }: { products: Product[] }) => {
-  const items = products.filter(p => p.badge === "Bestseller" || p.badge === "Award Winner" || p.badge === "New").slice(0, 4)
-  const display = items.length > 0 ? items : products.slice(0, 4)
-  return (
-    <section className={s.section}>
-      <div className={s.container}>
-        <Reveal><div className={s.sectionCenter}><span className={s.sectionLabel}>Community Favourites</span><h2 className={s.sectionTitle}>Best Sellers</h2><GoldDivider /></div></Reveal>
-        <div className={s.productsGrid}>
-          {display.map((p, i) => (
-            <Reveal key={p.id} delay={(i % 4) as 0|1|2|3|4|5}><ProductCard {...p} /></Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-const AllProducts = ({ products }: { products: Product[] }) => (
-  <section className={s.section} style={{ background: "var(--beige)" }}>
-    <div className={s.container}>
-      <Reveal><div className={s.sectionCenter}><span className={s.sectionLabel}>Full Range</span><h2 className={s.sectionTitle}>Shop All Products</h2><GoldDivider /></div></Reveal>
-      <div className={s.productsGrid}>
-        {products.map((p, i) => <Reveal key={p.id} delay={(i % 4) as 0|1|2|3|4|5}><ProductCard {...p} /></Reveal>)}
-      </div>
-    </div>
-  </section>
 )
 
 const IngredientSpotlight = () => (
@@ -256,13 +190,6 @@ const BeforeAfter = () => (
       <Reveal><div className={s.sectionCenter}><span className={s.sectionLabel} style={{ color: "rgba(250,248,244,0.5)" }}>Real Results</span><h2 className={s.sectionTitle} style={{ color: "var(--ivory)" }}>See the difference.</h2><GoldDivider /></div></Reveal>
       <div className={s.beforeAfterWrap}>
         <Reveal><BeforeAfterSlider before="https://images.unsplash.com/photo-1569163139294-de4944aa5b62?w=600&q=85" after="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=85" /></Reveal>
-        <Reveal delay={2}>
-          <div className={s.baResults}>
-            {[{ num: "89%", label: "reported visibly brighter skin" }, { num: "76%", label: "saw reduction in dark spots" }, { num: "94%", label: "said skin felt smoother & softer" }, { num: "4 weeks", label: "average time to visible results" }].map(({ num, label }) => (
-              <div key={label} className={s.baStat}><div className={s.baStatNum}>{num}</div><div className={s.baStatLabel}>{label}</div></div>
-            ))}
-          </div>
-        </Reveal>
       </div>
     </div>
   </section>
@@ -277,14 +204,13 @@ const Testimonials = () => (
           <Reveal key={t.id} delay={(i % 2) as 0|1|2|3|4|5}>
             <div className={s.testimonialCard}>
               <div className={s.testimonialStars}>{Array.from({ length: t.rating }).map((_, j) => <span key={j} className={s.starFill}>★</span>)}</div>
-              <p className={s.testimonialText}>"{t.text}"</p>
+              <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
               <div className={s.testimonialResult}>✓ {t.result}</div>
               <div className={s.testimonialAuthor}>
                 <img src={t.avatar} alt={t.name} className={s.testimonialAvatar} loading="lazy" />
                 <div>
                   <div className={s.testimonialName}>{t.name}, {t.age}</div>
                   <div className={s.testimonialMeta}>{t.skinType} · {t.concern}</div>
-                  {t.verified && <div className={s.verifiedBadge}>✓ Verified Purchase</div>}
                 </div>
               </div>
             </div>
@@ -300,7 +226,7 @@ const Newsletter = () => (
     <div className={s.container}>
       <Reveal>
         <span className={s.sectionLabel}>Join the Ritual</span>
-        <h2 className={s.sectionTitle}>Glow tips, new launches<br />& exclusive offers.</h2>
+        <h2 className={s.sectionTitle}>Glow tips, new launches<br />&amp; exclusive offers.</h2>
         <div className={s.newsletterForm}>
           <input type="email" placeholder="your@email.com" className={s.newsletterInput} />
           <button className={`${s.btn} ${s.btnDark}`}>Subscribe</button>
@@ -310,37 +236,45 @@ const Newsletter = () => (
   </section>
 )
 
-/* ---- Main export ---- */
-export function GlowLivePage({ config, products: rawProducts = [] }: { config: StoreConfig | null; products?: StoreProduct[] }) {
-  const storeName = config?.store_name ?? "glow."
-  const logoUrl = config?.logo_url ?? null
-  const announcementText = config?.announcement_text ?? null
-  const announcementEnabled = config?.announcement_enabled ?? true
+/* ---- Section of real products ---- */
+function ProductSection({ label, title, products }: { label: string; title: string; products: ProductView[] }) {
+  if (products.length === 0) return null
+  return (
+    <section className={s.section}>
+      <div className={s.container}>
+        <Reveal><div className={s.sectionCenter}><span className={s.sectionLabel}>{label}</span><h2 className={s.sectionTitle}>{title}</h2><GoldDivider /></div></Reveal>
+        <div className={s.productsGrid}>
+          {products.map((p, i) => (
+            <Reveal key={p.id} delay={(i % 4) as 0|1|2|3|4|5}><GlowLiveProductCard product={p} index={i} /></Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
-  // Use real products if available, fall back to mock data
-  const products: Product[] = rawProducts.length > 0
-    ? rawProducts.map(toGlowProduct)
-    : PRODUCTS
+/* ---- Home slot (StoreTheme.Home) ---- */
+export function GlowLivePage({ config, products, newArrivals, deals }: HomeProps) {
+  const storeName = config?.store_name ?? "glow."
+  const hasDeals = deals.length > 0
 
   const colorOverrides = {
     ...(config?.primary_color ? { "--charcoal": config.primary_color } : {}),
-    ...(config?.accent_color  ? { "--gold": config.accent_color }      : {}),
+    ...(config?.accent_color ? { "--gold": config.accent_color } : {}),
   } as React.CSSProperties
 
   return (
     <div className={s.page} style={colorOverrides}>
       <PageLoader />
-      <NavBar storeName={storeName} logoUrl={logoUrl} announcementText={announcementEnabled ? announcementText : null} />
+      <GlowLiveNav config={config} hasDeals={hasDeals} categories={[]} />
       <div className={s.headerSpacer} />
       <Hero config={config} />
       <TrustStrip />
       <BrandStory />
-      <FeaturedCollections />
-      <SkinConcernFinder />
-      <BestSellers products={products} />
+      <ProductSection label="Just In" title="New Arrivals" products={newArrivals.slice(0, 4)} />
       <IngredientSpotlight />
       <BeforeAfter />
-      <AllProducts products={products} />
+      <ProductSection label="The Collection" title={`Shop ${storeName}`} products={products.slice(0, 8)} />
       <Testimonials />
       <Newsletter />
       <Footer storeName={storeName} />

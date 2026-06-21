@@ -20,6 +20,9 @@ type ImportSummary = {
   types?: number
   tags?: number
   categories?: number
+  products?: number
+  existing_products?: number
+  new_products?: number
 }
 
 type PrepareResponse = {
@@ -200,14 +203,27 @@ const ProductUploadPage = () => {
         )}
 
         {summary && (
-          <div className="grid max-w-xl grid-cols-2 gap-3">
-            <SummaryItem label="Created" value={summary.toCreate ?? 0} />
-            <SummaryItem label="Updated" value={summary.toUpdate ?? 0} />
-            <SummaryItem label="Linked" value={summary.linked_products ?? 0} />
-            <SummaryItem label="Stock" value={summary.stocked_quantity ?? 0} />
-            <SummaryItem label="Collections" value={summary.collections ?? 0} />
-            <SummaryItem label="Categories" value={summary.categories ?? 0} />
-          </div>
+          <>
+            {(summary.existing_products ?? 0) > 0 && (
+              <div className="max-w-xl rounded-md border border-ui-border-base bg-ui-bg-subtle px-4 py-3">
+                <Text className="text-ui-fg-subtle" size="small">
+                  {summary.existing_products} of {summary.products} products already
+                  existed and were <strong>updated</strong> (matched by handle — no
+                  duplicates created). Stock was reset to the entered quantity.
+                </Text>
+              </div>
+            )}
+            <div className="grid max-w-xl grid-cols-2 gap-3">
+              <SummaryItem label="Created" value={summary.toCreate ?? 0} />
+              <SummaryItem label="Updated" value={summary.toUpdate ?? 0} />
+              <SummaryItem label="New" value={summary.new_products ?? 0} />
+              <SummaryItem label="Existing (updated)" value={summary.existing_products ?? 0} />
+              <SummaryItem label="Linked" value={summary.linked_products ?? 0} />
+              <SummaryItem label="Stock" value={summary.stocked_quantity ?? 0} />
+              <SummaryItem label="Collections" value={summary.collections ?? 0} />
+              <SummaryItem label="Categories" value={summary.categories ?? 0} />
+            </div>
+          </>
         )}
       </div>
     </Container>

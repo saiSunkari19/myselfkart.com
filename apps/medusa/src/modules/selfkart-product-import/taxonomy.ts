@@ -87,8 +87,16 @@ export function extractSellerImportSeeds(
     const tagValues = Object.entries(row)
       .filter(([header, value]) => /^Product Tag \d+$/.test(header) && value)
       .map(([, value]) => value)
-    const parentCategoryId = row["Parent Category Id"] ?? ""
-    const categoryId = row["Category Id"] ?? ""
+    // Categories may be given by Id, Handle, or just Name. A plain "Category
+    // Name" column is enough — we derive a stable slug id from the handle/name
+    // so sellers don't have to invent category ids. Same for parent categories.
+    const categoryName = row["Category Name"] ?? ""
+    const categoryHandle = row["Category Handle"] ?? ""
+    const categoryId = row["Category Id"] || toUrlSafeHandle(categoryHandle || categoryName)
+    const parentCategoryName = row["Parent Category Name"] ?? ""
+    const parentCategoryHandle = row["Parent Category Handle"] ?? ""
+    const parentCategoryId =
+      row["Parent Category Id"] || toUrlSafeHandle(parentCategoryHandle || parentCategoryName)
     const productHandle = toUrlSafeHandle(row["Product Handle"] ?? "")
     const scopedCollectionId = collectionId ? scopedImportId(tenantId, collectionId) : ""
     const scopedTypeId = typeId ? scopedImportId(tenantId, typeId) : ""

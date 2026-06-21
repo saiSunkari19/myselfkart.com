@@ -1,9 +1,9 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { formatMoney } from "../../../lib/format"
+import { getTheme } from "../../../lib/themes"
 import { getTenantOrder } from "../../../lib/medusa/order"
 import { resolveTenant } from "../../../lib/tenant/resolve-tenant"
+import { fetchStoreConfig } from "../../../lib/store-config"
 
 export const dynamic = "force-dynamic"
 
@@ -21,35 +21,14 @@ export default async function OrderConfirmationPage({
     notFound()
   }
 
-  const order = await getTenantOrder(tenant, id)
+  const [order, config] = await Promise.all([
+    getTenantOrder(tenant, id),
+    fetchStoreConfig(tenant),
+  ])
   if (!order) {
     notFound()
   }
 
-  return (
-    <main>
-      <h1>Thank you for your order</h1>
-      <p>
-        Order <strong>#{order.display_id}</strong> is confirmed
-        {order.email ? ` — a receipt will go to ${order.email}` : ""}.
-      </p>
-
-      <ul className="order-lines">
-        {order.items.map((item) => (
-          <li key={item.id}>
-            {item.quantity} × {item.title} —{" "}
-            {formatMoney(item.total, order.currency_code)}
-          </li>
-        ))}
-      </ul>
-
-      <p className="order-total">
-        <strong>Total: {formatMoney(order.total, order.currency_code)}</strong>
-      </p>
-
-      <p>
-        <Link href="/">← Continue shopping</Link>
-      </p>
-    </main>
-  )
+  const Theme = getTheme(config?.template_id)
+  return <Theme.Order config={config} order={order} />
 }

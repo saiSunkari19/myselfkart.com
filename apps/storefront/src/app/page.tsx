@@ -1,12 +1,13 @@
 import Link from "next/link"
 
 import { StorefrontStatePage } from "../components/storefront-state"
-import { GlowLivePage } from "./preview/glow/_live"
-import { VoltLivePage } from "./preview/volt/_live"
 import { ThreadLivePage } from "./preview/thread/_live"
 import { AurumLivePage } from "./preview/aurum/_live"
 import { EventpassLivePage } from "./preview/eventpass/_live"
 import { formatMoney } from "../lib/format"
+import { THEMES, getTheme } from "../lib/themes"
+import { mapProducts, resolveCategories } from "../lib/views"
+import { getDeals, getNewArrivals } from "../lib/merchandising"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../lib/store-config"
@@ -33,12 +34,23 @@ export default async function HomePage() {
     fetchStoreConfig(tenant),
   ])
 
-  // Each picked template renders its own live design at the tenant root, fed the
-  // tenant's real products + store config. No template (null) falls through to
-  // the generic hero + product grid below.
+  // Themes migrated into the registry render via getTheme() + view models.
+  // Remaining templates still use their legacy live components until they are
+  // ported (see docs/themed-routes-architecture.md, Phase 4).
+  if (config?.template_id && config.template_id in THEMES) {
+    const Theme = getTheme(config.template_id)
+    return (
+      <Theme.Home
+        config={config}
+        products={mapProducts(products)}
+        categories={resolveCategories(products)}
+        deals={mapProducts(getDeals(products))}
+        newArrivals={mapProducts(getNewArrivals(products))}
+      />
+    )
+  }
+
   switch (config?.template_id) {
-    case "glow":      return <GlowLivePage config={config} products={products} />
-    case "volt":      return <VoltLivePage config={config} products={products} />
     case "thread":    return <ThreadLivePage config={config} products={products} />
     case "aurum":     return <AurumLivePage config={config} products={products} />
     case "eventpass": return <EventpassLivePage config={config} products={products} />

@@ -1,9 +1,13 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { AddToCart } from "../../../components/add-to-cart"
-import { getTenantProductByHandle } from "../../../lib/medusa/products"
+import { getTheme } from "../../../lib/themes"
+import { mapProduct, mapProducts } from "../../../lib/views"
+import {
+  getTenantProductByHandle,
+  listTenantProducts,
+} from "../../../lib/medusa/products"
 import { resolveTenant } from "../../../lib/tenant/resolve-tenant"
+import { fetchStoreConfig } from "../../../lib/store-config"
 
 export const dynamic = "force-dynamic"
 
@@ -21,27 +25,28 @@ export default async function ProductPage({
     notFound()
   }
 
-  const product = await getTenantProductByHandle(tenant, handle)
+  const [product, config, all] = await Promise.all([
+    getTenantProductByHandle(tenant, handle),
+    fetchStoreConfig(tenant),
+    listTenantProducts(tenant),
+  ])
   if (!product) {
     notFound()
   }
 
+  // Related = other products sharing a tag, falling back to any others.
+  const tagIds = new Set((product.tags ?? []).map(t => t.id))
+  const others = all.filter(p => p.id !== product.id)
+  const sameTag = others.filter(p => (p.tags ?? []).some(t => tagIds.has(t.id)))
+  const related = (sameTag.length > 0 ? sameTag : others).slice(0, 4)
+
+  const Theme = getTheme(config?.template_id)
   return (
-    <main>
-      <p>
-        <Link href="/">← Back to shop</Link>
-      </p>
-      {product.thumbnail ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={product.thumbnail}
-          alt={product.title}
-          style={{ maxWidth: "320px", borderRadius: "10px" }}
-        />
-      ) : null}
-      <h1>{product.title}</h1>
-      {product.description ? <p>{product.description}</p> : null}
-      <AddToCart variants={product.variants ?? []} />
-    </main>
+    <Theme.PDP
+      config={config}
+      product={mapProduct(product)}
+      variants={product.variants ?? []}
+      related={mapProducts(related)}
+    />
   )
 }

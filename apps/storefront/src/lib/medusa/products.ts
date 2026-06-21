@@ -9,8 +9,22 @@ export type StoreVariant = {
   title: string | null
   calculated_price: {
     calculated_amount: number | null
+    // original_amount > calculated_amount means an active sale/price-list — this
+    // is how we detect a *real* deal rather than fabricating discounts.
+    original_amount: number | null
     currency_code: string | null
   } | null
+}
+
+export type StoreTag = {
+  id: string
+  value: string
+}
+
+export type StoreCategory = {
+  id: string
+  name: string
+  handle: string | null
 }
 
 export type StoreProduct = {
@@ -19,6 +33,11 @@ export type StoreProduct = {
   handle: string | null
   thumbnail: string | null
   description: string | null
+  created_at: string | null
+  tags: StoreTag[]
+  // Real Medusa product categories assigned to this product. Empty when the
+  // seller hasn't set up categories — the browse nav then falls back to tags.
+  categories: StoreCategory[]
   variants: StoreVariant[]
 }
 
@@ -26,7 +45,7 @@ export type StoreProduct = {
 // price for that region's currency. The price is in major units (e.g. 49.99) —
 // render it directly, never divide by 100.
 const PRODUCT_FIELDS =
-  "id,title,handle,thumbnail,description,*variants,variants.calculated_price"
+  "id,title,handle,thumbnail,description,created_at,*tags,categories.id,categories.name,categories.handle,*variants,variants.calculated_price"
 
 /**
  * Lists products for the resolved tenant. The per-tenant SDK attaches the

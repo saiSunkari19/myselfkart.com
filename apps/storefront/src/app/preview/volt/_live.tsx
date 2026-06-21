@@ -3,17 +3,17 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
-import type { StoreProduct } from "../../../lib/medusa/products"
+import type { ProductView, CategoryView } from "../../../lib/views"
+import type { HomeProps, NavProps } from "../../../lib/themes/types"
 import {
-  PageLoader, TrustStrip, ProductCard, Reveal, Stars, Badge, Footer,
+  PageLoader, TrustStrip, Reveal, Stars, Badge, Footer,
 } from "./_components"
-import {
-  PRODUCTS, CATEGORIES, BRANDS, DEALS, BESTSELLERS,
-  type Product,
-} from "./_data"
+import { type Product } from "./_data"
 import s from "./_styles.module.css"
 
-/* ---- Convert Medusa StoreProduct → Volt Product shape ---- */
+/* ---- View model → Volt card shape ----
+   The route maps Medusa → ProductView (the seam); here we adapt ProductView into
+   Volt's local card shape purely for rendering. No mock data, no derivation. */
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&q=85",
   "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=85",
@@ -23,16 +23,16 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=600&q=85",
 ]
 
-function toVoltProduct(p: StoreProduct, index: number): Product {
-  const price = p.variants?.find(v => v.calculated_price?.calculated_amount != null)
-    ?.calculated_price?.calculated_amount ?? 0
-  const img = p.thumbnail ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
+export function viewToVolt(v: ProductView, index: number): Product {
+  const img = v.thumbnail ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]
   return {
-    id: p.handle ?? p.id,
-    name: p.title,
+    id: v.handle ?? v.id,
+    name: v.title,
     brand: "",
-    category: "Featured",
-    price,
+    category: v.tags[0] ?? "Featured",
+    price: v.price ?? 0,
+    originalPrice: v.originalPrice ?? undefined,
+    discount: v.discountPercent > 0 ? v.discountPercent : undefined,
     rating: 4.5,
     reviewCount: 0,
     image: img,
@@ -40,14 +40,14 @@ function toVoltProduct(p: StoreProduct, index: number): Product {
     badge: undefined,
     inStock: true,
     warranty: "",
-    description: p.description ?? "",
+    description: v.description,
     highlights: [],
     specs: [],
   }
 }
 
 /* ---- Live product card: links to the real PDP /products/<handle> ---- */
-function LiveProductCard({ product }: { product: Product }) {
+export function LiveProductCard({ product }: { product: Product }) {
   return (
     <Link href={`/products/${product.id}`} className={s.productCard}>
       <div className={s.productCardImg}>
@@ -85,10 +85,11 @@ function LiveProductCard({ product }: { product: Product }) {
 }
 
 /* ---- Config-aware NavBar (drives store name / logo / announcement) ---- */
-function NavBar({ storeName, logoUrl, announcementText }: {
+export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = false }: {
   storeName: string
   logoUrl: string | null
   announcementText: string | null
+  hasDeals?: boolean
 }) {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
@@ -105,7 +106,7 @@ function NavBar({ storeName, logoUrl, announcementText }: {
       )}
       <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
         <div className={s.navInner}>
-          <Link href="/preview/volt" className={s.navLogo}>
+          <Link href="/" className={s.navLogo}>
             {logoUrl
               ? <img src={logoUrl} alt={storeName} style={{ height: 28, width: "auto", objectFit: "contain" }} />
               : <>{storeName}<span className={s.navLogoAccent}>.</span></>}
@@ -115,13 +116,9 @@ function NavBar({ storeName, logoUrl, announcementText }: {
             <button className={s.navSearchBtn}>🔍</button>
           </div>
           <div className={s.navLinks}>
-            <Link href="/preview/volt/deals" className={s.navLink}>Deals</Link>
-            <Link href="/preview/volt/new-launches" className={s.navLink}>New</Link>
-            <Link href="/preview/volt/brands" className={s.navLink}>Brands</Link>
-            <Link href="/preview/volt/cart" className={s.navCart}>
-              🛒 Cart
-              <span className={s.cartCount}>2</span>
-            </Link>
+            <Link href="/shop" className={s.navLink}>Shop</Link>
+            {hasDeals && <Link href="/deals" className={s.navLink}>Deals</Link>}
+            <Link href="/cart" className={s.navCart}>🛒 Cart</Link>
           </div>
         </div>
       </nav>
@@ -129,106 +126,60 @@ function NavBar({ storeName, logoUrl, announcementText }: {
   )
 }
 
-/* ---- Hero (config-aware) ---- */
-const DEFAULT_HERO_SLIDES = [
-  {
-    product: PRODUCTS[0],
-    bg: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1600&q=85",
-    tagline: "The Ultimate Smartphone",
-  },
-  {
-    product: PRODUCTS[2],
-    bg: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1600&q=85",
-    tagline: "Power. Redefined.",
-  },
-  {
-    product: PRODUCTS[3],
-    bg: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1600&q=85",
-    tagline: "Hear Every Detail",
-  },
-]
+/* ---- Volt nav slot (StoreTheme.Nav) ---- */
+export function VoltNav({ config, hasDeals }: NavProps) {
+  const announcementEnabled = config?.announcement_enabled ?? true
+  return (
+    <LiveNavBar
+      storeName={config?.store_name ?? "VOLT"}
+      logoUrl={config?.logo_url ?? null}
+      announcementText={announcementEnabled ? (config?.announcement_text ?? null) : null}
+      hasDeals={hasDeals}
+    />
+  )
+}
 
-function Hero({ config }: { config: StoreConfig | null }) {
-  const [active, setActive] = useState(0)
-  const hasCustomHero = !!(config?.hero_heading)
-
-  useEffect(() => {
-    if (hasCustomHero) return
-    const t = setInterval(() => setActive(i => (i + 1) % DEFAULT_HERO_SLIDES.length), 5000)
-    return () => clearInterval(t)
-  }, [hasCustomHero])
-
-  if (hasCustomHero) {
-    const heroImage = config?.hero_image_url || DEFAULT_HERO_SLIDES[0].bg
-    const heroCta = config?.hero_cta
-    return (
-      <div className={s.hero}>
-        <div className={`${s.heroSlide} ${s.heroSlideActive}`}>
-          <img src={heroImage} alt="" className={s.heroImg} />
-          <div className={s.heroOverlay} />
-        </div>
-        <div className={s.heroContent}>
-          <div className={s.heroText}>
-            {config?.tagline && <div className={s.heroBrand}>{config.tagline}</div>}
-            <h1 className={s.heroTitle}>{config?.hero_heading}</h1>
-            {config?.hero_subtext && <p className={s.heroSub}>{config.hero_subtext}</p>}
-            <div className={s.heroActions}>
-              <Link href={heroCta?.primary_link ?? "/shop"} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>
-                {heroCta?.primary_label ?? "Shop Now"}
-              </Link>
-              {heroCta?.secondary_label && (
-                <Link href={heroCta.secondary_link ?? "#"} className={`${s.btn} ${s.btnDark} ${s.btnLg}`}>
-                  {heroCta.secondary_label}
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+/* ---- Hero (config-aware; falls back to a real featured product, never mock) ---- */
+function Hero({ config, featured }: { config: StoreConfig | null; featured: Product | null }) {
+  const heroImage =
+    config?.hero_image_url ||
+    featured?.image ||
+    "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&q=85"
+  const heading = config?.hero_heading || featured?.name || config?.store_name || "Shop the collection"
+  const sub = config?.hero_subtext || (featured ? featured.description.slice(0, 110) : null)
+  const heroCta = config?.hero_cta
   return (
     <div className={s.hero}>
-      {DEFAULT_HERO_SLIDES.map((slide, i) => (
-        <div key={i} className={`${s.heroSlide} ${i === active ? s.heroSlideActive : ""}`}>
-          <img src={slide.bg} alt="" className={s.heroImg} />
-          <div className={s.heroOverlay} />
-        </div>
-      ))}
+      <div className={`${s.heroSlide} ${s.heroSlideActive}`}>
+        <img src={heroImage} alt="" className={s.heroImg} />
+        <div className={s.heroOverlay} />
+      </div>
       <div className={s.heroContent}>
         <div className={s.heroText}>
-          <div className={s.heroBrand}>{DEFAULT_HERO_SLIDES[active].product.brand} · {DEFAULT_HERO_SLIDES[active].tagline}</div>
-          <h1 className={s.heroTitle}>{DEFAULT_HERO_SLIDES[active].product.name}</h1>
-          <p className={s.heroSub}>{DEFAULT_HERO_SLIDES[active].product.description.slice(0, 100)}...</p>
-          <div className={s.heroPrice}>
-            <span className={s.heroPriceMain}>₹{DEFAULT_HERO_SLIDES[active].product.price.toLocaleString("en-IN")}</span>
-            {DEFAULT_HERO_SLIDES[active].product.originalPrice && (
-              <span className={s.heroPriceOriginal}>₹{DEFAULT_HERO_SLIDES[active].product.originalPrice!.toLocaleString("en-IN")}</span>
-            )}
-            {DEFAULT_HERO_SLIDES[active].product.discount && (
-              <span className={s.heroPriceDiscount}>{DEFAULT_HERO_SLIDES[active].product.discount}% OFF</span>
-            )}
-          </div>
+          {config?.tagline && <div className={s.heroBrand}>{config.tagline}</div>}
+          <h1 className={s.heroTitle}>{heading}</h1>
+          {sub && <p className={s.heroSub}>{sub}</p>}
           <div className={s.heroActions}>
-            <Link href={`/preview/volt/products/${DEFAULT_HERO_SLIDES[active].product.id}`} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Shop Now</Link>
-            <Link href="/preview/volt/shop" className={`${s.btn} ${s.btnDark} ${s.btnLg}`}>View All</Link>
+            <Link href={heroCta?.primary_link ?? "/shop"} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>
+              {heroCta?.primary_label ?? "Shop Now"}
+            </Link>
+            {heroCta?.secondary_label && (
+              <Link href={heroCta.secondary_link ?? "/shop"} className={`${s.btn} ${s.btnDark} ${s.btnLg}`}>
+                {heroCta.secondary_label}
+              </Link>
+            )}
           </div>
         </div>
-      </div>
-      <div className={s.heroDots}>
-        {DEFAULT_HERO_SLIDES.map((_, i) => (
-          <div key={i} className={`${s.heroDot} ${i === active ? s.heroDotActive : ""}`} onClick={() => setActive(i)} />
-        ))}
       </div>
     </div>
   )
 }
 
-/* ---- Category bar (mock) ---- */
-function CategoryBar() {
+/* ---- Category bar (derived from tags; hidden when empty) ---- */
+function CategoryBar({ categories }: { categories: CategoryView[] }) {
   const [active, setActive] = useState("All")
-  const cats = ["All", ...CATEGORIES.slice(0, 8).map(c => c.name)]
+  if (categories.length === 0) return null
+  const cats = ["All", ...categories.map(c => c.name)]
   return (
     <div className={s.categoryBar}>
       <div className={s.categoryBarInner}>
@@ -249,38 +200,27 @@ const REVIEWS = [
   { name: "Sneha Joshi", rating: 5, text: "Best prices I found anywhere online. Plus they have 24/7 support which saved me. 10/10.", product: "Featured Product", avatar: "S" },
 ]
 
-/* ---- Main export ---- */
-export function VoltLivePage({ config, products: rawProducts = [] }: { config: StoreConfig | null; products?: StoreProduct[] }) {
+/* ---- Home slot (StoreTheme.Home) — renders the tenant's real products ---- */
+export function VoltLivePage({ config, products: productViews, categories, deals: dealViews, newArrivals }: HomeProps) {
   const storeName = config?.store_name ?? "VOLT"
-  const logoUrl = config?.logo_url ?? null
-  const announcementEnabled = config?.announcement_enabled ?? true
-  const announcementText = announcementEnabled
-    ? (config?.announcement_text ?? "🎉 VOLT SALE — Up to 40% off on top brands")
-    : null
 
-  // Real products with mock fallback
-  const products: Product[] = rawProducts.length > 0
-    ? rawProducts.map(toVoltProduct)
-    : PRODUCTS
-  const isLive = rawProducts.length > 0
-
-  const newLaunches = products.slice(0, 4)
-  const bestsellers = products.slice(0, 4)
+  const products = productViews.map(viewToVolt)
+  const deals = dealViews.map(viewToVolt)
+  const newLaunches = newArrivals.slice(0, 4).map(viewToVolt)
   const allProducts = products.slice(0, 8)
+  const hasDeals = deals.length > 0
 
-  // Map seller colours onto volt's :root CSS vars
   const colorOverrides = {
     ...(config?.accent_color    ? { "--accent": config.accent_color }       : {}),
     ...(config?.primary_color   ? { "--text": config.primary_color }        : {}),
     ...(config?.secondary_color ? { "--bg2": config.secondary_color }        : {}),
   } as React.CSSProperties
 
-  // Render product grids with real PDP links when live, mock cards otherwise
   const renderGrid = (items: Product[]) => (
     <div className={s.productGrid}>
       {items.map((p, i) => (
         <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-          {isLive ? <LiveProductCard product={p} /> : <ProductCard product={p} />}
+          <LiveProductCard product={p} />
         </Reveal>
       ))}
     </div>
@@ -289,139 +229,97 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
   return (
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
-      <NavBar storeName={storeName} logoUrl={logoUrl} announcementText={announcementText} />
+      <VoltNav config={config} hasDeals={hasDeals} categories={categories} />
       <div className={s.main}>
-        <Hero config={config} />
+        <Hero config={config} featured={newLaunches[0] ?? allProducts[0] ?? null} />
         <TrustStrip />
-        <CategoryBar />
+        <CategoryBar categories={categories} />
 
-        {/* Shop by Category (mock decorative) */}
-        <section className={`${s.section} ${s.sectionBg}`}>
-          <div className={s.container}>
-            <Reveal>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Browse</span>
-                  <div className={s.sectionTitle}>Shop by Category</div>
+        {/* Shop by Category — derived from product tags */}
+        {categories.length > 0 && (
+          <section className={`${s.section} ${s.sectionBg}`}>
+            <div className={s.container}>
+              <Reveal>
+                <div className={s.sectionHead}>
+                  <div>
+                    <span className={s.sectionLabel}>Browse</span>
+                    <div className={s.sectionTitle}>Shop by Category</div>
+                  </div>
+                  <Link href="/shop" className={s.viewAll}>View All →</Link>
                 </div>
-                <Link href="/preview/volt/categories" className={s.viewAll}>View All →</Link>
+              </Reveal>
+              <div className={s.categoryGrid}>
+                {categories.slice(0, 6).map((cat, i) => (
+                  <Reveal key={cat.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
+                    <Link href={cat.href} className={s.categoryCard}>
+                      <div className={s.categoryIcon}>🏷️</div>
+                      <div className={s.categoryName}>{cat.name}</div>
+                      <div className={s.categoryCount}>{cat.count} products</div>
+                    </Link>
+                  </Reveal>
+                ))}
               </div>
-            </Reveal>
-            <div className={s.categoryGrid}>
-              {CATEGORIES.slice(0, 6).map((cat, i) => (
-                <Reveal key={cat.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <Link href={`/preview/volt/shop?category=${cat.id}`} className={s.categoryCard}>
-                    <div className={s.categoryIcon}>{cat.icon}</div>
-                    <div className={s.categoryName}>{cat.name}</div>
-                    <div className={s.categoryCount}>{cat.count}+ products</div>
-                  </Link>
-                </Reveal>
-              ))}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* New Launches (real products) */}
-        <section className={s.section}>
-          <div className={s.container}>
-            <Reveal>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Just In</span>
-                  <div className={s.sectionTitle}>New Launches</div>
-                  <div className={s.sectionSub}>The latest releases from {storeName}</div>
+        {/* New Arrivals (real) */}
+        {newLaunches.length > 0 && (
+          <section className={s.section}>
+            <div className={s.container}>
+              <Reveal>
+                <div className={s.sectionHead}>
+                  <div>
+                    <span className={s.sectionLabel}>Just In</span>
+                    <div className={s.sectionTitle}>New Arrivals</div>
+                    <div className={s.sectionSub}>The latest from {storeName}</div>
+                  </div>
+                  <Link href="/shop" className={s.viewAll}>View All →</Link>
                 </div>
-                <Link href="/preview/volt/new-launches" className={s.viewAll}>View All →</Link>
-              </div>
-            </Reveal>
-            {renderGrid(newLaunches)}
-          </div>
-        </section>
-
-        {/* Top Deals (mock decorative) */}
-        <section className={`${s.section} ${s.sectionBg}`}>
-          <div className={s.container}>
-            <Reveal>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Limited Time</span>
-                  <div className={s.sectionTitle}>Today's Best Deals</div>
-                  <div className={s.sectionSub}>Prices drop at midnight — don't miss out</div>
-                </div>
-                <Link href="/preview/volt/deals" className={s.viewAll}>All Deals →</Link>
-              </div>
-            </Reveal>
-            <div className={s.productGrid}>
-              {DEALS.slice(0, 4).map((p, i) => (
-                <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <ProductCard product={p} />
-                </Reveal>
-              ))}
+              </Reveal>
+              {renderGrid(newLaunches)}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Shop by Brand (mock decorative) */}
-        <section className={s.section}>
-          <div className={s.container}>
-            <Reveal>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Authorised</span>
-                  <div className={s.sectionTitle}>Shop by Brand</div>
+        {/* Today's Best Deals — only when products are genuinely on sale */}
+        {hasDeals && (
+          <section className={`${s.section} ${s.sectionBg}`}>
+            <div className={s.container}>
+              <Reveal>
+                <div className={s.sectionHead}>
+                  <div>
+                    <span className={s.sectionLabel}>Limited Time</span>
+                    <div className={s.sectionTitle}>Today's Best Deals</div>
+                    <div className={s.sectionSub}>On sale right now</div>
+                  </div>
+                  <Link href="/deals" className={s.viewAll}>All Deals →</Link>
                 </div>
-                <Link href="/preview/volt/brands" className={s.viewAll}>All Brands →</Link>
-              </div>
-            </Reveal>
-            <div className={s.brandGrid}>
-              {BRANDS.slice(0, 5).map((brand, i) => (
-                <Reveal key={brand.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <Link href={`/preview/volt/brands#${brand.id}`} className={s.brandCard}>
-                    <span className={s.brandLogo}>{brand.logo}</span>
-                    <div>
-                      <div className={s.brandName}>{brand.name}</div>
-                      <div style={{ fontSize: 11, color: "var(--text3)" }}>{brand.count} products</div>
-                    </div>
-                  </Link>
-                </Reveal>
-              ))}
+              </Reveal>
+              {renderGrid(deals.slice(0, 4))}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Bestsellers (real products) */}
-        <section className={`${s.section} ${s.sectionBg}`}>
-          <div className={s.container}>
-            <Reveal>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Customer Favourites</span>
-                  <div className={s.sectionTitle}>Best Sellers</div>
+        {/* Shop All (real) */}
+        {allProducts.length > 0 && (
+          <section className={s.section}>
+            <div className={s.container}>
+              <Reveal>
+                <div className={s.sectionHead}>
+                  <div>
+                    <span className={s.sectionLabel}>Full Range</span>
+                    <div className={s.sectionTitle}>Shop All Products</div>
+                  </div>
+                  <Link href="/shop" className={s.viewAll}>View All →</Link>
                 </div>
-                <Link href="/preview/volt/best-sellers" className={s.viewAll}>View All →</Link>
-              </div>
-            </Reveal>
-            {renderGrid(isLive ? bestsellers : BESTSELLERS.slice(0, 4))}
-          </div>
-        </section>
+              </Reveal>
+              {renderGrid(allProducts)}
+            </div>
+          </section>
+        )}
 
-        {/* Shop All (real products) */}
-        <section className={s.section}>
-          <div className={s.container}>
-            <Reveal>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Full Range</span>
-                  <div className={s.sectionTitle}>Shop All Products</div>
-                </div>
-                <Link href="/preview/volt/shop" className={s.viewAll}>View All →</Link>
-              </div>
-            </Reveal>
-            {renderGrid(allProducts)}
-          </div>
-        </section>
-
-        {/* Why Buy (decorative) */}
+        {/* Why Buy (decorative chrome) */}
         <section className={`${s.section} ${s.sectionDark}`}>
           <div className={s.container}>
             <Reveal>
@@ -432,10 +330,10 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
             </Reveal>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
               {[
-                { icon: "🏆", title: "10+ Years of Trust", text: "Serving 50 lakh+ customers with consistent quality." },
-                { icon: "📦", title: "Same-Day Dispatch", text: "Order before 3 PM and get your product dispatched same day." },
-                { icon: "🔧", title: "Expert Support", text: "Certified technicians available for all product queries." },
-                { icon: "💯", title: "Price Promise", text: "Found it cheaper? We'll match it. No questions asked." },
+                { icon: "🏆", title: "Trusted Quality", text: "Genuine products, carefully checked before dispatch." },
+                { icon: "📦", title: "Fast Dispatch", text: "Orders processed quickly so they reach you sooner." },
+                { icon: "🔧", title: "Helpful Support", text: "A team ready to help with any product queries." },
+                { icon: "💯", title: "Fair Pricing", text: "Honest prices with no hidden surprises." },
               ].map((item, i) => (
                 <Reveal key={item.title} delay={(i % 4) as 0 | 1 | 2 | 3}>
                   <div style={{ textAlign: "center", padding: "28px 20px" }}>
@@ -449,7 +347,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
           </div>
         </section>
 
-        {/* Reviews (decorative) */}
+        {/* Reviews (decorative chrome) */}
         <section className={s.section}>
           <div className={s.container}>
             <Reveal>
@@ -485,7 +383,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
           <Reveal>
             <div className={s.newsletter}>
               <div className={s.newsletterTitle}>Get Exclusive Deals First</div>
-              <p className={s.newsletterSub}>Join 2 million+ subscribers. First access to sales, new launches, and insider offers.</p>
+              <p className={s.newsletterSub}>Be first to hear about sales, new arrivals, and insider offers.</p>
               <div className={s.newsletterForm}>
                 <input className={s.newsletterInput} placeholder="Your email address" type="email" />
                 <button className={s.newsletterBtn}>Subscribe</button>
