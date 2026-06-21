@@ -16,6 +16,8 @@ import {
   type CartAddress,
 } from "../medusa/cart"
 import { getRegion } from "../medusa/region"
+import { createCustomerAddress, listCustomerAddresses } from "../medusa/customer"
+import { getCustomerToken } from "../customer/cookie"
 import {
   getPaymentConfig,
   initiateRazorpaySession,
@@ -112,6 +114,36 @@ export async function setAddressAction(formData: FormData): Promise<void> {
   }
 
   await setCustomerDetails(tenant, cartId, email, address)
+
+  // Mirror the checkout address into the signed-in customer's address book so it
+  // appears under Account → Addresses and can be reused next time. Deduped by
+  // street + postal code, and best-effort: a failure here must never block the
+  // checkout (the cart already has the address it needs).
+  const token = await getCustomerToken()
+  if (token) {
+    try {
+      const sig = (a: { address_1?: string | null; postal_code?: string | null }) =>
+        `${(a.address_1 ?? "").trim().toLowerCase()}|${(a.postal_code ?? "").trim()}`
+      const newSig = sig({ address_1: address.address_1, postal_code: address.postal_code })
+      const existing = await listCustomerAddresses(tenant, token)
+      if (!existing.some((a) => sig(a) === newSig)) {
+        await createCustomerAddress(tenant, token, {
+          first_name: address.first_name,
+          last_name: address.last_name,
+          address_1: address.address_1,
+          city: address.city,
+          province: address.province,
+          postal_code: address.postal_code,
+          country_code: address.country_code,
+          phone: address.phone,
+        })
+        revalidatePath("/account/addresses")
+      }
+    } catch {
+      /* best-effort: never block checkout on address-book sync */
+    }
+  }
+
   revalidatePath("/checkout")
 }
 
