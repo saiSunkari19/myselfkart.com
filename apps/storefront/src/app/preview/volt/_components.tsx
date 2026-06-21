@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { type Product } from "./_data"
+import { useTemplateConfig } from "../../../lib/template-config-context"
 import s from "./_styles.module.css"
 
 // ---- Scroll Reveal ----
@@ -69,8 +70,9 @@ export function Badge({ type }: { type: Product["badge"] }) {
 
 // ---- Product Card ----
 export function ProductCard({ product, compact = false }: { product: Product; compact?: boolean }) {
+  const { basePath } = useTemplateConfig()
   return (
-    <Link href={`/preview/volt/products/${product.id}`} className={s.productCard}>
+    <Link href={`${basePath}/products/${product.id}`} className={s.productCard}>
       <div className={s.productCardImg}>
         <img src={product.image} alt={product.name} />
         <div className={s.productCardBadge}><Badge type={product.badge} /></div>
@@ -107,35 +109,43 @@ export function ProductCard({ product, compact = false }: { product: Product; co
 
 // ---- Nav ----
 export function NavBar() {
+  const { basePath, config } = useTemplateConfig()
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 10)
     window.addEventListener("scroll", h, { passive: true })
     return () => window.removeEventListener("scroll", h)
   }, [])
+  const storeName = config?.store_name ?? "VOLT"
+  const announcementText = config?.announcement_enabled && config.announcement_text
+    ? config.announcement_text
+    : "🎉 VOLT SALE — Up to 40% off on top brands"
   return (
     <>
       <div className={s.announcementBar}>
-        <span className={s.announcementText}>🎉 <strong>VOLT SALE</strong> — Up to 40% off on top brands</span>
+        <span className={s.announcementText}>{announcementText}</span>
         <span className={s.announcementText}>|</span>
         <span className={s.announcementText}>Free delivery on orders above ₹999</span>
         <span className={s.announcementText}>|</span>
-        <Link href="/preview/volt/deals" className={s.announcementLink}>Shop Deals →</Link>
+        <Link href={`${basePath}/deals`} className={s.announcementLink}>Shop Deals →</Link>
       </div>
       <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
         <div className={s.navInner}>
-          <Link href="/preview/volt" className={s.navLogo}>
-            VOLT<span className={s.navLogoAccent}>.</span>
+          <Link href={basePath || "/"} className={s.navLogo}>
+            {config?.logo_url
+              ? <img src={config.logo_url} alt={storeName} style={{ height: 32, objectFit: "contain" }} />
+              : <>{storeName}<span className={s.navLogoAccent}>.</span></>
+            }
           </Link>
           <div className={s.navSearch}>
             <input className={s.navSearchInput} placeholder="Search for phones, laptops, TVs & more..." />
             <button className={s.navSearchBtn}>🔍</button>
           </div>
           <div className={s.navLinks}>
-            <Link href="/preview/volt/deals" className={s.navLink}>Deals</Link>
-            <Link href="/preview/volt/new-launches" className={s.navLink}>New</Link>
-            <Link href="/preview/volt/brands" className={s.navLink}>Brands</Link>
-            <Link href="/preview/volt/cart" className={s.navCart}>
+            <Link href={`${basePath}/deals`} className={s.navLink}>Deals</Link>
+            <Link href={`${basePath}/new-launches`} className={s.navLink}>New</Link>
+            <Link href={`${basePath}/brands`} className={s.navLink}>Brands</Link>
+            <Link href={`${basePath}/cart`} className={s.navCart}>
               🛒 Cart
               <span className={s.cartCount}>2</span>
             </Link>
@@ -148,12 +158,14 @@ export function NavBar() {
 
 // ---- Footer ----
 export function Footer() {
+  const { basePath, config } = useTemplateConfig()
+  const storeName = config?.store_name ?? "VOLT"
   return (
     <footer className={s.footer}>
       <div className={s.container}>
         <div className={s.footerGrid}>
           <div className={s.footerBrand}>
-            <div className={s.footerLogo}>VOLT<span className={s.footerLogoAccent}>.</span></div>
+            <div className={s.footerLogo}>{storeName}<span className={s.footerLogoAccent}>.</span></div>
             <p className={s.footerTagline}>India's most trusted destination for premium electronics. Genuine products, unbeatable prices.</p>
             <div className={s.footerSocial}>
               {["𝕏", "📘", "📸", "▶"].map(icon => (
@@ -162,9 +174,9 @@ export function Footer() {
             </div>
           </div>
           {[
-            { title: "Shop", links: [["Smartphones", "/preview/volt/shop"], ["Laptops", "/preview/volt/shop"], ["Audio", "/preview/volt/shop"], ["Deals", "/preview/volt/deals"], ["New Launches", "/preview/volt/new-launches"]] },
-            { title: "Help", links: [["FAQs", "/preview/volt/faq"], ["Warranty", "/preview/volt/warranty"], ["Shipping", "/preview/volt/shipping"], ["Returns", "/preview/volt/returns"], ["Contact", "/preview/volt/contact"]] },
-            { title: "Company", links: [["About Us", "/preview/volt/about"], ["Brands", "/preview/volt/brands"], ["Privacy Policy", "/preview/volt/privacy"], ["Terms", "/preview/volt/terms"]] },
+            { title: "Shop", links: [["Smartphones", `${basePath}/shop`], ["Laptops", `${basePath}/shop`], ["Audio", `${basePath}/shop`], ["Deals", `${basePath}/deals`], ["New Launches", `${basePath}/new-launches`]] },
+            { title: "Help", links: [["FAQs", `${basePath}/faq`], ["Warranty", `${basePath}/warranty`], ["Shipping", `${basePath}/shipping`], ["Returns", `${basePath}/returns`], ["Contact", `${basePath}/contact`]] },
+            { title: "Company", links: [["About Us", `${basePath}/about`], ["Brands", `${basePath}/brands`], ["Privacy Policy", `${basePath}/privacy`], ["Terms", `${basePath}/terms`]] },
             { title: "Contact", links: [["1800-VOLT-CARE", "#"], ["support@volt.in", "#"], ["Mon–Sat 9am–9pm", "#"], ["Live Chat", "#"]] },
           ].map(col => (
             <div key={col.title} className={s.footerCol}>
@@ -176,11 +188,11 @@ export function Footer() {
           ))}
         </div>
         <div className={s.footerBottom}>
-          <span className={s.footerCopy}>© 2025 Volt Electronics. All rights reserved.</span>
+          <span className={s.footerCopy}>© 2025 {storeName}. All rights reserved.</span>
           <div className={s.footerBottomLinks}>
-            <Link href="/preview/volt/privacy" className={s.footerBottomLink}>Privacy</Link>
-            <Link href="/preview/volt/terms" className={s.footerBottomLink}>Terms</Link>
-            <Link href="/preview/volt/shipping" className={s.footerBottomLink}>Shipping</Link>
+            <Link href={`${basePath}/privacy`} className={s.footerBottomLink}>Privacy</Link>
+            <Link href={`${basePath}/terms`} className={s.footerBottomLink}>Terms</Link>
+            <Link href={`${basePath}/shipping`} className={s.footerBottomLink}>Shipping</Link>
           </div>
         </div>
       </div>
@@ -190,8 +202,13 @@ export function Footer() {
 
 // ---- Page Shell ----
 export function PageShell({ children }: { children: React.ReactNode }) {
+  const { config } = useTemplateConfig()
+  const colorVars = {
+    ...(config?.primary_color ? { "--text": config.primary_color } : {}),
+    ...(config?.accent_color  ? { "--accent": config.accent_color  } : {}),
+  } as React.CSSProperties
   return (
-    <div className={s.pageShell}>
+    <div className={s.pageShell} style={colorVars}>
       <PageLoader />
       <NavBar />
       <div className={s.main}>

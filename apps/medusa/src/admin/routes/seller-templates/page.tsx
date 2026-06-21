@@ -454,6 +454,7 @@ const TemplatePicker = ({
   const [pending, setPending] = useState<Template | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const confirmRef = useRef<HTMLDivElement>(null)
 
   const handleConfirm = async () => {
     if (!pending) return
@@ -498,6 +499,7 @@ const TemplatePicker = ({
               onSelect={(tpl) => {
                 setPending(tpl)
                 setError(null)
+                setTimeout(() => confirmRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
               }}
             />
           ))}
@@ -505,7 +507,7 @@ const TemplatePicker = ({
       </div>
 
       {pending && (
-        <div className="flex flex-col gap-3 bg-ui-bg-highlight px-6 py-4">
+        <div ref={confirmRef} className="flex flex-col gap-3 bg-ui-bg-highlight px-6 py-4">
           <div className="flex items-start gap-3 rounded-md border border-ui-border-caution bg-ui-bg-base p-4">
             <div className="flex flex-col gap-1">
               <Text size="small" weight="plus" className="text-ui-fg-base">

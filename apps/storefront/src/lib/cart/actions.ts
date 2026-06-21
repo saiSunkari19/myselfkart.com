@@ -17,8 +17,10 @@ import {
 } from "../medusa/cart"
 import { getRegion } from "../medusa/region"
 import {
+  getPaymentConfig,
   initiateRazorpaySession,
   type RazorpaySession,
+  type StorePaymentConfig,
 } from "../medusa/payment"
 import { resolveTenant } from "../tenant/resolve-tenant"
 import type { TenantResolution } from "../tenant/types"
@@ -208,4 +210,11 @@ export async function completeRazorpayOrderAction(): Promise<
     return { ok: true, orderId: result.orderId }
   }
   return { ok: false, error: result.message }
+}
+
+/** Checks if Razorpay is configured and enabled for the current store tenant. */
+export async function getPaymentSetupAction(): Promise<StorePaymentConfig> {
+  const tenant = await resolveTenant()
+  if (!tenant || tenant.status !== "active") return { razorpay: null }
+  return getPaymentConfig(tenant)
 }

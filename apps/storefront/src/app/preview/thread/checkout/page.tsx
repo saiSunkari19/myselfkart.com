@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import { PageShell } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { RazorpayCheckout } from "../../../../components/razorpay-checkout"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const CART_ITEMS = [
   { product: PRODUCTS[0], size: "M", qty: 1 },
@@ -18,6 +20,7 @@ const total = subtotal + shipping
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { config } = useTemplateConfig()
   const [step, setStep] = useState<"shipping" | "payment">("shipping")
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", phone: "",
@@ -118,42 +121,19 @@ export default function CheckoutPage() {
             {step === "payment" && (
               <div className={s.formSection}>
                 <div className={s.formSectionTitle}>Payment</div>
-                <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-                  {[{ label: "Card", icon: "💳" }, { label: "UPI", icon: "📱" }, { label: "Net Banking", icon: "🏦" }, { label: "COD", icon: "💵" }].map((m, i) => (
-                    <label key={m.label} style={{
-                      flex: 1, border: `1.5px solid ${i === 0 ? "#1a1a1a" : "#e8e4df"}`,
-                      borderRadius: 10, padding: "12px", textAlign: "center",
-                      cursor: "pointer", fontSize: 13, fontWeight: i === 0 ? 600 : 400, color: "#1a1a1a",
-                    }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>{m.icon}</div>
-                      {m.label}
-                    </label>
-                  ))}
-                </div>
-                <div className={s.formGrid}>
-                  <div className={`${s.formGroup} ${s.fullWidth}`}>
-                    <label className={s.formLabel}>Card Number</label>
-                    <input className={s.formInput} placeholder="1234 5678 9012 3456" maxLength={19} />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label className={s.formLabel}>Expiry</label>
-                    <input className={s.formInput} placeholder="MM / YY" maxLength={7} />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label className={s.formLabel}>CVV</label>
-                    <input className={s.formInput} placeholder="•••" maxLength={4} type="password" />
-                  </div>
-                  <div className={`${s.formGroup} ${s.fullWidth}`}>
-                    <label className={s.formLabel}>Name on Card</label>
-                    <input className={s.formInput} placeholder="Priya Sharma" />
-                  </div>
-                </div>
+                <RazorpayCheckout
+                  storeName={config?.store_name ?? "THREAD"}
+                  accentColor={config?.accent_color ?? undefined}
+                  email={form.email || null}
+                />
               </div>
             )}
 
-            <button type="submit" className={`${s.btn} ${s.btnFull}`}>
-              {step === "shipping" ? "Continue to Payment →" : `Pay ₹${total.toLocaleString()} →`}
-            </button>
+            {step === "shipping" && (
+              <button type="submit" className={`${s.btn} ${s.btnFull}`}>
+                Continue to Payment →
+              </button>
+            )}
           </form>
 
           {/* Order Summary */}

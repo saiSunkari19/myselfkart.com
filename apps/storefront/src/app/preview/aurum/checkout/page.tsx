@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import { PageShell } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { RazorpayCheckout } from "../../../../components/razorpay-checkout"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const CART = [
   { product: PRODUCTS[1], size: "8", qty: 1 },
@@ -17,6 +19,7 @@ const total = subtotal + shipping
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { config } = useTemplateConfig()
   const [step, setStep] = useState<"info" | "payment">("info")
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", phone: "",
@@ -115,43 +118,20 @@ export default function CheckoutPage() {
 
             {step === "payment" && (
               <div className={s.formBlock}>
-                <div className={s.formBlockTitle}>Payment Method</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 28 }}>
-                  {[{ icon: "💳", label: "Card" }, { icon: "📱", label: "UPI" }, { icon: "🏦", label: "Net Banking" }, { icon: "📄", label: "EMI" }].map((m, i) => (
-                    <div key={m.label} style={{
-                      border: `1.5px solid ${i === 0 ? "#b8962e" : "#e8e0d4"}`,
-                      padding: "14px", textAlign: "center", cursor: "pointer",
-                      background: i === 0 ? "#fdf9f4" : "#fff",
-                    }}>
-                      <div style={{ fontSize: 22, marginBottom: 6 }}>{m.icon}</div>
-                      <div style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: "#6b5f52" }}>{m.label}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className={s.formGrid}>
-                  <div className={`${s.formGroup} ${s.formGroupFull}`}>
-                    <label className={s.formLabel}>Card Number</label>
-                    <input className={s.formInput} placeholder="1234 5678 9012 3456" maxLength={19} />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label className={s.formLabel}>Expiry Date</label>
-                    <input className={s.formInput} placeholder="MM / YY" maxLength={7} />
-                  </div>
-                  <div className={s.formGroup}>
-                    <label className={s.formLabel}>CVV</label>
-                    <input className={s.formInput} placeholder="•••" maxLength={4} type="password" />
-                  </div>
-                  <div className={`${s.formGroup} ${s.formGroupFull}`}>
-                    <label className={s.formLabel}>Name on Card</label>
-                    <input className={s.formInput} placeholder="Priya Sharma" />
-                  </div>
-                </div>
+                <div className={s.formBlockTitle}>Payment</div>
+                <RazorpayCheckout
+                  storeName={config?.store_name ?? "AURUM"}
+                accentColor={config?.accent_color ?? undefined}
+                  email={form.email || null}
+                />
               </div>
             )}
 
-            <button type="submit" className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`}>
-              {step === "info" ? "Continue to Payment →" : `Confirm & Pay ₹${total.toLocaleString("en-IN")}`}
-            </button>
+            {step === "info" && (
+              <button type="submit" className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`}>
+                Continue to Payment →
+              </button>
+            )}
 
             <div style={{ fontSize: 11, color: "#a09080", textAlign: "center", letterSpacing: 0.5 }}>
               🔒 256-bit SSL encryption · All payments secured by Razorpay

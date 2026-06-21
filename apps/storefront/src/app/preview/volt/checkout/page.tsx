@@ -6,6 +6,8 @@ import Link from "next/link"
 import { PageShell } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { RazorpayCheckout } from "../../../../components/razorpay-checkout"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const CART = [
   { product: PRODUCTS[0], qty: 1, storage: "256GB" },
@@ -16,10 +18,10 @@ const total = subtotal
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { config } = useTemplateConfig()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", address: "", city: "", state: "", pincode: "" })
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(p => ({ ...p, [k]: e.target.value }))
-  const [payMethod, setPayMethod] = useState(0)
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,30 +93,23 @@ export default function CheckoutPage() {
               <div className={s.formCard}>
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>2</div>
-                  <div className={s.formCardHeadTitle}>Payment Method</div>
+                  <div className={s.formCardHeadTitle}>Payment</div>
                 </div>
                 <div className={s.formCardBody}>
-                  <div className={s.paymentMethods}>
-                    {[{ icon: "💳", label: "Card" }, { icon: "📱", label: "UPI" }, { icon: "🏦", label: "Net Banking" }, { icon: "📄", label: "EMI" }].map((m, i) => (
-                      <div key={m.label} className={`${s.paymentMethod} ${i === payMethod ? s.paymentMethodActive : ""}`} onClick={() => setPayMethod(i)}>
-                        <div className={s.paymentMethodIcon}>{m.icon}</div>
-                        <div className={s.paymentMethodLabel}>{m.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={s.formGrid} style={{ marginTop: 20 }}>
-                    <div className={`${s.formGroup} ${s.formGroupFull}`}><label className={s.formLabel}>Card Number</label><input className={s.formInput} placeholder="1234 5678 9012 3456" maxLength={19} /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>Expiry</label><input className={s.formInput} placeholder="MM / YY" maxLength={7} /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>CVV</label><input className={s.formInput} type="password" placeholder="•••" maxLength={4} /></div>
-                    <div className={`${s.formGroup} ${s.formGroupFull}`}><label className={s.formLabel}>Name on Card</label><input className={s.formInput} placeholder="Rahul Sharma" /></div>
-                  </div>
+                  <RazorpayCheckout
+                    storeName={config?.store_name ?? "VOLT"}
+                    accentColor={config?.accent_color ?? undefined}
+                    email={form.email || null}
+                  />
                 </div>
               </div>
             )}
 
-            <button type="submit" className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`}>
-              {step === 0 ? "Continue to Payment →" : `Pay ₹${total.toLocaleString("en-IN")}`}
-            </button>
+            {step === 0 && (
+              <button type="submit" className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`}>
+                Continue to Payment →
+              </button>
+            )}
             <div className={s.secureNote}>🔒 256-bit SSL encryption · Secured by Razorpay</div>
           </form>
 

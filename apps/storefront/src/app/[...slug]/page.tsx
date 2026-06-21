@@ -1,0 +1,203 @@
+import { notFound } from "next/navigation"
+import { resolveTenant } from "../../lib/tenant/resolve-tenant"
+import { fetchStoreConfig } from "../../lib/store-config"
+import { listTenantProducts } from "../../lib/medusa/products"
+import { TemplateConfigProvider } from "../../lib/template-config-context"
+
+// ── Volt sub-page imports ──
+import VoltDealsPage from "../preview/volt/deals/page"
+import VoltShopPage from "../preview/volt/shop/page"
+import VoltCartPage from "../preview/volt/cart/page"
+import VoltCheckoutPage from "../preview/volt/checkout/page"
+import VoltAboutPage from "../preview/volt/about/page"
+import VoltBrandsPage from "../preview/volt/brands/page"
+import VoltCategoriesPage from "../preview/volt/categories/page"
+import VoltBestSellersPage from "../preview/volt/best-sellers/page"
+import VoltNewLaunchesPage from "../preview/volt/new-launches/page"
+import VoltContactPage from "../preview/volt/contact/page"
+import VoltFaqPage from "../preview/volt/faq/page"
+import VoltPrivacyPage from "../preview/volt/privacy/page"
+import VoltTermsPage from "../preview/volt/terms/page"
+import VoltShippingPage from "../preview/volt/shipping/page"
+import VoltReturnsPage from "../preview/volt/returns/page"
+import VoltWarrantyPage from "../preview/volt/warranty/page"
+import VoltConfirmationPage from "../preview/volt/confirmation/page"
+
+// ── Glow sub-page imports ──
+import { ShopClient as GlowShopClient } from "../preview/glow/shop/_shop-client"
+import { CartClient as GlowCartClient } from "../preview/glow/cart/_cart-client"
+import { CheckoutClient as GlowCheckoutClient } from "../preview/glow/checkout/_checkout-client"
+import { AboutClient as GlowAboutClient } from "../preview/glow/about/_about-client"
+
+// ── Thread sub-page imports ──
+import ThreadProductsPage from "../preview/thread/products/page"
+import ThreadCartPage from "../preview/thread/cart/page"
+import ThreadCheckoutPage from "../preview/thread/checkout/page"
+import ThreadAboutPage from "../preview/thread/about/page"
+import ThreadCategoriesPage from "../preview/thread/categories/page"
+import ThreadContactPage from "../preview/thread/contact/page"
+import ThreadFaqPage from "../preview/thread/faq/page"
+import ThreadPrivacyPage from "../preview/thread/privacy/page"
+import ThreadTermsPage from "../preview/thread/terms/page"
+import ThreadConfirmationPage from "../preview/thread/confirmation/page"
+
+// ── Aurum sub-page imports ──
+import AurumShopPage from "../preview/aurum/shop/page"
+import AurumCartPage from "../preview/aurum/cart/page"
+import AurumCheckoutPage from "../preview/aurum/checkout/page"
+import AurumAboutPage from "../preview/aurum/about/page"
+import AurumCollectionsPage from "../preview/aurum/collections/page"
+import AurumNewArrivalsPage from "../preview/aurum/new-arrivals/page"
+import AurumBridalPage from "../preview/aurum/bridal/page"
+import AurumGiftsPage from "../preview/aurum/gifts/page"
+import AurumContactPage from "../preview/aurum/contact/page"
+import AurumFaqPage from "../preview/aurum/faq/page"
+import AurumPrivacyPage from "../preview/aurum/privacy/page"
+import AurumTermsPage from "../preview/aurum/terms/page"
+import AurumConfirmationPage from "../preview/aurum/confirmation/page"
+
+// ── Eventpass sub-page imports ──
+import EventpassEventsPage from "../preview/eventpass/events/page"
+import EventpassCartPage from "../preview/eventpass/cart/page"
+import EventpassCheckoutPage from "../preview/eventpass/checkout/page"
+import EventpassAboutPage from "../preview/eventpass/about/page"
+import EventpassCategoriesPage from "../preview/eventpass/categories/page"
+import EventpassContactPage from "../preview/eventpass/contact/page"
+import EventpassFaqPage from "../preview/eventpass/faq/page"
+import EventpassPrivacyPage from "../preview/eventpass/privacy/page"
+import EventpassTermsPage from "../preview/eventpass/terms/page"
+import EventpassConfirmationPage from "../preview/eventpass/confirmation/page"
+
+export const dynamic = "force-dynamic"
+
+export default async function TemplateSubPage({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>
+}) {
+  const { slug: slugParts } = await params
+  const tenant = await resolveTenant()
+  const config = tenant ? await fetchStoreConfig(tenant) : null
+  const template = config?.template_id
+
+  if (!template) return notFound()
+
+  const slug = (slugParts ?? []).join("/")
+
+  // ── VOLT ──
+  if (template === "volt") {
+    const colorVars = {
+      ...(config?.primary_color ? { "--text": config.primary_color } : {}),
+      ...(config?.accent_color  ? { "--accent": config.accent_color } : {}),
+    }
+    const wrap = (node: React.ReactNode) => (
+      <TemplateConfigProvider config={config} basePath="">
+        <div style={colorVars as React.CSSProperties}>{node}</div>
+      </TemplateConfigProvider>
+    )
+    switch (slug) {
+      case "deals":         return wrap(<VoltDealsPage />)
+      case "shop":          return wrap(<VoltShopPage />)
+      case "cart":          return wrap(<VoltCartPage />)
+      case "checkout":      return wrap(<VoltCheckoutPage />)
+      case "about":         return wrap(<VoltAboutPage />)
+      case "brands":        return wrap(<VoltBrandsPage />)
+      case "categories":    return wrap(<VoltCategoriesPage />)
+      case "best-sellers":  return wrap(<VoltBestSellersPage />)
+      case "new-launches":  return wrap(<VoltNewLaunchesPage />)
+      case "contact":       return wrap(<VoltContactPage />)
+      case "faq":           return wrap(<VoltFaqPage />)
+      case "privacy":       return wrap(<VoltPrivacyPage />)
+      case "terms":         return wrap(<VoltTermsPage />)
+      case "shipping":      return wrap(<VoltShippingPage />)
+      case "returns":       return wrap(<VoltReturnsPage />)
+      case "warranty":      return wrap(<VoltWarrantyPage />)
+      case "confirmation":  return wrap(<VoltConfirmationPage />)
+    }
+  }
+
+  // ── GLOW ──
+  if (template === "glow") {
+    const products = tenant ? await listTenantProducts(tenant) : []
+    switch (slug) {
+      case "shop":      return <GlowShopClient config={config} products={products.map((p, i) => ({
+        id: p.id, name: p.title, subtitle: p.description?.slice(0, 60) ?? "",
+        category: "Skincare", price: p.variants?.find(v => v.calculated_price?.calculated_amount != null)?.calculated_price?.calculated_amount ?? 0,
+        image: p.thumbnail ?? "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
+        hoverImage: p.thumbnail ?? "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
+        rating: 4.5, reviews: 128, skinTypes: [], concerns: [], description: p.description ?? "", keyIngredients: [], size: "",
+      }))} />
+      case "cart":      return <GlowCartClient config={config} />
+      case "checkout":  return <GlowCheckoutClient config={config} />
+      case "about":     return <GlowAboutClient config={config} />
+    }
+  }
+
+  // ── THREAD ──
+  if (template === "thread") {
+    const wrap = (node: React.ReactNode) => (
+      <TemplateConfigProvider config={config} basePath="">
+        {node}
+      </TemplateConfigProvider>
+    )
+    switch (slug) {
+      case "products":     return wrap(<ThreadProductsPage />)
+      case "cart":         return wrap(<ThreadCartPage />)
+      case "checkout":     return wrap(<ThreadCheckoutPage />)
+      case "about":        return wrap(<ThreadAboutPage />)
+      case "categories":   return wrap(<ThreadCategoriesPage />)
+      case "contact":      return wrap(<ThreadContactPage />)
+      case "faq":          return wrap(<ThreadFaqPage />)
+      case "privacy":      return wrap(<ThreadPrivacyPage />)
+      case "terms":        return wrap(<ThreadTermsPage />)
+      case "confirmation": return wrap(<ThreadConfirmationPage />)
+    }
+  }
+
+  // ── AURUM ──
+  if (template === "aurum") {
+    const wrap = (node: React.ReactNode) => (
+      <TemplateConfigProvider config={config} basePath="">
+        {node}
+      </TemplateConfigProvider>
+    )
+    switch (slug) {
+      case "shop":          return wrap(<AurumShopPage />)
+      case "cart":          return wrap(<AurumCartPage />)
+      case "checkout":      return wrap(<AurumCheckoutPage />)
+      case "about":         return wrap(<AurumAboutPage />)
+      case "collections":   return wrap(<AurumCollectionsPage />)
+      case "new-arrivals":  return wrap(<AurumNewArrivalsPage />)
+      case "bridal":        return wrap(<AurumBridalPage />)
+      case "gifts":         return wrap(<AurumGiftsPage />)
+      case "contact":       return wrap(<AurumContactPage />)
+      case "faq":           return wrap(<AurumFaqPage />)
+      case "privacy":       return wrap(<AurumPrivacyPage />)
+      case "terms":         return wrap(<AurumTermsPage />)
+      case "confirmation":  return wrap(<AurumConfirmationPage />)
+    }
+  }
+
+  // ── EVENTPASS ──
+  if (template === "eventpass") {
+    const wrap = (node: React.ReactNode) => (
+      <TemplateConfigProvider config={config} basePath="">
+        {node}
+      </TemplateConfigProvider>
+    )
+    switch (slug) {
+      case "events":       return wrap(<EventpassEventsPage />)
+      case "cart":         return wrap(<EventpassCartPage />)
+      case "checkout":     return wrap(<EventpassCheckoutPage />)
+      case "about":        return wrap(<EventpassAboutPage />)
+      case "categories":   return wrap(<EventpassCategoriesPage />)
+      case "contact":      return wrap(<EventpassContactPage />)
+      case "faq":          return wrap(<EventpassFaqPage />)
+      case "privacy":      return wrap(<EventpassPrivacyPage />)
+      case "terms":        return wrap(<EventpassTermsPage />)
+      case "confirmation": return wrap(<EventpassConfirmationPage />)
+    }
+  }
+
+  return notFound()
+}
