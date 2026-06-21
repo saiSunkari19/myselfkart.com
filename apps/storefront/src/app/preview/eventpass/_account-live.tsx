@@ -1,7 +1,8 @@
 import { AccountContent } from "../../../components/storefront/account/account-content"
 import { LoginForm } from "../../../components/storefront/account/login-form"
 import type { AccountProps, LoginProps } from "../../../lib/themes/types"
-import { EventpassFooter, EventpassNav, pageShell } from "./_live"
+import { EventpassFooter, EventpassNav } from "./_live"
+import { pageShell } from "./_tokens"
 
 /** Eventpass login + account slots — shared auth/account UI in Eventpass chrome. */
 export function EventpassLoginPage({ config, next, error, notice }: LoginProps) {

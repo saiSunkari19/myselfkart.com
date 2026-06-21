@@ -1,7 +1,8 @@
 import { AccountContent } from "../../../components/storefront/account/account-content"
 import { LoginForm } from "../../../components/storefront/account/login-form"
 import type { AccountProps, LoginProps } from "../../../lib/themes/types"
-import { ThreadFooter, ThreadNav, threadColorVars } from "./_live"
+import { ThreadFooter, ThreadNav } from "./_live"
+import { threadColorVars } from "./_color-vars"
 import s from "./_styles.module.css"
 
 /** Thread login + account slots — shared auth/account UI in Thread chrome. */

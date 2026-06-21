@@ -84,6 +84,37 @@ test("no live buyer-path render file links to a /preview/ URL", () => {
   )
 })
 
+/**
+ * A theme's `_account-live.tsx` (Login + Account slots) is a SERVER component —
+ * it composes the server-rendered `AccountContent`, so it can't be `"use client"`.
+ * `_live.tsx` is `"use client"`, so any lowercase (non-component) value imported
+ * from it becomes a client reference; CALLING it during the server render throws
+ * "Attempted to call <fn>() from the server" → /login & /account 500. Components
+ * (Nav/Footer, uppercase) are fine — they're rendered, not called. Pure helpers
+ * (colorVars/pageShell) must come from a plain (non-client) module instead.
+ * This bug shipped invisibly on aurum/eventpass (no tenants to surface it).
+ */
+test("account/login server slots don't import client helpers from ./_live", () => {
+  const offenders = []
+  for (const id of ["volt", "glow", "thread", "aurum", "eventpass"]) {
+    const rel = `app/preview/${id}/_account-live.tsx`
+    const src = fs.readFileSync(path.join(SRC, rel), "utf8")
+    const m = src.match(/import\s*\{([^}]*)\}\s*from\s*["']\.\/_live["']/)
+    if (!m) continue
+    const lowercaseImports = m[1]
+      .split(",")
+      .map(s => s.trim().split(/\s+as\s+/)[0].trim())
+      .filter(name => name && /^[a-z]/.test(name))
+    if (lowercaseImports.length > 0) offenders.push(`${rel}: ${lowercaseImports.join(", ")}`)
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `Server account slots must import helpers (colorVars/pageShell) from a plain ` +
+      `module, not the "use client" ./_live: ${offenders.join(" | ")}`
+  )
+})
+
 test("the live render file list stays in sync with registered themes", () => {
   // If a new theme is registered, its slot files must be added above so the
   // isolation guarantee covers it. Volt + Glow are the registered themes today.

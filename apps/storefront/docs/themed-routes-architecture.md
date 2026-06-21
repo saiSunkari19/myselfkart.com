@@ -235,6 +235,23 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
   13 tests green. Thread built inline as the reference; aurum + eventpass built by
   parallel agents against it and reviewed.
 
+- 2026-06-22 — **Bugfix: login/account 500 on thread/aurum/eventpass.** Each theme's
+  `_account-live.tsx` is a SERVER component (it composes the server-rendered
+  `AccountContent`), but called a helper exported from the `"use client"` `_live.tsx`
+  (`threadColorVars`/`aurumColorVars`/`pageShell`). A client-tainted function invoked
+  during a server render throws ("Attempted to call …() from the server") → `/login`
+  (and `/checkout`, which redirects there) 500. Home/shop/etc. were unaffected — those
+  slots live *inside* the client `_live.tsx`. Fix: moved the pure helpers into plain
+  (non-`"use client"`) modules (`_color-vars.ts`, eventpass `_tokens.ts`); `_live.tsx`
+  re-exports them so client slots are untouched; `_account-live.tsx` imports from the
+  plain module. volt/glow were already clean (account slots import only components).
+  Added a regression guard (`live-path-isolation.test.ts`, 14 tests) that fails if any
+  `_account-live.tsx` imports a lowercase helper from `./_live`. The bug shipped
+  invisibly on aurum/eventpass (no tenants to surface it). Also: thread category cards
+  now use a real product thumbnail (`CategoryView.image`) with a neutral generated
+  placeholder, instead of hardcoded Unsplash apparel photos. `tsc` + `next build` +
+  tests green.
+
 ## 6. Risks / open questions
 
 - **Checkout theming** is the riskiest slot — server actions (`setAddressAction`,

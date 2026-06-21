@@ -33,14 +33,13 @@ function inr(amount: number | null | undefined): string {
   return `₹${(amount ?? 0).toLocaleString("en-IN")}`
 }
 
-/** Publish store-config brand colours on the wrapper (Thread CSS uses hex). */
-export function threadColorVars(config: StoreConfig | null): React.CSSProperties {
-  return {
-    ...(config?.primary_color ? { "--store-primary": config.primary_color } : {}),
-    ...(config?.accent_color ? { "--store-accent": config.accent_color } : {}),
-    ...(config?.secondary_color ? { "--store-secondary": config.secondary_color } : {}),
-  } as React.CSSProperties
-}
+/**
+ * Publish store-config brand colours on the wrapper (Thread CSS uses hex).
+ * Re-exported from a plain module so the server-rendered account/login slots can
+ * call it too (a "use client" export is unusable from a server component).
+ */
+import { threadColorVars } from "./_color-vars"
+export { threadColorVars }
 
 /* ---- Live product card → real PDP ---- */
 export function ThreadProductCard({ product, index = 0 }: { product: ProductView; index?: number }) {
@@ -207,9 +206,12 @@ function CategoriesSection({ categories }: { categories: HomeProps["categories"]
           <p className={`${s.sectionSub} ${s.sectionSubCenter}`}>Find exactly what you&apos;re looking for, or discover something new.</p>
         </div>
         <div className={s.categoryGrid}>
-          {categories.map((cat, i) => (
+          {categories.map((cat) => (
             <Link key={cat.id} href={cat.href} className={s.categoryCard}>
-              <img src={FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]} alt={cat.name} />
+              <img
+                src={cat.image ?? `https://placehold.co/600x750/png?text=${encodeURIComponent(cat.name)}`}
+                alt={cat.name}
+              />
               <div className={s.categoryOverlay} />
               <div className={s.categoryInfo}>
                 <div className={s.categoryName}>{cat.name}</div>

@@ -19,6 +19,18 @@ export type CategoryView = {
   count: number
   /** Live listing path filtered to this category. */
   href: string
+  /**
+   * A representative real image for the category — the first thumbnail of a
+   * product in it. `null` when none carry one; themes then fall back to a
+   * neutral placeholder, never fabricated stock photography.
+   */
+  image: string | null
+}
+
+/** First real product thumbnail in a category/tag, or null. */
+function representativeImage(products: StoreProduct[], id: string): string | null {
+  const match = productsInCategoryOrTag(products, id).find(p => p.thumbnail)
+  return match?.thumbnail ?? null
 }
 
 /** Derive category views from product tags (fallback source). */
@@ -28,6 +40,7 @@ export function deriveCategoriesFromTags(products: StoreProduct[]): CategoryView
     name: c.name,
     count: c.count,
     href: `/shop?category=${c.id}`,
+    image: representativeImage(products, c.id),
   }))
 }
 
@@ -40,6 +53,7 @@ export function resolveCategories(products: StoreProduct[]): CategoryView[] {
     name: c.name,
     count: c.count,
     href: `/shop?category=${c.id}`,
+    image: representativeImage(products, c.id),
   }))
 }
 

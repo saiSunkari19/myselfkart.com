@@ -31,15 +31,13 @@ function inr(amount: number | null | undefined): string {
   return `₹${(amount ?? 0).toLocaleString("en-IN")}`
 }
 
-/** Publish store-config brand colours on Aurum's semantic CSS vars. */
-export function aurumColorVars(config: StoreConfig | null): React.CSSProperties {
-  return {
-    ...(config?.accent_color ? { "--aurum-gold": config.accent_color } : {}),
-    ...(config?.accent_color ? { "--aurum-gold-soft": config.accent_color } : {}),
-    ...(config?.primary_color ? { "--aurum-ink": config.primary_color } : {}),
-    ...(config?.secondary_color ? { "--aurum-bg": config.secondary_color } : {}),
-  } as React.CSSProperties
-}
+/**
+ * Publish store-config brand colours on Aurum's semantic CSS vars.
+ * Re-exported from a plain module so the server-rendered account/login slots can
+ * call it too (a "use client" export is unusable from a server component).
+ */
+import { aurumColorVars } from "./_color-vars"
+export { aurumColorVars }
 
 /* ---- Live product card → real PDP ---- */
 export function AurumProductCard({ product, index = 0 }: { product: ProductView; index?: number }) {

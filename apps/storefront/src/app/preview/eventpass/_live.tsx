@@ -21,32 +21,13 @@ import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types
  */
 
 // ---------------------------------------------------------------------------
-// Design tokens (mirrors preview _components.tsx `T`, token-only)
+// Design tokens + page-shell helper live in a plain module so the server-rendered
+// account/login slots can use them too (a "use client" export is unusable from a
+// server component). Re-exported here so the client slot files importing from
+// `./_live` are unaffected.
 // ---------------------------------------------------------------------------
-export const T = {
-  bg: "#ffffff",
-  bgSubtle: "#f8f8fc",
-  bgCard: "#ffffff",
-  border: "#e5e7eb",
-  borderSubtle: "#f0f0f6",
-  text: "#0f0f0f",
-  textMuted: "#6b7280",
-  textLight: "#9ca3af",
-  accent: "#6366f1",
-  accentLight: "#eef2ff",
-  accentHover: "#4f46e5",
-  danger: "#ef4444",
-  success: "#10b981",
-  warning: "#f59e0b",
-  shadow: "0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)",
-  shadowMd: "0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-  shadowLg: "0 12px 40px rgba(0,0,0,0.1)",
-  radius: 14,
-  radiusSm: 10,
-  radiusLg: 20,
-}
-
-const FONT_FAMILY = "'Inter', ui-sans-serif, system-ui, sans-serif"
+import { T, pageShell } from "./_tokens"
+export { T, pageShell }
 
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
@@ -68,11 +49,6 @@ function inr(amount: number | null | undefined): string {
 /** The accent colour: seller brand first, then Eventpass indigo. */
 export function eventAccent(config: StoreConfig | null): string {
   return config?.primary_color || config?.accent_color || T.accent
-}
-
-/** Shared page wrapper (background + font). */
-export function pageShell(): React.CSSProperties {
-  return { background: T.bg, minHeight: "100vh", fontFamily: FONT_FAMILY }
 }
 
 // ---------------------------------------------------------------------------

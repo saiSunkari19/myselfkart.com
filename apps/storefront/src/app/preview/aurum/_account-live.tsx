@@ -1,7 +1,8 @@
 import { AccountContent } from "../../../components/storefront/account/account-content"
 import { LoginForm } from "../../../components/storefront/account/login-form"
 import type { AccountProps, LoginProps } from "../../../lib/themes/types"
-import { AurumFooter, AurumNav, aurumColorVars } from "./_live"
+import { AurumFooter, AurumNav } from "./_live"
+import { aurumColorVars } from "./_color-vars"
 import s from "./_styles.module.css"
 
 /** Aurum login + account slots — shared auth/account UI in Aurum chrome. */
