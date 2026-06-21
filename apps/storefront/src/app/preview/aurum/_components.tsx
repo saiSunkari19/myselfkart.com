@@ -1,5 +1,6 @@
 "use client"
 
+import { useTemplateConfig } from "../../../lib/template-config-context"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { type Product } from "./_data"
@@ -68,6 +69,8 @@ export const PageLoader = () => {
 // ---------------------------------------------------------------------------
 
 export const NavBar = () => {
+  const { basePath, config } = useTemplateConfig()
+  const storeName = config?.store_name ?? "Aurum"
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20)
@@ -89,24 +92,24 @@ export const NavBar = () => {
         <div className={s.navInner}>
           <div className={s.navLeft}>
             {[
-              { label: "Collections", href: "/preview/aurum/collections" },
-              { label: "Shop", href: "/preview/aurum/shop" },
-              { label: "Bridal", href: "/preview/aurum/bridal" },
-              { label: "New Arrivals", href: "/preview/aurum/new-arrivals" },
+              { label: "Collections", href: `${basePath}/collections` },
+              { label: "Shop", href: `${basePath}/shop` },
+              { label: "Bridal", href: `${basePath}/bridal` },
+              { label: "New Arrivals", href: `${basePath}/new-arrivals` },
             ].map(item => (
               <Link key={item.label} href={item.href} className={s.navLink}>{item.label}</Link>
             ))}
           </div>
 
-          <Link href="/preview/aurum" className={s.navLogo}>
-            <span className={s.navLogoText}>Aurum</span>
+          <Link href={basePath || "/"} className={s.navLogo}>
+            <span className={s.navLogoText}>{storeName}</span>
             <span className={s.navLogoSub}>Fine Jewellery</span>
           </Link>
 
           <div className={s.navRight}>
-            <Link href="/preview/aurum/about" className={s.navIconBtn}>About</Link>
-            <Link href="/preview/aurum/store-locator" className={s.navIconBtn}>Stores</Link>
-            <Link href="/preview/aurum/cart" className={s.navIconBtn}>
+            <Link href={`${basePath}/about`} className={s.navIconBtn}>About</Link>
+            <Link href={`${basePath}/store-locator`} className={s.navIconBtn}>Stores</Link>
+            <Link href={`${basePath}/cart`} className={s.navIconBtn}>
               Bag <span className={s.cartCount}>2</span>
             </Link>
           </div>
@@ -120,80 +123,86 @@ export const NavBar = () => {
 // Footer
 // ---------------------------------------------------------------------------
 
-export const Footer = () => (
-  <footer className={s.footer}>
-    <div className={s.footerTop}>
-      <div className={s.footerBrand}>
-        <Link href="/preview/aurum" className={s.footerLogoText}>Aurum</Link>
-        <span className={s.footerLogoSub}>Fine Jewellery</span>
-        <p className={s.footerTagline}>
-          Since 1987, we have crafted jewellery that endures. Every piece is an heirloom in waiting.
-        </p>
-        <div className={s.footerGoldLine} />
-        <div className={s.footerCerts}>
-          {["BIS 916", "GIA", "ISO 9001", "BIS 925"].map(c => (
-            <span key={c} className={s.footerCertItem}>{c}</span>
-          ))}
-        </div>
-      </div>
-      {[
-        {
-          title: "Collections",
-          links: [
-            { label: "Eternal Gold", href: "/preview/aurum/collections" },
-            { label: "Diamond Dreams", href: "/preview/aurum/collections" },
-            { label: "Royal Bridal", href: "/preview/aurum/bridal" },
-            { label: "Gemstone Garden", href: "/preview/aurum/collections" },
-            { label: "New Arrivals", href: "/preview/aurum/new-arrivals" },
-          ],
-        },
-        {
-          title: "Company",
-          links: [
-            { label: "About Aurum", href: "/preview/aurum/about" },
-            { label: "Store Locator", href: "/preview/aurum/store-locator" },
-            { label: "Contact Us", href: "/preview/aurum/contact" },
-            { label: "Certification", href: "/preview/aurum/certification" },
-            { label: "Care Guide", href: "/preview/aurum/care-guide" },
-          ],
-        },
-        {
-          title: "Support",
-          links: [
-            { label: "FAQs", href: "/preview/aurum/faq" },
-            { label: "Shipping Policy", href: "/preview/aurum/shipping" },
-            { label: "Return Policy", href: "/preview/aurum/returns" },
-            { label: "Privacy Policy", href: "/preview/aurum/privacy" },
-            { label: "Terms & Conditions", href: "/preview/aurum/terms" },
-          ],
-        },
-      ].map(col => (
-        <div key={col.title}>
-          <div className={s.footerColTitle}>{col.title}</div>
-          <ul className={s.footerLinks}>
-            {col.links.map(link => (
-              <li key={link.label}>
-                <Link href={link.href} className={s.footerLink}>{link.label}</Link>
-              </li>
+export const Footer = () => {
+  const { basePath, config } = useTemplateConfig()
+  const storeName = config?.store_name ?? "Aurum"
+  return (
+    <footer className={s.footer}>
+      <div className={s.footerTop}>
+        <div className={s.footerBrand}>
+          <Link href={basePath || "/"} className={s.footerLogoText}>{storeName}</Link>
+          <span className={s.footerLogoSub}>Fine Jewellery</span>
+          <p className={s.footerTagline}>
+            Since 1987, we have crafted jewellery that endures. Every piece is an heirloom in waiting.
+          </p>
+          <div className={s.footerGoldLine} />
+          <div className={s.footerCerts}>
+            {["BIS 916", "GIA", "ISO 9001", "BIS 925"].map(c => (
+              <span key={c} className={s.footerCertItem}>{c}</span>
             ))}
-          </ul>
+          </div>
         </div>
-      ))}
-    </div>
-    <div className={s.footerBottom}>
-      <span className={s.footerCopy}>© 2026 Aurum Fine Jewellery Pvt. Ltd. All rights reserved.</span>
-      <span className={s.footerBadge}>Crafted with Precision</span>
-    </div>
-  </footer>
-)
+        {[
+          {
+            title: "Collections",
+            links: [
+              { label: "Eternal Gold", href: `${basePath}/collections` },
+              { label: "Diamond Dreams", href: `${basePath}/collections` },
+              { label: "Royal Bridal", href: `${basePath}/bridal` },
+              { label: "Gemstone Garden", href: `${basePath}/collections` },
+              { label: "New Arrivals", href: `${basePath}/new-arrivals` },
+            ],
+          },
+          {
+            title: "Company",
+            links: [
+              { label: `About ${storeName}`, href: `${basePath}/about` },
+              { label: "Store Locator", href: `${basePath}/store-locator` },
+              { label: "Contact Us", href: `${basePath}/contact` },
+              { label: "Certification", href: `${basePath}/certification` },
+              { label: "Care Guide", href: `${basePath}/care-guide` },
+            ],
+          },
+          {
+            title: "Support",
+            links: [
+              { label: "FAQs", href: `${basePath}/faq` },
+              { label: "Shipping Policy", href: `${basePath}/shipping` },
+              { label: "Return Policy", href: `${basePath}/returns` },
+              { label: "Privacy Policy", href: `${basePath}/privacy` },
+              { label: "Terms & Conditions", href: `${basePath}/terms` },
+            ],
+          },
+        ].map(col => (
+          <div key={col.title}>
+            <div className={s.footerColTitle}>{col.title}</div>
+            <ul className={s.footerLinks}>
+              {col.links.map(link => (
+                <li key={link.label}>
+                  <Link href={link.href} className={s.footerLink}>{link.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className={s.footerBottom}>
+        <span className={s.footerCopy}>© 2026 {storeName} Fine Jewellery Pvt. Ltd. All rights reserved.</span>
+        <span className={s.footerBadge}>Crafted with Precision</span>
+      </div>
+    </footer>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Product Card
 // ---------------------------------------------------------------------------
 
-export const ProductCard = ({ product, delay = 0 }: { product: Product; delay?: 0|1|2|3|4 }) => (
+export const ProductCard = ({ product, delay = 0 }: { product: Product; delay?: 0|1|2|3|4 }) => {
+  const { basePath } = useTemplateConfig()
+  return (
   <Reveal delay={delay}>
-    <Link href={`/preview/aurum/products/${product.id}`} className={s.productCard}>
+    <Link href={`${basePath}/products/${product.id}`} className={s.productCard}>
       <div className={s.productImageWrap}>
         <img src={product.image} alt={product.name} />
         {product.badge && (
@@ -222,7 +231,8 @@ export const ProductCard = ({ product, delay = 0 }: { product: Product; delay?: 
       </div>
     </Link>
   </Reveal>
-)
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Gold Divider
