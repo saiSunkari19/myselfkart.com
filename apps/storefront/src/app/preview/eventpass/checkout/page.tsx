@@ -4,16 +4,19 @@ import Link from "next/link"
 import { useState } from "react"
 import { NavBar, Footer, T } from "../_components"
 import { EVENTS } from "../_data"
+import { RazorpayCheckout } from "../../../../components/razorpay-checkout"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 type Step = 1 | 2
 
 export default function CheckoutPage() {
+  const { config } = useTemplateConfig()
   const event = EVENTS[0]
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", gst: "" })
   const [showGst, setShowGst] = useState(false)
   const [errors, setErrors] = useState<Partial<typeof form>>({})
-  const [submitting, setSubmitting] = useState(false)
+  const [submitting] = useState(false)
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -39,14 +42,7 @@ export default function CheckoutPage() {
     if (validate()) setStep(2)
   }
 
-  const handlePay = () => {
-    setSubmitting(true)
-    setTimeout(() => {
-      window.location.href = "/preview/eventpass/confirmation"
-    }, 1200)
-  }
-
-  const STEPS = ["Contact Details", "Review & Pay", "Confirmation"]
+const STEPS = ["Contact Details", "Review & Pay", "Confirmation"]
 
   const inputStyle = (hasError: boolean): React.CSSProperties => ({
     width: "100%", border: `1.5px solid ${hasError ? T.danger : T.border}`, borderRadius: 12,
@@ -304,15 +300,11 @@ export default function CheckoutPage() {
                   Continue →
                 </button>
               ) : (
-                <button onClick={handlePay} disabled={submitting} style={{
-                  width: "100%", padding: "15px",
-                  background: submitting ? T.bgSubtle : "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                  color: submitting ? T.textMuted : "#fff",
-                  border: "none", borderRadius: 12,
-                  fontSize: 15, fontWeight: 700, cursor: submitting ? "default" : "pointer",
-                }}>
-                  {submitting ? "Processing…" : `Pay ₹${total.toLocaleString()} →`}
-                </button>
+                <RazorpayCheckout
+                  storeName={config?.store_name ?? "EVENTPASS"}
+                  accentColor={config?.accent_color ?? undefined}
+                  email={form.email || null}
+                />
               )}
 
               <p style={{ color: T.textLight, fontSize: 12, textAlign: "center", margin: "12px 0 0" }}>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useTemplateConfig } from "../../../lib/template-config-context"
 import s from "./_styles.module.css"
 
 /* ---- Page Loader ---- */
@@ -58,6 +59,10 @@ export const NavBar = ({
   logoUrl?: string | null
   announcementText?: string | null
 } = {}) => {
+  const { basePath, config } = useTemplateConfig()
+  const resolvedName = storeName ?? config?.store_name ?? "glow."
+  const resolvedLogo = logoUrl ?? config?.logo_url ?? null
+  const resolvedAnnouncement = announcementText ?? (config?.announcement_enabled ? config.announcement_text : null) ?? null
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -67,28 +72,28 @@ export const NavBar = ({
 
   return (
     <div className={s.stickyHeader}>
-      <AnnouncementBar text={announcementText ?? undefined} />
+      <AnnouncementBar text={resolvedAnnouncement ?? undefined} />
       <nav className={`${s.navbar} ${scrolled ? s.navbarScrolled : ""}`}>
-        <a href="/preview/glow" className={s.navLogo}>
-          {logoUrl
-            ? <img src={logoUrl} alt={storeName ?? "glow."} style={{ height: 32, objectFit: "contain" }} />
-            : (storeName ?? "glow.")
+        <a href={basePath || "/"} className={s.navLogo}>
+          {resolvedLogo
+            ? <img src={resolvedLogo} alt={resolvedName} style={{ height: 32, objectFit: "contain" }} />
+            : resolvedName
           }
         </a>
         <ul className={s.navLinks}>
           {[
-            { label: "Shop", href: "/preview/glow/shop" },
-            { label: "Serums", href: "/preview/glow/shop" },
-            { label: "Moisturisers", href: "/preview/glow/shop" },
-            { label: "Sun Care", href: "/preview/glow/shop" },
-            { label: "Routines", href: "/preview/glow/shop" },
-            { label: "About", href: "/preview/glow/about" },
+            { label: "Shop", href: `${basePath}/shop` },
+            { label: "Serums", href: `${basePath}/shop` },
+            { label: "Moisturisers", href: `${basePath}/shop` },
+            { label: "Sun Care", href: `${basePath}/shop` },
+            { label: "Routines", href: `${basePath}/shop` },
+            { label: "About", href: `${basePath}/about` },
           ].map(({ label, href }) => (
             <li key={label}><a href={href} className={s.navLink}>{label}</a></li>
           ))}
         </ul>
         <div className={s.navActions}>
-          <a href="/preview/glow/cart" className={s.navCart}>
+          <a href={`${basePath}/cart`} className={s.navCart}>
             <svg className={s.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
               <line x1="3" y1="6" x2="21" y2="6"/>
@@ -163,13 +168,14 @@ export const ProductCard = ({
     : badge === "Award Winner" ? s.badgeAward
     : ""
 
+  const { basePath } = useTemplateConfig()
   return (
     <div className={s.productCard}>
       <div className={s.productImageWrap}>
         <img src={image} alt={name} className={s.productImg} loading="lazy" />
         <img src={hoverImage} alt={name} className={`${s.productImg} ${s.productImgHover}`} loading="lazy" />
         {badge && <span className={`${s.productBadge} ${badgeClass}`}>{badge}</span>}
-        <a href="/preview/glow/cart" className={s.productQuickAdd}>+ Add to Bag</a>
+        <a href={`${basePath}/cart`} className={s.productQuickAdd}>+ Add to Bag</a>
       </div>
       <div className={s.productCategory}>{category}</div>
       <div className={s.productName}>{name}</div>

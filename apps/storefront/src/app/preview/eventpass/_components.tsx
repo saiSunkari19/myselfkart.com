@@ -1,5 +1,6 @@
 "use client"
 
+import { useTemplateConfig } from "../../../lib/template-config-context"
 import Link from "next/link"
 import React from "react"
 import { useCart } from "./_cart"
@@ -37,6 +38,8 @@ export const T = {
 // ---------------------------------------------------------------------------
 
 export const NavBar = () => {
+  const { basePath, config } = useTemplateConfig()
+  const storeName = config?.store_name ?? "EventPass"
   const [menuOpen, setMenuOpen] = React.useState(false)
   const { totalItems } = useCart()
   return (
@@ -49,7 +52,7 @@ export const NavBar = () => {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 clamp(16px, 4vw, 40px)", height: 64,
       }}>
-        <Link href="/preview/eventpass" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
+        <Link href={basePath || "/"} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
@@ -57,17 +60,17 @@ export const NavBar = () => {
             fontSize: 15, fontWeight: 800, color: "#fff",
           }}>E</div>
           <span style={{ color: T.text, fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
-            EventPass
+            {storeName}
           </span>
         </Link>
 
         {/* Desktop links */}
         <div className="ep-nav-links" style={{ display: "flex", gap: 28 }}>
           {[
-            { label: "Discover", href: "/preview/eventpass/events" },
-            { label: "Categories", href: "/preview/eventpass/categories" },
-            { label: "About", href: "/preview/eventpass/about" },
-            { label: "Contact", href: "/preview/eventpass/contact" },
+            { label: "Discover", href: `${basePath}/events` },
+            { label: "Categories", href: `${basePath}/categories` },
+            { label: "About", href: `${basePath}/about` },
+            { label: "Contact", href: `${basePath}/contact` },
           ].map(item => (
             <Link key={item.label} href={item.href} style={{
               color: T.textMuted, textDecoration: "none",
@@ -77,7 +80,7 @@ export const NavBar = () => {
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/preview/eventpass/cart" className="ep-nav-cart" style={{
+          <Link href={`${basePath}/cart`} className="ep-nav-cart" style={{
             display: "flex", alignItems: "center", gap: 6,
             color: T.textMuted, textDecoration: "none",
             fontSize: 14, fontWeight: 500, padding: "8px 14px",
@@ -127,11 +130,11 @@ export const NavBar = () => {
           display: "flex", flexDirection: "column", gap: 16,
         }}>
           {[
-            { label: "Discover", href: "/preview/eventpass/events" },
-            { label: "Categories", href: "/preview/eventpass/categories" },
-            { label: "About", href: "/preview/eventpass/about" },
-            { label: "Contact", href: "/preview/eventpass/contact" },
-            { label: "🛒 Cart", href: "/preview/eventpass/cart" },
+            { label: "Discover", href: `${basePath}/events` },
+            { label: "Categories", href: `${basePath}/categories` },
+            { label: "About", href: `${basePath}/about` },
+            { label: "Contact", href: `${basePath}/contact` },
+            { label: "🛒 Cart", href: `${basePath}/cart` },
           ].map(item => (
             <Link key={item.label} href={item.href}
               onClick={() => setMenuOpen(false)}
@@ -159,7 +162,10 @@ export const NavBar = () => {
 // Footer
 // ---------------------------------------------------------------------------
 
-export const Footer = () => (
+export const Footer = () => {
+  const { basePath, config } = useTemplateConfig()
+  const storeName = config?.store_name ?? "EventPass"
+  return (
   <footer style={{
     background: T.bgSubtle, borderTop: `1px solid ${T.border}`,
     padding: "64px 40px 40px",
@@ -174,7 +180,7 @@ export const Footer = () => (
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 15, fontWeight: 800, color: "#fff",
             }}>E</div>
-            <span style={{ color: T.text, fontWeight: 800, fontSize: 17 }}>EventPass</span>
+            <span style={{ color: T.text, fontWeight: 800, fontSize: 17 }}>{storeName}</span>
           </div>
           <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, maxWidth: 260, margin: 0 }}>
             Premium event discovery and ticket booking. No account needed. Just great experiences.
@@ -184,25 +190,25 @@ export const Footer = () => (
           {
             title: "Discover",
             links: [
-              { label: "All Events", href: "/preview/eventpass/events" },
-              { label: "Categories", href: "/preview/eventpass/categories" },
-              { label: "Cities", href: "/preview/eventpass/events" },
+              { label: "All Events", href: `${basePath}/events` },
+              { label: "Categories", href: `${basePath}/categories` },
+              { label: "Cities", href: `${basePath}/events` },
             ],
           },
           {
             title: "Help",
             links: [
-              { label: "FAQ", href: "/preview/eventpass/faq" },
-              { label: "Contact", href: "/preview/eventpass/contact" },
-              { label: "About", href: "/preview/eventpass/about" },
-              { label: "Refund Policy", href: "/preview/eventpass/refund" },
+              { label: "FAQ", href: `${basePath}/faq` },
+              { label: "Contact", href: `${basePath}/contact` },
+              { label: "About", href: `${basePath}/about` },
+              { label: "Refund Policy", href: `${basePath}/refund` },
             ],
           },
           {
             title: "Legal",
             links: [
-              { label: "Privacy Policy", href: "/preview/eventpass/privacy" },
-              { label: "Terms & Conditions", href: "/preview/eventpass/terms" },
+              { label: "Privacy Policy", href: `${basePath}/privacy` },
+              { label: "Terms & Conditions", href: `${basePath}/terms` },
             ],
           },
         ].map(col => (
@@ -223,7 +229,7 @@ export const Footer = () => (
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <span style={{ color: T.textLight, fontSize: 13 }}>
-          © 2026 EventPass. All rights reserved.
+          © 2026 {storeName}. All rights reserved.
         </span>
         <span style={{
           color: T.accent, fontSize: 11, fontWeight: 600,
@@ -234,14 +240,17 @@ export const Footer = () => (
       </div>
     </div>
   </footer>
-)
+  )
+}
 
 // ---------------------------------------------------------------------------
 // EventCard
 // ---------------------------------------------------------------------------
 
-export const EventCard = ({ event }: { event: Event }) => (
-  <Link href={`/preview/eventpass/events/${event.id}`} style={{ textDecoration: "none" }}>
+export const EventCard = ({ event }: { event: Event }) => {
+  const { basePath } = useTemplateConfig()
+  return (
+  <Link href={`${basePath}/events/${event.id}`} style={{ textDecoration: "none" }}>
     <div style={{
       borderRadius: T.radiusLg, overflow: "hidden",
       background: T.bgCard, border: `1px solid ${T.border}`,
@@ -298,7 +307,8 @@ export const EventCard = ({ event }: { event: Event }) => (
       </div>
     </div>
   </Link>
-)
+  )
+}
 
 // ---------------------------------------------------------------------------
 // SectionHeader

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { StoreProduct } from "../../../lib/medusa/products"
+import { TemplateConfigProvider } from "../../../lib/template-config-context"
 import {
   PageLoader, TrustStrip, ProductCard, Reveal, Stars, Badge, Footer,
 } from "./_components"
@@ -105,7 +106,7 @@ function NavBar({ storeName, logoUrl, announcementText }: {
       )}
       <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
         <div className={s.navInner}>
-          <Link href="/preview/volt" className={s.navLogo}>
+          <Link href="/" className={s.navLogo}>
             {logoUrl
               ? <img src={logoUrl} alt={storeName} style={{ height: 28, width: "auto", objectFit: "contain" }} />
               : <>{storeName}<span className={s.navLogoAccent}>.</span></>}
@@ -115,10 +116,10 @@ function NavBar({ storeName, logoUrl, announcementText }: {
             <button className={s.navSearchBtn}>🔍</button>
           </div>
           <div className={s.navLinks}>
-            <Link href="/preview/volt/deals" className={s.navLink}>Deals</Link>
-            <Link href="/preview/volt/new-launches" className={s.navLink}>New</Link>
-            <Link href="/preview/volt/brands" className={s.navLink}>Brands</Link>
-            <Link href="/preview/volt/cart" className={s.navCart}>
+            <Link href="/deals" className={s.navLink}>Deals</Link>
+            <Link href="/new-launches" className={s.navLink}>New</Link>
+            <Link href="/brands" className={s.navLink}>Brands</Link>
+            <Link href="/cart" className={s.navCart}>
               🛒 Cart
               <span className={s.cartCount}>2</span>
             </Link>
@@ -287,6 +288,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
   )
 
   return (
+    <TemplateConfigProvider config={config} basePath="">
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
       <NavBar storeName={storeName} logoUrl={logoUrl} announcementText={announcementText} />
@@ -496,5 +498,6 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
       </div>
       <Footer />
     </div>
+    </TemplateConfigProvider>
   )
 }

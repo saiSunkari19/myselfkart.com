@@ -6,6 +6,7 @@ import { NavBar } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
 import c from "./_checkout.module.css"
+import { RazorpayCheckout } from "../../../../components/razorpay-checkout"
 
 const ORDER_ITEMS = [
   { product: PRODUCTS[0], qty: 1 },
@@ -115,65 +116,14 @@ export function CheckoutClient({ config }: { config?: import("../../../../lib/st
               <div className={c.section}>
                 <div className={c.sectionTitle}>Payment Method</div>
 
-                <div className={c.payMethods}>
-                  {[
-                    { id: "upi", label: "UPI", icon: "◎" },
-                    { id: "card", label: "Credit / Debit Card", icon: "▭" },
-                    { id: "cod", label: "Cash on Delivery", icon: "💵" },
-                    { id: "netbanking", label: "Net Banking", icon: "🏦" },
-                  ].map(m => (
-                    <label key={m.id} className={`${c.payMethod} ${form.payMethod === m.id ? c.payMethodActive : ""}`}>
-                      <input
-                        type="radio"
-                        name="pay"
-                        value={m.id}
-                        checked={form.payMethod === m.id}
-                        onChange={() => set("payMethod", m.id)}
-                        className={c.radioHidden}
-                      />
-                      <span className={c.payMethodIcon}>{m.icon}</span>
-                      <span className={c.payMethodLabel}>{m.label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                {form.payMethod === "upi" && (
-                  <div className={c.payFields}>
-                    <Field label="UPI ID" value={form.upiId} onChange={v => set("upiId", v)} placeholder="yourname@upi" />
-                    <p className={c.payNote}>You'll receive a payment request on your UPI app.</p>
-                  </div>
-                )}
-
-                {form.payMethod === "card" && (
-                  <div className={c.payFields}>
-                    <Field label="Card Number" value={form.cardNum} onChange={v => set("cardNum", v)} placeholder="1234 5678 9012 3456" />
-                    <Field label="Name on Card" value={form.cardName} onChange={v => set("cardName", v)} placeholder="Priya Mehta" />
-                    <div className={c.row2}>
-                      <Field label="Expiry (MM/YY)" value={form.cardExp} onChange={v => set("cardExp", v)} placeholder="08/27" />
-                      <Field label="CVV" value={form.cardCvv} onChange={v => set("cardCvv", v)} placeholder="•••" />
-                    </div>
-                  </div>
-                )}
-
-                {form.payMethod === "cod" && (
-                  <div className={c.payNote} style={{ marginTop: 16 }}>
-                    Pay ₹{TOTAL.toLocaleString("en-IN")} in cash when your order arrives. A small COD fee of ₹30 may apply.
-                  </div>
-                )}
-
-                {form.payMethod === "netbanking" && (
-                  <div className={c.payFields}>
-                    <div className={c.bankGrid}>
-                      {["SBI", "HDFC", "ICICI", "Axis", "Kotak", "Other"].map(bank => (
-                        <button key={bank} className={c.bankBtn}>{bank}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <RazorpayCheckout
+                  storeName={config?.store_name ?? "GLOW"}
+                  accentColor={config?.accent_color ?? undefined}
+                  email={form.email || null}
+                />
 
                 <div className={c.navBtns}>
                   <button className={c.backBtn} onClick={() => setStep(0)}>← Back</button>
-                  <button className={c.nextBtn} onClick={() => setStep(2)}>Review Order →</button>
                 </div>
               </div>
             )}
