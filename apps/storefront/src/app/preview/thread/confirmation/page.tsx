@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { PageShell } from "../_components"
 import { PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 const ORDER_ID = "THR-2026-8847"
@@ -15,6 +16,7 @@ const shipping = 0
 const total = subtotal + shipping
 
 export default function ConfirmationPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.container}>
@@ -92,8 +94,8 @@ export default function ConfirmationPage() {
           </div>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <Link href="/preview/thread" className={`${s.btn} ${s.btnOutline}`}>Back to Home</Link>
-            <Link href="/preview/thread/products" className={s.btn}>Continue Shopping</Link>
+            <Link href={basePath || "/"} className={`${s.btn} ${s.btnOutline}`}>Back to Home</Link>
+            <Link href={`${basePath}/products`} className={s.btn}>Continue Shopping</Link>
           </div>
         </div>
       </div>

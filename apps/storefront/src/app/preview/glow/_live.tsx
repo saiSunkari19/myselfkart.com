@@ -159,7 +159,7 @@ const FeaturedCollections = () => (
       <div className={s.collectionsGrid}>
         {COLLECTIONS.map((col, i) => (
           <Reveal key={col.id} delay={(i % 4) as 0|1|2|3|4|5}>
-            <a href="/preview/glow/shop" className={s.collectionCard}>
+            <a href="/shop" className={s.collectionCard}>
               <img src={col.image} alt={col.name} className={s.collectionImg} loading="lazy" />
               <div className={s.collectionOverlay}>
                 <div className={s.collectionName}>{col.name}</div>

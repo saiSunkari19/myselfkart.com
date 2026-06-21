@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { PageShell, T } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function ConfirmationPage() {
+  const { basePath } = useTemplateConfig()
   const bookingId = "EVT-2026-88421"
 
   return (
@@ -100,7 +102,7 @@ export default function ConfirmationPage() {
           </p>
         </div>
 
-        <Link href="/preview/eventpass/events" style={{ textDecoration: "none" }}>
+        <Link href={`${basePath}/events`} style={{ textDecoration: "none" }}>
           <button style={{
             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
             color: "#fff", border: "none", borderRadius: 12,

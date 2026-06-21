@@ -4,8 +4,10 @@ import Link from "next/link"
 import { PageShell, ProductCard, Reveal, GoldDivider, NewsletterSection } from "../_components"
 import { COLLECTIONS, PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function CollectionsPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.pageHeader} style={{ padding: "100px 0 80px" }}>
@@ -21,7 +23,7 @@ export default function CollectionsPage() {
       <div className={s.collectionGrid2} style={{ gap: 2 }}>
         {COLLECTIONS.map((col, i) => (
           <Reveal key={col.id} delay={(i % 2) as 0|1}>
-            <Link href="/preview/aurum/shop" className={s.collectionCard} style={{ aspectRatio: i < 2 ? "16/9" : "4/3" }}>
+            <Link href={`${basePath}/shop`} className={s.collectionCard} style={{ aspectRatio: i < 2 ? "16/9" : "4/3" }}>
               <img src={col.image} alt={col.name} />
               <div className={s.collectionOverlay} />
               <div className={s.collectionInfo} style={{ padding: "40px" }}>
@@ -52,7 +54,7 @@ export default function CollectionsPage() {
                     <h2 className={s.sectionTitle}>{col.name}</h2>
                     <p className={s.sectionSub}>{col.tagline}</p>
                   </div>
-                  <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnOutlineGold}`}>
+                  <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnOutlineGold}`}>
                     View Collection
                   </Link>
                 </div>

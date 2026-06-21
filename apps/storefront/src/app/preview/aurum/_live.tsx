@@ -128,10 +128,10 @@ const LiveNavBar = ({ config }: { config: StoreConfig | null }) => {
         <div className={s.navInner}>
           <div className={s.navLeft}>
             {[
-              { label: "Collections", href: "/preview/aurum/collections" },
-              { label: "Shop", href: "/preview/aurum/shop" },
-              { label: "Bridal", href: "/preview/aurum/bridal" },
-              { label: "New Arrivals", href: "/preview/aurum/new-arrivals" },
+              { label: "Collections", href: "/collections" },
+              { label: "Shop", href: "/shop" },
+              { label: "Bridal", href: "/bridal" },
+              { label: "New Arrivals", href: "/new-arrivals" },
             ].map(item => (
               <Link key={item.label} href={item.href} className={s.navLink}>{item.label}</Link>
             ))}
@@ -149,9 +149,9 @@ const LiveNavBar = ({ config }: { config: StoreConfig | null }) => {
           </Link>
 
           <div className={s.navRight}>
-            <Link href="/preview/aurum/about" className={s.navIconBtn}>About</Link>
-            <Link href="/preview/aurum/store-locator" className={s.navIconBtn}>Stores</Link>
-            <Link href="/preview/aurum/cart" className={s.navIconBtn}>
+            <Link href="/about" className={s.navIconBtn}>About</Link>
+            <Link href="/store-locator" className={s.navIconBtn}>Stores</Link>
+            <Link href="/cart" className={s.navIconBtn}>
               Bag <span className={s.cartCount}>2</span>
             </Link>
           </div>
@@ -184,11 +184,11 @@ const Hero = ({ config }: { config: StoreConfig | null }) => {
           <h1 className={s.heroTitle}>{config?.hero_heading}</h1>
           {config?.hero_subtext && <p className={s.heroSub}>{config.hero_subtext}</p>}
           <div className={s.heroCtas}>
-            <Link href={heroCta?.primary_link ?? "/preview/aurum/collections"} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
+            <Link href={heroCta?.primary_link ?? "/collections"} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
               {heroCta?.primary_label ?? "Explore Collections"}
             </Link>
             {heroCta?.secondary_label && (
-              <Link href={heroCta.secondary_link ?? "/preview/aurum/bridal"} className={`${s.btn} ${s.btnWhite} ${s.btnLg}`}>
+              <Link href={heroCta.secondary_link ?? "/bridal"} className={`${s.btn} ${s.btnWhite} ${s.btnLg}`}>
                 {heroCta.secondary_label}
               </Link>
             )}
@@ -221,10 +221,10 @@ const Hero = ({ config }: { config: StoreConfig | null }) => {
           Jewellery crafted for moments that last a lifetime. Hallmarked. Certified. Yours.
         </p>
         <div className={s.heroCtas}>
-          <Link href="/preview/aurum/collections" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
+          <Link href="/collections" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
             Explore Collections
           </Link>
-          <Link href="/preview/aurum/bridal" className={`${s.btn} ${s.btnWhite} ${s.btnLg}`}>
+          <Link href="/bridal" className={`${s.btn} ${s.btnWhite} ${s.btnLg}`}>
             Bridal Edit
           </Link>
         </div>
@@ -251,7 +251,7 @@ const FeaturedCollections = () => (
       <div className={s.collectionGrid}>
         {COLLECTIONS.slice(0, 3).map((col, i) => (
           <Reveal key={col.id} delay={(i % 3) as 0|1|2}>
-            <Link href="/preview/aurum/collections" className={s.collectionCard}>
+            <Link href="/collections" className={s.collectionCard}>
               <img src={col.image} alt={col.name} />
               <div className={s.collectionOverlay} />
               <div className={s.collectionInfo}>
@@ -281,7 +281,7 @@ const NewArrivals = ({ products, rawProducts }: { products: Product[]; rawProduc
               <h2 className={s.sectionTitle}>New Arrivals</h2>
               <p className={s.sectionSub}>Freshly crafted, now available. Each piece certified and ready to ship.</p>
             </div>
-            <Link href="/preview/aurum/new-arrivals" className={`${s.btn} ${s.btnOutline}`}>
+            <Link href="/new-arrivals" className={`${s.btn} ${s.btnOutline}`}>
               View All
             </Link>
           </div>
@@ -315,10 +315,10 @@ const BridalEditorial = () => (
           Kundan, Polki, and heirloom gold — bridal jewellery crafted over months for a day you'll remember forever.
         </p>
         <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
-          <Link href="/preview/aurum/bridal" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
+          <Link href="/bridal" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
             Explore Bridal
           </Link>
-          <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnWhite}`}>
+          <Link href="/contact" className={`${s.btn} ${s.btnWhite}`}>
             Book Appointment
           </Link>
         </div>
@@ -340,7 +340,7 @@ const Bestsellers = ({ products, rawProducts }: { products: Product[]; rawProduc
               <h2 className={s.sectionTitle}>Bestsellers</h2>
               <p className={s.sectionSub}>Our most celebrated pieces, cherished by thousands of families across India.</p>
             </div>
-            <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnOutlineGold}`}>Shop All</Link>
+            <Link href="/shop" className={`${s.btn} ${s.btnOutlineGold}`}>Shop All</Link>
           </div>
         </Reveal>
         <div className={s.productGrid4}>
@@ -373,7 +373,7 @@ const CraftsmanshipSection = () => (
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.9, margin: "0 0 32px", maxWidth: 400 }}>
             Since 1987, every Aurum piece has been made by hand in our Jaipur atelier. We employ over 200 master artisans — karigar families who have passed their skills down through generations. It takes up to 120 hours to complete a single bridal set.
           </p>
-          <Link href="/preview/aurum/about" className={`${s.btn} ${s.btnOutlineGold}`}>
+          <Link href="/about" className={`${s.btn} ${s.btnOutlineGold}`}>
             Our Story →
           </Link>
         </Reveal>
@@ -428,7 +428,7 @@ const CertificationSection = () => (
               <div className={s.certLogo}>{item.icon}</div>
               <div className={s.certTitle}>{item.title}</div>
               <p className={s.certText}>{item.desc}</p>
-              <Link href="/preview/aurum/certification" className={`${s.btn} ${s.btnOutlineGold}`} style={{ fontSize: 10, padding: "10px 20px" }}>
+              <Link href="/certification" className={`${s.btn} ${s.btnOutlineGold}`} style={{ fontSize: 10, padding: "10px 20px" }}>
                 Learn More
               </Link>
             </div>
@@ -494,7 +494,7 @@ const GiftSection = () => (
         <p className={s.sectionSub} style={{ color: "rgba(255,255,255,0.5)" }}>
           Curated for every occasion — anniversaries, birthdays, milestones. Luxury presentation included.
         </p>
-        <Link href="/preview/aurum/gifts" className={`${s.btn} ${s.btnGold}`}>
+        <Link href="/gifts" className={`${s.btn} ${s.btnGold}`}>
           Shop Gifts →
         </Link>
       </Reveal>

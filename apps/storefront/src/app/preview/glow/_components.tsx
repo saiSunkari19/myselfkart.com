@@ -156,9 +156,9 @@ export const GoldDivider = () => <div className={s.goldLine} />
 
 /* ---- Product Card ---- */
 export const ProductCard = ({
-  name, subtitle, category, price, originalPrice, image, hoverImage, badge, rating, reviews,
+  id, name, subtitle, category, price, originalPrice, image, hoverImage, badge, rating, reviews,
 }: {
-  name: string; subtitle: string; category: string; price: number;
+  id: string; name: string; subtitle: string; category: string; price: number;
   originalPrice?: number; image: string; hoverImage: string;
   badge?: string; rating: number; reviews: number;
 }) => {
@@ -171,15 +171,22 @@ export const ProductCard = ({
   const { basePath } = useTemplateConfig()
   return (
     <div className={s.productCard}>
-      <div className={s.productImageWrap}>
+      <a href={`${basePath}/products/${id}`} className={s.productImageWrap}>
         <img src={image} alt={name} className={s.productImg} loading="lazy" />
         <img src={hoverImage} alt={name} className={`${s.productImg} ${s.productImgHover}`} loading="lazy" />
         {badge && <span className={`${s.productBadge} ${badgeClass}`}>{badge}</span>}
-        <a href={`${basePath}/cart`} className={s.productQuickAdd}>+ Add to Bag</a>
-      </div>
-      <div className={s.productCategory}>{category}</div>
-      <div className={s.productName}>{name}</div>
-      <div className={s.productSub}>{subtitle}</div>
+        <span
+          className={s.productQuickAdd}
+          onClick={e => { e.preventDefault(); window.location.href = `${basePath}/cart` }}
+        >
+          + Add to Bag
+        </span>
+      </a>
+      <a href={`${basePath}/products/${id}`} style={{ textDecoration: "none", color: "inherit" }}>
+        <div className={s.productCategory}>{category}</div>
+        <div className={s.productName}>{name}</div>
+        <div className={s.productSub}>{subtitle}</div>
+      </a>
       <div className={s.productFooter}>
         <div>
           <span className={s.productPrice}>₹{price.toLocaleString("en-IN")}</span>

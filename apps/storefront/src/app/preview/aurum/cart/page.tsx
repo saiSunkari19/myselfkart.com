@@ -5,6 +5,7 @@ import Link from "next/link"
 import { PageShell, ProductCard, Reveal } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const INITIAL = [
   { product: PRODUCTS[1], size: "8", qty: 1 },
@@ -12,6 +13,7 @@ const INITIAL = [
 ]
 
 export default function CartPage() {
+  const { basePath } = useTemplateConfig()
   const [cart, setCart] = useState(INITIAL)
   const [promo, setPromo] = useState("")
 
@@ -36,7 +38,7 @@ export default function CartPage() {
           <div className={s.emptyIcon}>◇</div>
           <div className={s.emptyTitle}>Your bag is empty</div>
           <p className={s.emptyText}>Add a piece to your bag to begin your journey.</p>
-          <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>Explore Collection</Link>
+          <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>Explore Collection</Link>
         </div>
       </div>
     </PageShell>
@@ -55,7 +57,7 @@ export default function CartPage() {
           <div>
             {cart.map((item, i) => (
               <div key={i} className={s.cartItem}>
-                <Link href={`/preview/aurum/products/${item.product.id}`} className={s.cartItemImg}>
+                <Link href={`${basePath}/products/${item.product.id}`} className={s.cartItemImg}>
                   <img src={item.product.image} alt={item.product.name} />
                 </Link>
                 <div>
@@ -79,7 +81,7 @@ export default function CartPage() {
             ))}
 
             <div style={{ marginTop: 28 }}>
-              <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnOutline}`}>← Continue Shopping</Link>
+              <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnOutline}`}>← Continue Shopping</Link>
             </div>
           </div>
 
@@ -103,7 +105,7 @@ export default function CartPage() {
               <button className={s.promoBtn}>Apply</button>
             </div>
             <div className={`${s.summaryRow} ${s.summaryRowTotal}`}><span>Total</span><span>₹{total.toLocaleString("en-IN")}</span></div>
-            <Link href="/preview/aurum/checkout" className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`} style={{ marginTop: 20, display: "flex" }}>
+            <Link href={`${basePath}/checkout`} className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`} style={{ marginTop: 20, display: "flex" }}>
               Proceed to Checkout
             </Link>
             <div className={s.secureNote}>

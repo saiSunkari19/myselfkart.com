@@ -3,9 +3,11 @@
 import Link from "next/link"
 import { PageShell, ProductCard } from "../_components"
 import { CATEGORIES, PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 export default function CategoriesPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.container}>
@@ -18,7 +20,7 @@ export default function CategoriesPage() {
         {/* Large category grid */}
         <div className={s.categoryLarge}>
           {CATEGORIES.slice(0, 2).map(cat => (
-            <Link key={cat.id} href="/preview/thread/products" className={s.categoryLargeCard}>
+            <Link key={cat.id} href={`${basePath}/products`} className={s.categoryLargeCard}>
               <img src={cat.image} alt={cat.name} />
               <div className={s.categoryOverlay} />
               <div className={s.categoryInfo}>
@@ -33,7 +35,7 @@ export default function CategoriesPage() {
         </div>
         <div className={s.categoryGrid} style={{ marginBottom: 24 }}>
           {CATEGORIES.slice(2).map(cat => (
-            <Link key={cat.id} href="/preview/thread/products" className={s.categoryCard}>
+            <Link key={cat.id} href={`${basePath}/products`} className={s.categoryCard}>
               <img src={cat.image} alt={cat.name} />
               <div className={s.categoryOverlay} />
               <div className={s.categoryInfo}>
@@ -57,7 +59,7 @@ export default function CategoriesPage() {
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 20 }}>
               Curated pieces for every wardrobe.
             </p>
-            <Link href="/preview/thread/products" className={`${s.btn} ${s.btnWhite}`} style={{ fontSize: 12, padding: "10px 18px" }}>
+            <Link href={`${basePath}/products`} className={`${s.btn} ${s.btnWhite}`} style={{ fontSize: 12, padding: "10px 18px" }}>
               Explore →
             </Link>
           </div>
@@ -74,7 +76,7 @@ export default function CategoriesPage() {
                   <h2 className={s.sectionTitle}>{cat.name}</h2>
                   <p className={s.sectionSub}>{cat.description}</p>
                 </div>
-                <Link href="/preview/thread/products" className={`${s.btn} ${s.btnOutline}`}>
+                <Link href={`${basePath}/products`} className={`${s.btn} ${s.btnOutline}`}>
                   Shop {cat.name}
                 </Link>
               </div>

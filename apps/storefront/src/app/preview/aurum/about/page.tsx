@@ -3,8 +3,10 @@
 import Link from "next/link"
 import { PageShell, Reveal, GoldDivider, NewsletterSection } from "../_components"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function AboutPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       {/* Hero */}
@@ -48,7 +50,7 @@ export default function AboutPage() {
             <p style={{ fontSize: 15, color: "#6b5f52", lineHeight: 1.9, marginBottom: 32 }}>
               Today, under the leadership of his son Vikram and granddaughter Priya, Aurum employs over 220 artisans across two ateliers. The rules haven't changed.
             </p>
-            <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnDark}`}>Visit Our Atelier</Link>
+            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnDark}`}>Visit Our Atelier</Link>
           </Reveal>
         </div>
 

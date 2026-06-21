@@ -212,8 +212,8 @@ function Hero({ config }: { config: StoreConfig | null }) {
             )}
           </div>
           <div className={s.heroActions}>
-            <Link href={`/preview/volt/products/${DEFAULT_HERO_SLIDES[active].product.id}`} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Shop Now</Link>
-            <Link href="/preview/volt/shop" className={`${s.btn} ${s.btnDark} ${s.btnLg}`}>View All</Link>
+            <Link href={`/products/${DEFAULT_HERO_SLIDES[active].product.id}`} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Shop Now</Link>
+            <Link href="/shop" className={`${s.btn} ${s.btnDark} ${s.btnLg}`}>View All</Link>
           </div>
         </div>
       </div>
@@ -306,13 +306,13 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
                   <span className={s.sectionLabel}>Browse</span>
                   <div className={s.sectionTitle}>Shop by Category</div>
                 </div>
-                <Link href="/preview/volt/categories" className={s.viewAll}>View All →</Link>
+                <Link href="/categories" className={s.viewAll}>View All →</Link>
               </div>
             </Reveal>
             <div className={s.categoryGrid}>
               {CATEGORIES.slice(0, 6).map((cat, i) => (
                 <Reveal key={cat.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <Link href={`/preview/volt/shop?category=${cat.id}`} className={s.categoryCard}>
+                  <Link href={`/shop?category=${cat.id}`} className={s.categoryCard}>
                     <div className={s.categoryIcon}>{cat.icon}</div>
                     <div className={s.categoryName}>{cat.name}</div>
                     <div className={s.categoryCount}>{cat.count}+ products</div>
@@ -333,7 +333,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
                   <div className={s.sectionTitle}>New Launches</div>
                   <div className={s.sectionSub}>The latest releases from {storeName}</div>
                 </div>
-                <Link href="/preview/volt/new-launches" className={s.viewAll}>View All →</Link>
+                <Link href="/new-launches" className={s.viewAll}>View All →</Link>
               </div>
             </Reveal>
             {renderGrid(newLaunches)}
@@ -350,7 +350,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
                   <div className={s.sectionTitle}>Today's Best Deals</div>
                   <div className={s.sectionSub}>Prices drop at midnight — don't miss out</div>
                 </div>
-                <Link href="/preview/volt/deals" className={s.viewAll}>All Deals →</Link>
+                <Link href="/deals" className={s.viewAll}>All Deals →</Link>
               </div>
             </Reveal>
             <div className={s.productGrid}>
@@ -372,13 +372,13 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
                   <span className={s.sectionLabel}>Authorised</span>
                   <div className={s.sectionTitle}>Shop by Brand</div>
                 </div>
-                <Link href="/preview/volt/brands" className={s.viewAll}>All Brands →</Link>
+                <Link href="/brands" className={s.viewAll}>All Brands →</Link>
               </div>
             </Reveal>
             <div className={s.brandGrid}>
               {BRANDS.slice(0, 5).map((brand, i) => (
                 <Reveal key={brand.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <Link href={`/preview/volt/brands#${brand.id}`} className={s.brandCard}>
+                  <Link href={`/brands#${brand.id}`} className={s.brandCard}>
                     <span className={s.brandLogo}>{brand.logo}</span>
                     <div>
                       <div className={s.brandName}>{brand.name}</div>
@@ -400,7 +400,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
                   <span className={s.sectionLabel}>Customer Favourites</span>
                   <div className={s.sectionTitle}>Best Sellers</div>
                 </div>
-                <Link href="/preview/volt/best-sellers" className={s.viewAll}>View All →</Link>
+                <Link href="/best-sellers" className={s.viewAll}>View All →</Link>
               </div>
             </Reveal>
             {renderGrid(isLive ? bestsellers : BESTSELLERS.slice(0, 4))}
@@ -416,7 +416,7 @@ export function VoltLivePage({ config, products: rawProducts = [] }: { config: S
                   <span className={s.sectionLabel}>Full Range</span>
                   <div className={s.sectionTitle}>Shop All Products</div>
                 </div>
-                <Link href="/preview/volt/shop" className={s.viewAll}>View All →</Link>
+                <Link href="/shop" className={s.viewAll}>View All →</Link>
               </div>
             </Reveal>
             {renderGrid(allProducts)}

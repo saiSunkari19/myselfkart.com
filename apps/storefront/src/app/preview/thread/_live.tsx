@@ -26,7 +26,7 @@ type ThreadProduct = Product & { handle?: string | null }
 // Real product handles are routed through to the detail page; the mock products
 // (which lack handles) keep their numeric id-based links inside ProductCard.
 function productHref(p: ThreadProduct): string {
-  return p.handle ? `/products/${p.handle}` : `/preview/thread/products/${p.id}`
+  return p.handle ? `/products/${p.handle}` : `/products/${p.id}`
 }
 
 function toThreadProduct(p: StoreProduct, index: number): ThreadProduct {
@@ -94,11 +94,11 @@ const Hero = ({ config }: { config: StoreConfig | null }) => {
           <h1 className={s.heroTitle}>{config?.hero_heading}</h1>
           {config?.hero_subtext && <p className={s.heroSub}>{config.hero_subtext}</p>}
           <div className={s.heroCtas}>
-            <Link href={heroCta?.primary_link ?? "/preview/thread/products"} className={s.btn}>
+            <Link href={heroCta?.primary_link ?? "/products"} className={s.btn}>
               {heroCta?.primary_label ?? "Shop Now"}
             </Link>
             {heroCta?.secondary_label && (
-              <Link href={heroCta.secondary_link ?? "/preview/thread/categories"} className={`${s.btn} ${s.btnOutline}`}>
+              <Link href={heroCta.secondary_link ?? "/categories"} className={`${s.btn} ${s.btnOutline}`}>
                 {heroCta.secondary_label}
               </Link>
             )}
@@ -145,8 +145,8 @@ const Hero = ({ config }: { config: StoreConfig | null }) => {
           Clothing built for the long haul. Natural fabrics, considered cuts, and a palette that never shouts.
         </p>
         <div className={s.heroCtas}>
-          <Link href="/preview/thread/products" className={s.btn}>Shop Now</Link>
-          <Link href="/preview/thread/categories" className={`${s.btn} ${s.btnOutline}`}>Browse Categories</Link>
+          <Link href="/products" className={s.btn}>Shop Now</Link>
+          <Link href="/categories" className={`${s.btn} ${s.btnOutline}`}>Browse Categories</Link>
         </div>
         <dl className={s.heroStats}>
           {[
@@ -189,7 +189,7 @@ const NewArrivals = ({ products }: { products: ThreadProduct[] }) => {
             <h2 className={s.sectionTitle}>New Arrivals</h2>
             <p className={s.sectionSub}>Our latest pieces, freshly added to the collection.</p>
           </div>
-          <Link href="/preview/thread/products" className={`${s.btn} ${s.btnOutline}`}>View All</Link>
+          <Link href="/products" className={`${s.btn} ${s.btnOutline}`}>View All</Link>
         </div>
         <div className={s.productGrid}>
           {display.map(p => (
@@ -212,7 +212,7 @@ const CategoriesSection = () => (
       </div>
       <div className={s.categoryGrid}>
         {CATEGORIES.map(cat => (
-          <Link key={cat.id} href="/preview/thread/categories" className={s.categoryCard}>
+          <Link key={cat.id} href="/categories" className={s.categoryCard}>
             <img src={cat.image} alt={cat.name} />
             <div className={s.categoryOverlay} />
             <div className={s.categoryInfo}>
@@ -244,7 +244,7 @@ const EditorialBanner = () => (
         <p className={s.sectionSub} style={{ color: "rgba(255,255,255,0.65)" }}>
           Wool-blend coats and cropped blazers built to outlast the season.
         </p>
-        <Link href="/preview/thread/categories" className={`${s.btn} ${s.btnWhite}`}>
+        <Link href="/categories" className={`${s.btn} ${s.btnWhite}`}>
           Explore Outerwear →
         </Link>
       </div>
@@ -261,7 +261,7 @@ const BestSellers = ({ products }: { products: ThreadProduct[] }) => (
           <div className={s.sectionLabel}>Community favourites</div>
           <h2 className={s.sectionTitle}>Best Sellers</h2>
         </div>
-        <Link href="/preview/thread/products" className={`${s.btn} ${s.btnOutline}`}>See All</Link>
+        <Link href="/products" className={`${s.btn} ${s.btnOutline}`}>See All</Link>
       </div>
       <div className={`${s.productGrid} ${s.productGrid4}`}>
         {products.slice(0, 4).map(p => (
@@ -317,7 +317,7 @@ const SaleSection = ({ products }: { products: ThreadProduct[] }) => {
             <h2 className={s.sectionTitle}>On Sale Now</h2>
             <p className={s.sectionSub}>Last-season pieces at honest prices.</p>
           </div>
-          <Link href="/preview/thread/products" className={`${s.btn} ${s.btnAccent}`}>Shop the Sale</Link>
+          <Link href="/products" className={`${s.btn} ${s.btnAccent}`}>Shop the Sale</Link>
         </div>
         <div className={s.productGrid}>
           {onSale.map(p => (

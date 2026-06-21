@@ -1,8 +1,10 @@
 import Link from "next/link"
 import { PageShell, GoldDivider } from "../_components"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function ReturnsPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.pageHeader}>
@@ -84,7 +86,7 @@ export default function ReturnsPage() {
             <p style={{ fontSize: 14, color: "#6b5f52", lineHeight: 1.8, marginBottom: 20 }}>
               For return and exchange queries, our team is available Monday–Friday, 10am–7pm IST.
             </p>
-            <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnGold}`}>Contact Us</Link>
+            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnGold}`}>Contact Us</Link>
           </div>
 
         </div>

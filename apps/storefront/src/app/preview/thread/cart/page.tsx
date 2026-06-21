@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { PageShell } from "../_components"
 import { PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 const INITIAL_CART = [
@@ -12,6 +13,7 @@ const INITIAL_CART = [
 ]
 
 export default function CartPage() {
+  const { basePath } = useTemplateConfig()
   const [cart, setCart] = useState(INITIAL_CART)
   const [promo, setPromo] = useState("")
 
@@ -37,7 +39,7 @@ export default function CartPage() {
             <div className={s.emptyIcon}>🛍️</div>
             <h2 className={s.emptyTitle}>Your bag is empty</h2>
             <p className={s.emptyText}>Looks like you haven't added anything yet.</p>
-            <Link href="/preview/thread/products" className={s.btn}>Start Shopping</Link>
+            <Link href={`${basePath}/products`} className={s.btn}>Start Shopping</Link>
           </div>
         </div>
       </PageShell>
@@ -58,12 +60,12 @@ export default function CartPage() {
           <div>
             {cart.map((item, i) => (
               <div key={i} className={s.cartItem}>
-                <Link href={`/preview/thread/products/${item.product.id}`} className={s.cartItemImg}>
+                <Link href={`${basePath}/products/${item.product.id}`} className={s.cartItemImg}>
                   <img src={item.product.image} alt={item.product.name} />
                 </Link>
                 <div>
                   <Link
-                    href={`/preview/thread/products/${item.product.id}`}
+                    href={`${basePath}/products/${item.product.id}`}
                     style={{ textDecoration: "none" }}
                   >
                     <div className={s.cartItemName}>{item.product.name}</div>
@@ -88,7 +90,7 @@ export default function CartPage() {
 
             {/* Continue Shopping */}
             <div style={{ marginTop: 28 }}>
-              <Link href="/preview/thread/products" className={`${s.btn} ${s.btnOutline}`}>← Continue Shopping</Link>
+              <Link href={`${basePath}/products`} className={`${s.btn} ${s.btnOutline}`}>← Continue Shopping</Link>
             </div>
           </div>
 
@@ -130,7 +132,7 @@ export default function CartPage() {
               <span>₹{total.toLocaleString()}</span>
             </div>
 
-            <Link href="/preview/thread/checkout" className={`${s.btn} ${s.btnFull}`} style={{ marginTop: 20, display: "flex" }}>
+            <Link href={`${basePath}/checkout`} className={`${s.btn} ${s.btnFull}`} style={{ marginTop: 20, display: "flex" }}>
               Proceed to Checkout →
             </Link>
 

@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { PageShell, Reveal, GoldDivider } from "../_components"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const FAQS = [
   { category: "Certification", q: "What does BIS Hallmarking mean?", a: "BIS (Bureau of Indian Standards) hallmarking is the government-mandated quality certification for gold and silver jewellery in India. It guarantees the purity of the metal — 916 means 91.6% pure gold (22K), 750 means 75% pure gold (18K). Every Aurum gold and silver piece carries a BIS hallmark." },
@@ -23,6 +24,7 @@ const FAQS = [
 const categories = ["All", ...Array.from(new Set(FAQS.map(f => f.category)))]
 
 export default function FAQPage() {
+  const { basePath } = useTemplateConfig()
   const [open, setOpen] = useState<number | null>(0)
   const [activeCategory, setActiveCategory] = useState("All")
 
@@ -35,7 +37,7 @@ export default function FAQPage() {
         <h1 className={s.pageHeaderTitle}>Frequently Asked Questions</h1>
         <GoldDivider />
         <p className={s.pageHeaderSub}>
-          Everything you need to know about Aurum. Can't find an answer? <Link href="/preview/aurum/contact" style={{ color: "#b8962e" }}>Contact us</Link>.
+          Everything you need to know about Aurum. Can't find an answer? <Link href={`${basePath}/contact`} style={{ color: "#b8962e" }}>Contact us</Link>.
         </p>
       </div>
 
@@ -69,7 +71,7 @@ export default function FAQPage() {
               <div style={{ fontSize: 28, marginBottom: 12 }}>✦</div>
               <h3 style={{ fontSize: 20, fontWeight: 400, color: "#1a1410", marginBottom: 10 }}>Still have questions?</h3>
               <p style={{ fontSize: 13, color: "#6b5f52", marginBottom: 24 }}>Our team typically responds within 4 business hours.</p>
-              <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnGold}`}>Contact Us</Link>
+              <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnGold}`}>Contact Us</Link>
             </div>
           </div>
         </Reveal>

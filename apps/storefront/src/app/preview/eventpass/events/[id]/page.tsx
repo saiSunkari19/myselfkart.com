@@ -5,8 +5,10 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { NavBar, Footer, EventCard, T } from "../../_components"
 import { EVENTS } from "../../_data"
+import { useTemplateConfig } from "../../../../../lib/template-config-context"
 
 export default function EventDetailPage() {
+  const { basePath } = useTemplateConfig()
   const params = useParams()
   const event = EVENTS.find(e => e.id === params.id) ?? EVENTS[0]
   const related = EVENTS.filter(e => e.id !== event.id && e.category === event.category).slice(0, 3)
@@ -260,7 +262,7 @@ export default function EventDetailPage() {
                 </div>
               )}
 
-              <Link href={totalTickets > 0 ? "/preview/eventpass/checkout" : "#"} style={{ textDecoration: "none" }}>
+              <Link href={totalTickets > 0 ? `${basePath}/checkout` : "#"} style={{ textDecoration: "none" }}>
                 <button style={{
                   width: "100%", padding: "16px",
                   background: totalTickets > 0 ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : T.bgSubtle,
