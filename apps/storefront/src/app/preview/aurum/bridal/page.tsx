@@ -4,10 +4,12 @@ import Link from "next/link"
 import { PageShell, ProductCard, Reveal, GoldDivider, NewsletterSection } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const bridalProducts = PRODUCTS.filter(p => p.category === "Bridal")
 
 export default function BridalPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       {/* Cinematic hero */}
@@ -27,7 +29,7 @@ export default function BridalPage() {
             Every bridal set is crafted over 80–120 hours by our master karigar. Traditional Kundan, Polki, and 22K gold — for the most important day of your life.
           </p>
           <div className={s.heroCtas}>
-            <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
+            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
               Book Bridal Appointment
             </Link>
             <a href="#collection" className={`${s.btn} ${s.btnWhite} ${s.btnLg}`}>
@@ -96,10 +98,10 @@ export default function BridalPage() {
                 Our bridal specialists will guide you through the entire process — from design consultation to final fitting. Every detail, perfectly handled.
               </p>
               <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-                <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
+                <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
                   Book Appointment
                 </Link>
-                <Link href="/preview/aurum/store-locator" className={`${s.btn} ${s.btnOutlineGold}`}>
+                <Link href={`${basePath}/store-locator`} className={`${s.btn} ${s.btnOutlineGold}`}>
                   Visit a Store
                 </Link>
               </div>

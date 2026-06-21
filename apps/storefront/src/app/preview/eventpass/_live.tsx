@@ -166,7 +166,7 @@ function HeroSection({ config, accent }: { config: StoreConfig | null; accent: s
     const params = new URLSearchParams()
     if (search.trim()) params.set("q", search.trim())
     if (city !== "All Cities") params.set("city", city)
-    window.location.href = `/preview/eventpass/events?${params.toString()}`
+    window.location.href = `/events?${params.toString()}`
   }
 
   return (
@@ -269,7 +269,7 @@ function HeroSection({ config, accent }: { config: StoreConfig | null; accent: s
           ].map(tag => (
             <button
               key={tag.label}
-              onClick={() => { window.location.href = `/preview/eventpass/events?q=${tag.q}` }}
+              onClick={() => { window.location.href = `/events?q=${tag.q}` }}
               style={{
                 background: "#fff", border: `1px solid ${T.border}`,
                 color: T.textMuted, borderRadius: 100,
@@ -319,7 +319,7 @@ const TrendingSection = ({ events, accent }: { events: LiveEvent[]; accent: stri
         label="Hot right now"
         title="Trending Events"
         subtitle="Events everyone's talking about this week"
-        action={<ViewAllLink href="/preview/eventpass/events" accent={accent} />}
+        action={<ViewAllLink href="/events" accent={accent} />}
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
         {events.slice(0, 3).map(event => <LiveEventCard key={event.id} event={event} accent={accent} />)}
@@ -334,7 +334,7 @@ const FeaturedSection = ({ events, accent }: { events: LiveEvent[]; accent: stri
       <SectionHeader
         label="Editor's picks"
         title="Featured Events"
-        action={<ViewAllLink href="/preview/eventpass/events" accent={accent} />}
+        action={<ViewAllLink href="/events" accent={accent} />}
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
         {(events.length > 3 ? events.slice(3) : events).map(event => (
@@ -352,7 +352,7 @@ const CategoriesSection = () => (
       <SectionHeader label="Browse by type" title="Explore Categories" subtitle="Find exactly what you're in the mood for" />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
         {CATEGORIES.map(cat => (
-          <Link key={cat.name} href={`/preview/eventpass/events?cat=${encodeURIComponent(cat.name)}`} style={{ textDecoration: "none" }}>
+          <Link key={cat.name} href={`/events?cat=${encodeURIComponent(cat.name)}`} style={{ textDecoration: "none" }}>
             <div style={{
               background: T.bgCard, border: `1px solid ${T.border}`,
               borderRadius: T.radiusLg, padding: "24px 16px", textAlign: "center",
@@ -385,7 +385,7 @@ const CitiesSection = () => (
       <SectionHeader label="Explore locally" title="Browse by City" subtitle="Events happening near you right now" />
       <div className="ep-cities-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
         {CITIES.map(city => (
-          <Link key={city.name} href={`/preview/eventpass/events?city=${encodeURIComponent(city.name)}`} style={{ textDecoration: "none" }}>
+          <Link key={city.name} href={`/events?city=${encodeURIComponent(city.name)}`} style={{ textDecoration: "none" }}>
             <div style={{
               position: "relative", borderRadius: T.radiusLg, overflow: "hidden",
               cursor: "pointer", aspectRatio: "3/4",

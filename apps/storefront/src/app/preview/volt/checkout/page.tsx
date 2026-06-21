@@ -18,7 +18,7 @@ const total = subtotal
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { config } = useTemplateConfig()
+  const { config, basePath } = useTemplateConfig()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", address: "", city: "", state: "", pincode: "" })
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (step < 1) setStep(step + 1)
-    else router.push("/preview/volt/confirmation")
+    else router.push(`${basePath}/confirmation`)
   }
 
   const steps = ["Shipping Info", "Payment"]
@@ -36,7 +36,7 @@ export default function CheckoutPage() {
       <div className={s.pageHeader}>
         <div className={s.container}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Link href="/preview/volt/cart" style={{ fontSize: 13, color: "var(--accent)" }}>← Back to Cart</Link>
+            <Link href={`${basePath}/cart`} style={{ fontSize: 13, color: "var(--accent)" }}>← Back to Cart</Link>
           </div>
           <div className={s.pageHeaderTitle} style={{ marginTop: 8 }}>Checkout</div>
         </div>

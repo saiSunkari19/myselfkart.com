@@ -5,6 +5,7 @@ import Link from "next/link"
 import { NavBar, Footer, ProductCard, Reveal, GoldDivider } from "../_components"
 import type { Product } from "../_data"
 import type { StoreConfig } from "../../../../lib/store-config"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 import ss from "./_shop.module.css"
 
@@ -19,6 +20,7 @@ const SORT_OPTIONS = [
 ]
 
 export function ShopClient({ products, config }: { products: Product[]; config?: StoreConfig | null }) {
+  const { basePath } = useTemplateConfig()
   const colorVars = {
     ...(config?.primary_color ? { "--charcoal": config.primary_color } : {}),
     ...(config?.accent_color  ? { "--gold":     config.accent_color  } : {}),
@@ -70,7 +72,7 @@ export function ShopClient({ products, config }: { products: Product[]; config?:
       <div className={ss.pageHeader}>
         <div className={s.container}>
           <div className={ss.breadcrumb}>
-            <Link href="/preview/glow" className={ss.breadcrumbLink}>Home</Link>
+            <Link href={basePath || "/"} className={ss.breadcrumbLink}>Home</Link>
             <span className={ss.breadcrumbSep}>›</span>
             <span>Shop</span>
           </div>

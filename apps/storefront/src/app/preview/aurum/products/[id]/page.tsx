@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import { PageShell, ProductCard, Reveal, GoldDivider, NewsletterSection } from "../../_components"
 import { PRODUCTS } from "../../_data"
 import s from "../../_styles.module.css"
+import { useTemplateConfig } from "../../../../../lib/template-config-context"
 
 const REVIEWS = [
   { name: "Anita S.", date: "March 2026", stars: 5, text: "Absolutely breathtaking. The quality is unmatched and the certificate gave me full confidence. Delivery was fast and the packaging was museum-quality.", product: "Verified Purchase" },
@@ -14,6 +15,7 @@ const REVIEWS = [
 ]
 
 export default function ProductDetailPage() {
+  const { basePath } = useTemplateConfig()
   const { id } = useParams()
   const product = PRODUCTS.find(p => p.id === id) ?? PRODUCTS[0]
   const related = PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4)
@@ -33,11 +35,11 @@ export default function ProductDetailPage() {
       <div className={s.container}>
         {/* Breadcrumb */}
         <div className={s.breadcrumb}>
-          <Link href="/preview/aurum">Home</Link>
+          <Link href={basePath || "/"}>Home</Link>
           <span>/</span>
-          <Link href="/preview/aurum/shop">Shop</Link>
+          <Link href={`${basePath}/shop`}>Shop</Link>
           <span>/</span>
-          <Link href="/preview/aurum/shop">{product.category}</Link>
+          <Link href={`${basePath}/shop`}>{product.category}</Link>
           <span>/</span>
           <span>{product.name}</span>
         </div>
@@ -119,7 +121,7 @@ export default function ProductDetailPage() {
               >
                 {added ? "✓ Added to Bag" : "Add to Bag"}
               </button>
-              <Link href="/preview/aurum/cart" className={`${s.btn} ${s.btnOutlineGold}`} style={{ padding: "14px 20px" }}>
+              <Link href={`${basePath}/cart`} className={`${s.btn} ${s.btnOutlineGold}`} style={{ padding: "14px 20px" }}>
                 View Bag
               </Link>
             </div>
@@ -246,7 +248,7 @@ export default function ProductDetailPage() {
                   <span className={s.sectionLabel}>You May Also Like</span>
                   <h2 className={s.sectionTitle} style={{ fontSize: 36 }}>Related Pieces</h2>
                 </div>
-                <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnOutline}`}>View All</Link>
+                <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnOutline}`}>View All</Link>
               </div>
             </Reveal>
             <div className={s.productGrid4}>

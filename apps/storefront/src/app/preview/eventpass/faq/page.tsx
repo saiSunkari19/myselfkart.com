@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { PageShell, SectionHeader, T } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const FAQS = [
   {
@@ -68,6 +69,7 @@ const FAQItem = ({ q, a }: { q: string; a: string }) => {
 }
 
 export default function FAQPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -89,7 +91,7 @@ export default function FAQPage() {
           <div style={{ fontSize: 36, marginBottom: 16 }}>💬</div>
           <h3 style={{ color: T.text, fontWeight: 700, marginBottom: 8, marginTop: 0 }}>Still have questions?</h3>
           <p style={{ color: T.textMuted, fontSize: 14, margin: "0 0 20px" }}>Our support team typically responds within 2 hours.</p>
-          <a href="/preview/eventpass/contact" style={{ textDecoration: "none" }}>
+          <a href={`${basePath}/contact`} style={{ textDecoration: "none" }}>
             <button style={{
               background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
               color: "#fff", border: "none", borderRadius: 12,

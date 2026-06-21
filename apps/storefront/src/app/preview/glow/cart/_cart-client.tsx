@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import { NavBar, Footer } from "../_components"
 import { PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 import c from "./_cart.module.css"
 
@@ -17,6 +18,7 @@ const SHIPPING_THRESHOLD = 999
 const SHIPPING_COST = 99
 
 export function CartClient({ config }: { config?: import("../../../../lib/store-config").StoreConfig | null }) {
+  const { basePath } = useTemplateConfig()
   const [items, setItems] = useState(INITIAL_ITEMS)
   const [coupon, setCoupon] = useState("")
   const [couponApplied, setCouponApplied] = useState(false)
@@ -59,9 +61,9 @@ export function CartClient({ config }: { config?: import("../../../../lib/store-
 
           {/* Breadcrumb */}
           <div className={c.breadcrumb}>
-            <Link href="/preview/glow" className={c.breadcrumbLink}>Home</Link>
+            <Link href={basePath || "/"} className={c.breadcrumbLink}>Home</Link>
             <span>›</span>
-            <Link href="/preview/glow/shop" className={c.breadcrumbLink}>Shop</Link>
+            <Link href={`${basePath}/shop`} className={c.breadcrumbLink}>Shop</Link>
             <span>›</span>
             <span>Cart</span>
           </div>
@@ -75,7 +77,7 @@ export function CartClient({ config }: { config?: import("../../../../lib/store-
               <div className={c.emptyIcon}>🛍</div>
               <div className={c.emptyTitle}>Your bag is empty</div>
               <p className={c.emptySub}>Discover clean, science-backed skincare made for your skin.</p>
-              <Link href="/preview/glow/shop" className={`${s.btn} ${s.btnDark}`}>Continue Shopping</Link>
+              <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnDark}`}>Continue Shopping</Link>
             </div>
           ) : (
             <div className={c.layout}>
@@ -207,7 +209,7 @@ export function CartClient({ config }: { config?: import("../../../../lib/store-
                     <span>₹{total.toLocaleString("en-IN")}</span>
                   </div>
 
-                  <Link href="/preview/glow/checkout" className={c.checkoutBtn}>
+                  <Link href={`${basePath}/checkout`} className={c.checkoutBtn}>
                     Proceed to Checkout →
                   </Link>
 

@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { PageShell, ProductCard, Reveal } from "../_components"
 import { PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 const INIT = [
@@ -12,6 +13,7 @@ const INIT = [
 ]
 
 export default function CartPage() {
+  const { basePath } = useTemplateConfig()
   const [cart, setCart] = useState(INIT)
   const [promo, setPromo] = useState("")
   const updateQty = (i: number, d: number) => setCart(prev => {
@@ -32,7 +34,7 @@ export default function CartPage() {
           <div className={s.emptyStateIcon}>🛒</div>
           <div className={s.emptyStateTitle}>Your cart is empty</div>
           <p className={s.emptyStateText} style={{ marginBottom: 20 }}>Add items to get started</p>
-          <Link href="/preview/volt/shop" className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Start Shopping</Link>
+          <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Start Shopping</Link>
         </div>
       </div>
     </PageShell>
@@ -51,7 +53,7 @@ export default function CartPage() {
           <div>
             {cart.map((item, i) => (
               <div key={i} className={s.cartItem}>
-                <Link href={`/preview/volt/products/${item.product.id}`} className={s.cartItemImg}>
+                <Link href={`${basePath}/products/${item.product.id}`} className={s.cartItemImg}>
                   <img src={item.product.image} alt={item.product.name} />
                 </Link>
                 <div>
@@ -78,7 +80,7 @@ export default function CartPage() {
                 </div>
               </div>
             ))}
-            <Link href="/preview/volt/shop" className={`${s.btn} ${s.btnSecondary}`} style={{ marginTop: 8 }}>← Continue Shopping</Link>
+            <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnSecondary}`} style={{ marginTop: 8 }}>← Continue Shopping</Link>
           </div>
           <div className={s.orderSummary}>
             <div className={s.orderSummaryTitle}>Order Summary</div>
@@ -90,7 +92,7 @@ export default function CartPage() {
               <button className={s.promoBtn}>Apply</button>
             </div>
             <div className={`${s.summaryRow} ${s.summaryRowTotal}`}><span>Total</span><span>₹{total.toLocaleString("en-IN")}</span></div>
-            <Link href="/preview/volt/checkout" className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`} style={{ marginTop: 16, display: "flex" }}>Proceed to Checkout</Link>
+            <Link href={`${basePath}/checkout`} className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`} style={{ marginTop: 16, display: "flex" }}>Proceed to Checkout</Link>
             <div className={s.secureNote}>🔒 100% Secure · SSL Encrypted</div>
           </div>
         </div>

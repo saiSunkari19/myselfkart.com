@@ -5,9 +5,11 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { PageShell, ProductCard, NewsletterSection } from "../../_components"
 import { PRODUCTS } from "../../_data"
+import { useTemplateConfig } from "../../../../../lib/template-config-context"
 import s from "../../_styles.module.css"
 
 export default function ProductDetailPage() {
+  const { basePath } = useTemplateConfig()
   const { id } = useParams()
   const product = PRODUCTS.find(p => p.id === id) ?? PRODUCTS[0]
   const related = PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4)
@@ -27,9 +29,9 @@ export default function ProductDetailPage() {
       <div className={s.container}>
         {/* Breadcrumb */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "24px 0 0", fontSize: 13, color: "#a09890" }}>
-          <Link href="/preview/thread" style={{ color: "#a09890", textDecoration: "none" }}>Home</Link>
+          <Link href={basePath || "/"} style={{ color: "#a09890", textDecoration: "none" }}>Home</Link>
           <span>/</span>
-          <Link href="/preview/thread/products" style={{ color: "#a09890", textDecoration: "none" }}>Shop</Link>
+          <Link href={`${basePath}/products`} style={{ color: "#a09890", textDecoration: "none" }}>Shop</Link>
           <span>/</span>
           <span style={{ color: "#1a1a1a" }}>{product.name}</span>
         </div>
@@ -110,7 +112,7 @@ export default function ProductDetailPage() {
               >
                 {added ? "Added to Bag ✓" : "Add to Bag"}
               </button>
-              <Link href="/preview/thread/cart" className={`${s.btn} ${s.btnOutline}`}>
+              <Link href={`${basePath}/cart`} className={`${s.btn} ${s.btnOutline}`}>
                 View Bag
               </Link>
             </div>
@@ -149,7 +151,7 @@ export default function ProductDetailPage() {
                 <div className={s.sectionLabel}>More from {product.category}</div>
                 <h2 className={s.sectionTitle}>You might also like</h2>
               </div>
-              <Link href="/preview/thread/products" className={`${s.btn} ${s.btnOutline}`}>View All</Link>
+              <Link href={`${basePath}/products`} className={`${s.btn} ${s.btnOutline}`}>View All</Link>
             </div>
             <div className={`${s.productGrid} ${s.productGrid4}`}>
               {related.map(p => <ProductCard key={p.id} product={p} />)}

@@ -7,6 +7,7 @@ import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
 import c from "./_checkout.module.css"
 import { RazorpayCheckout } from "../../../../components/razorpay-checkout"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const ORDER_ITEMS = [
   { product: PRODUCTS[0], qty: 1 },
@@ -22,6 +23,7 @@ const STEPS = ["Delivery", "Payment", "Review"]
 type Step = 0 | 1 | 2
 
 export function CheckoutClient({ config }: { config?: import("../../../../lib/store-config").StoreConfig | null }) {
+  const { basePath } = useTemplateConfig()
   const [step, setStep] = useState<Step>(0)
   const [placed, setPlaced] = useState(false)
 
@@ -53,7 +55,7 @@ export function CheckoutClient({ config }: { config?: import("../../../../lib/st
           <div className={c.formCol}>
 
             {/* Logo + breadcrumb */}
-            <Link href="/preview/glow" className={c.logoLink}>glow.</Link>
+            <Link href={basePath || "/"} className={c.logoLink}>glow.</Link>
 
             {/* Step tabs */}
             <div className={c.stepBar}>
@@ -238,6 +240,7 @@ function Field({ label, value, onChange, placeholder, type = "text" }: {
 
 /* ── Order success screen ── */
 function OrderSuccess() {
+  const { basePath } = useTemplateConfig()
   return (
     <div className={c.successPage}>
       <div className={c.successCard}>
@@ -273,8 +276,8 @@ function OrderSuccess() {
           ))}
         </div>
         <div className={c.successBtns}>
-          <Link href="/preview/glow/shop" className={c.successShopBtn}>Continue Shopping</Link>
-          <Link href="/preview/glow" className={c.successHomeBtn}>Back to Home</Link>
+          <Link href={`${basePath}/shop`} className={c.successShopBtn}>Continue Shopping</Link>
+          <Link href={basePath || "/"} className={c.successHomeBtn}>Back to Home</Link>
         </div>
       </div>
     </div>

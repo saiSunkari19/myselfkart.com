@@ -3,8 +3,10 @@
 import Link from "next/link"
 import { PageShell, GoldDivider } from "../_components"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function ConfirmationPage() {
+  const { basePath } = useTemplateConfig()
   const orderId = "AUR-" + Math.floor(100000 + Math.random() * 900000)
 
   return (
@@ -40,8 +42,8 @@ export default function ConfirmationPage() {
           </div>
 
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>Continue Shopping</Link>
-            <Link href="/preview/aurum" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>Back to Home</Link>
+            <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>Continue Shopping</Link>
+            <Link href={basePath || "/"} className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>Back to Home</Link>
           </div>
         </div>
       </div>

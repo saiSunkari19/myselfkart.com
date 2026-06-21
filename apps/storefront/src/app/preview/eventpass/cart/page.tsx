@@ -4,8 +4,10 @@ import Link from "next/link"
 import { useState } from "react"
 import { PageShell, T } from "../_components"
 import { useCart } from "../_cart"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function CartPage() {
+  const { basePath } = useTemplateConfig()
   const { items, updateQty, subtotal } = useCart()
   const [promo, setPromo] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
@@ -42,7 +44,7 @@ export default function CartPage() {
             <div style={{ fontSize: 56, marginBottom: 20 }}>🎟️</div>
             <h2 style={{ color: T.text, marginBottom: 12 }}>Your cart is empty</h2>
             <p style={{ color: T.textMuted, marginBottom: 28 }}>Find an event and add tickets to get started.</p>
-            <Link href="/preview/eventpass/events">
+            <Link href={`${basePath}/events`}>
               <button style={{
                 background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
                 color: "#fff", border: "none", borderRadius: 12,
@@ -177,7 +179,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <Link href="/preview/eventpass/checkout" style={{ textDecoration: "none" }}>
+              <Link href={`${basePath}/checkout`} style={{ textDecoration: "none" }}>
                 <button style={{
                   width: "100%", padding: "15px",
                   background: "linear-gradient(135deg,#6366f1,#8b5cf6)",

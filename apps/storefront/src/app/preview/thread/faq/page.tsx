@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { PageShell } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 const FAQS = [
@@ -49,6 +50,7 @@ const FAQS = [
 ]
 
 export default function FAQPage() {
+  const { basePath } = useTemplateConfig()
   const [open, setOpen] = useState<number | null>(0)
 
   return (
@@ -57,7 +59,7 @@ export default function FAQPage() {
         <div className={`${s.pageTitle} ${s.sectionCenter}`}>
           <div className={s.pageTitleLabel}>Help centre</div>
           <h1 className={s.pageTitleText}>Frequently Asked Questions</h1>
-          <p className={s.pageTitleSub}>Everything you need to know. Can't find the answer? <Link href="/preview/thread/contact" style={{ color: "#c4956a" }}>Contact us</Link>.</p>
+          <p className={s.pageTitleSub}>Everything you need to know. Can't find the answer? <Link href={`${basePath}/contact`} style={{ color: "#c4956a" }}>Contact us</Link>.</p>
         </div>
 
         <div className={s.faqList}>
@@ -82,7 +84,7 @@ export default function FAQPage() {
             <p style={{ fontSize: 14, color: "#6b6560", marginBottom: 24 }}>
               Our team usually replies within a few hours on weekdays.
             </p>
-            <Link href="/preview/thread/contact" className={s.btn}>Get in Touch</Link>
+            <Link href={`${basePath}/contact`} className={s.btn}>Get in Touch</Link>
           </div>
         </div>
       </div>

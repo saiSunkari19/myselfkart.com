@@ -717,6 +717,7 @@
   group: true;
 }
 .productImageWrap {
+  display: block;
   position: relative;
   aspect-ratio: 3/4;
   overflow: hidden;

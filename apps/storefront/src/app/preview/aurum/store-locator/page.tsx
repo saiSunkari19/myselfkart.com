@@ -4,8 +4,10 @@ import Link from "next/link"
 import { PageShell, Reveal, GoldDivider } from "../_components"
 import { STORES } from "../_data"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function StoreLocatorPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.pageHeader}>
@@ -31,7 +33,7 @@ export default function StoreLocatorPage() {
                   <p className={s.storeAddress}>{store.address}</p>
                   <p className={s.storePhone}>{store.phone}</p>
                   <p className={s.storeHours}>{store.hours}</p>
-                  <Link href="/preview/aurum/contact" className={`${s.btn} ${s.btnOutlineGold}`} style={{ fontSize: 10, padding: "10px 20px" }}>
+                  <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnOutlineGold}`} style={{ fontSize: 10, padding: "10px 20px" }}>
                     Book Appointment
                   </Link>
                 </div>
