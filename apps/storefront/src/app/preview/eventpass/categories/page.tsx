@@ -3,15 +3,17 @@
 import Link from "next/link"
 import { PageShell, SectionHeader, EventCard, T } from "../_components"
 import { CATEGORIES, EVENTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function CategoriesPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <SectionHeader label="Browse" title="All Categories" subtitle="Find events by what you love" />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20, marginBottom: 72 }}>
         {CATEGORIES.map(cat => (
-          <Link key={cat.name} href="/preview/eventpass/events" style={{ textDecoration: "none" }}>
+          <Link key={cat.name} href={`${basePath}/events`} style={{ textDecoration: "none" }}>
             <div style={{
               background: T.bgCard, border: `1px solid ${T.border}`,
               borderRadius: T.radiusLg, padding: "32px 24px", textAlign: "center",

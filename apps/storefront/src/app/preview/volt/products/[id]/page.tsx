@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { PageShell, ProductCard, Stars, Badge, Reveal } from "../../_components"
 import { PRODUCTS } from "../../_data"
+import { useTemplateConfig } from "../../../../../lib/template-config-context"
 import s from "../../_styles.module.css"
 
 const REVIEWS = [
@@ -14,6 +15,7 @@ const REVIEWS = [
 ]
 
 export default function ProductDetailPage() {
+  const { basePath } = useTemplateConfig()
   const { id } = useParams()
   const product = PRODUCTS.find(p => p.id === id) || PRODUCTS[0]
   const related = PRODUCTS.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4)
@@ -29,9 +31,9 @@ export default function ProductDetailPage() {
       <div style={{ background: "var(--bg2)", borderBottom: "1px solid var(--border)", padding: "10px 0" }}>
         <div className={s.container}>
           <div style={{ display: "flex", gap: 6, fontSize: 12, color: "var(--text3)" }}>
-            <Link href="/preview/volt" style={{ color: "var(--accent)" }}>Home</Link>
+            <Link href={basePath || "/"} style={{ color: "var(--accent)" }}>Home</Link>
             <span>/</span>
-            <Link href="/preview/volt/shop" style={{ color: "var(--accent)" }}>{product.category}</Link>
+            <Link href={`${basePath}/shop`} style={{ color: "var(--accent)" }}>{product.category}</Link>
             <span>/</span>
             <span style={{ color: "var(--text)" }}>{product.name}</span>
           </div>
@@ -123,8 +125,8 @@ export default function ProductDetailPage() {
             </div>
 
             <div className={s.detailActions}>
-              <Link href="/preview/volt/cart" className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`}>Add to Cart</Link>
-              <Link href="/preview/volt/checkout" className={`${s.btn} ${s.btnDark} ${s.btnFull} ${s.btnLg}`}>Buy Now</Link>
+              <Link href={`${basePath}/cart`} className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`}>Add to Cart</Link>
+              <Link href={`${basePath}/checkout`} className={`${s.btn} ${s.btnDark} ${s.btnFull} ${s.btnLg}`}>Buy Now</Link>
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

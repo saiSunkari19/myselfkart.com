@@ -1,7 +1,11 @@
+"use client"
+
 import Link from "next/link"
 import { NavBar, Footer, T } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 export default function AboutPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
       <NavBar />
@@ -203,7 +207,7 @@ export default function AboutPage() {
             </h3>
             <p style={{ color: T.textMuted, fontSize: 15, margin: 0 }}>500+ events across India. No account needed.</p>
           </div>
-          <Link href="/preview/eventpass/events" style={{ textDecoration: "none" }}>
+          <Link href={`${basePath}/events`} style={{ textDecoration: "none" }}>
             <button style={{
               background: T.text, color: "#fff",
               border: "none", borderRadius: 12,

@@ -1,8 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { PageShell } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 export default function ConfirmationPage() {
+  const { basePath } = useTemplateConfig()
   const orderId = "VLT" + Math.floor(10000000 + Math.random() * 90000000)
   return (
     <PageShell>
@@ -25,8 +29,8 @@ export default function ConfirmationPage() {
             ))}
           </div>
           <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <Link href="/preview/volt/shop" className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Continue Shopping</Link>
-            <Link href="/preview/volt" className={`${s.btn} ${s.btnSecondary} ${s.btnLg}`}>Back to Home</Link>
+            <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Continue Shopping</Link>
+            <Link href={basePath || "/"} className={`${s.btn} ${s.btnSecondary} ${s.btnLg}`}>Back to Home</Link>
           </div>
         </div>
       </div>

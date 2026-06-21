@@ -10,7 +10,7 @@ import { useTemplateConfig } from "../../../../lib/template-config-context"
 type Step = 1 | 2
 
 export default function CheckoutPage() {
-  const { config } = useTemplateConfig()
+  const { config, basePath } = useTemplateConfig()
   const event = EVENTS[0]
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", gst: "" })
@@ -66,7 +66,7 @@ const STEPS = ["Contact Details", "Review & Pay", "Confirmation"]
       <div style={{ paddingTop: 64 }}>
         <div className="ep-checkout-wrap" style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 40px" }}>
           <div style={{ marginBottom: 32 }}>
-            <Link href="/preview/eventpass/cart" style={{ color: T.accent, textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
+            <Link href={`${basePath}/cart`} style={{ color: T.accent, textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
               ← Back to cart
             </Link>
           </div>

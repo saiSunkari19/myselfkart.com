@@ -35,7 +35,8 @@ export async function getPaymentConfig(
   const sdk = getTenantMedusa(tenant)
   try {
     return await sdk.client.fetch<StorePaymentConfig>(
-      "/store/selfkart/payment-config"
+      "/store/selfkart/payment-config",
+      { cache: "no-store" }
     )
   } catch {
     return { razorpay: null }

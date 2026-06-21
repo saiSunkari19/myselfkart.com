@@ -2,6 +2,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { PageShell } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 const FAQS = [
@@ -20,6 +21,7 @@ const FAQS = [
 const cats = ["All", ...Array.from(new Set(FAQS.map(f => f.cat)))]
 
 export default function FAQPage() {
+  const { basePath } = useTemplateConfig()
   const [open, setOpen] = useState<number | null>(null)
   const [cat, setCat] = useState("All")
   const filtered = FAQS.filter(f => cat === "All" || f.cat === cat)
@@ -29,7 +31,7 @@ export default function FAQPage() {
         <div className={s.container}>
           <div className={s.pageHeaderLabel}>Help Centre</div>
           <div className={s.pageHeaderTitle}>Frequently Asked Questions</div>
-          <div className={s.pageHeaderSub}>Can't find an answer? <Link href="/preview/volt/contact" style={{ color: "var(--accent)" }}>Contact us</Link></div>
+          <div className={s.pageHeaderSub}>Can't find an answer? <Link href={`${basePath}/contact`} style={{ color: "var(--accent)" }}>Contact us</Link></div>
         </div>
       </div>
       <div className={s.container}>
@@ -54,7 +56,7 @@ export default function FAQPage() {
             <div style={{ fontSize: 24, marginBottom: 10 }}>💬</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Still have questions?</div>
             <p style={{ fontSize: 13.5, color: "var(--text2)", marginBottom: 16 }}>Our team typically responds within 2 hours.</p>
-            <Link href="/preview/volt/contact" className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
+            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
           </div>
         </div>
       </div>

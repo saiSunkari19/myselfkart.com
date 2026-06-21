@@ -5,10 +5,12 @@ import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { PageShell, EventCard, SectionHeader, T } from "../_components"
 import { EVENTS, CATEGORIES } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 type SortKey = "relevance" | "price_asc" | "price_desc" | "date_asc"
 
 function EventsContent() {
+  const { basePath } = useTemplateConfig()
   const searchParams = useSearchParams()
 
   const [search, setSearch] = useState(searchParams.get("q") ?? "")
@@ -184,7 +186,7 @@ function EventsContent() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {filtered.map(event => (
-            <a key={event.id} href={`/preview/eventpass/events/${event.id}`} style={{ textDecoration: "none" }}>
+            <a key={event.id} href={`${basePath}/events/${event.id}`} style={{ textDecoration: "none" }}>
               <div style={{
                 display: "flex", gap: 0, background: T.bgCard,
                 border: `1px solid ${T.border}`, borderRadius: T.radiusLg,

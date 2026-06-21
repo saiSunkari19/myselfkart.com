@@ -20,7 +20,7 @@ const total = subtotal + shipping
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { config } = useTemplateConfig()
+  const { config, basePath } = useTemplateConfig()
   const [step, setStep] = useState<"shipping" | "payment">("shipping")
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", phone: "",
@@ -33,14 +33,14 @@ export default function CheckoutPage() {
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault()
     if (step === "shipping") setStep("payment")
-    else router.push("/preview/thread/confirmation")
+    else router.push(`${basePath}/confirmation`)
   }
 
   return (
     <PageShell>
       <div className={s.container}>
         <div className={s.pageTitle}>
-          <Link href="/preview/thread/cart" style={{ fontSize: 13, color: "#a09890", textDecoration: "none", display: "block", marginBottom: 8 }}>
+          <Link href={`${basePath}/cart`} style={{ fontSize: 13, color: "#a09890", textDecoration: "none", display: "block", marginBottom: 8 }}>
             ← Back to Bag
           </Link>
           <h1 className={s.pageTitleText}>Checkout</h1>

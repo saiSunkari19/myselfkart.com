@@ -1,8 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { PageShell } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 export default function ReturnsPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.pageHeader}>
@@ -35,7 +39,7 @@ export default function ReturnsPage() {
           ))}
           <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "24px", textAlign: "center" }}>
             <p style={{ fontSize: 14, color: "var(--text2)", marginBottom: 12 }}>Need help with a return? Our support team is here for you.</p>
-            <Link href="/preview/volt/contact" className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
+            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
           </div>
         </div>
       </div>

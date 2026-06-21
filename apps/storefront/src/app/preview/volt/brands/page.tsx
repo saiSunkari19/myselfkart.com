@@ -1,9 +1,13 @@
+"use client"
+
 import Link from "next/link"
 import { PageShell, ProductCard, Reveal } from "../_components"
 import { BRANDS, PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 export default function BrandsPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div className={s.pageHeader}>
@@ -43,7 +47,7 @@ export default function BrandsPage() {
                 <span className={s.sectionLabel}>Featured</span>
                 <div className={s.sectionTitle}>🍎 Apple Products</div>
               </div>
-              <Link href="/preview/volt/shop?brand=apple" className={s.viewAll}>View All Apple →</Link>
+              <Link href={`${basePath}/shop?brand=apple`} className={s.viewAll}>View All Apple →</Link>
             </div>
           </Reveal>
           <div className={s.productGrid}>
@@ -60,7 +64,7 @@ export default function BrandsPage() {
                 <span className={s.sectionLabel}>Featured</span>
                 <div className={s.sectionTitle}>🔷 Samsung Products</div>
               </div>
-              <Link href="/preview/volt/shop?brand=samsung" className={s.viewAll}>View All Samsung →</Link>
+              <Link href={`${basePath}/shop?brand=samsung`} className={s.viewAll}>View All Samsung →</Link>
             </div>
           </Reveal>
           <div className={s.productGrid}>

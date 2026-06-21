@@ -1,6 +1,9 @@
+"use client"
+
 import Link from "next/link"
 import { PageShell, ProductCard, Reveal } from "../_components"
 import { PRODUCTS } from "../_data"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 const DEAL_SECTIONS = [
@@ -10,6 +13,7 @@ const DEAL_SECTIONS = [
 ]
 
 export default function DealsPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <div style={{ background: "#0f172a", padding: "40px 0" }}>
@@ -37,7 +41,7 @@ export default function DealsPage() {
             <Reveal>
               <div className={s.sectionHead}>
                 <div className={s.sectionTitle}>{section.label}</div>
-                <Link href="/preview/volt/shop" className={s.viewAll}>View All →</Link>
+                <Link href={`${basePath}/shop`} className={s.viewAll}>View All →</Link>
               </div>
             </Reveal>
             <div className={s.productGrid}>

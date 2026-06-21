@@ -28,6 +28,9 @@ import { ShopClient as GlowShopClient } from "../preview/glow/shop/_shop-client"
 import { CartClient as GlowCartClient } from "../preview/glow/cart/_cart-client"
 import { CheckoutClient as GlowCheckoutClient } from "../preview/glow/checkout/_checkout-client"
 import { AboutClient as GlowAboutClient } from "../preview/glow/about/_about-client"
+import { ProductDetailClient as GlowProductDetailClient } from "../preview/glow/products/[id]/_product-client"
+import type { Product as GlowProduct } from "../preview/glow/_data"
+import type { StoreProduct } from "../../lib/medusa/products"
 
 // ── Thread sub-page imports ──
 import ThreadProductsPage from "../preview/thread/products/page"
@@ -118,15 +121,26 @@ export default async function TemplateSubPage({
 
   // ── GLOW ──
   if (template === "glow") {
+    const toGlowProduct = (p: StoreProduct): GlowProduct => ({
+      id: p.id, name: p.title, subtitle: p.description?.slice(0, 60) ?? "",
+      category: "Skincare", price: p.variants?.find(v => v.calculated_price?.calculated_amount != null)?.calculated_price?.calculated_amount ?? 0,
+      image: p.thumbnail ?? "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
+      hoverImage: p.thumbnail ?? "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
+      rating: 4.5, reviews: 128, skinTypes: [], concerns: [], description: p.description ?? "", keyIngredients: [], size: "",
+    })
     const products = tenant ? await listTenantProducts(tenant) : []
+    const glowProducts = products.map(toGlowProduct)
+
+    if (slug.startsWith("products/")) {
+      const productId = slug.slice("products/".length)
+      const product = glowProducts.find(p => p.id === productId)
+      if (!product) return notFound()
+      const related = glowProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4)
+      return <GlowProductDetailClient product={product} related={related} config={config} />
+    }
+
     switch (slug) {
-      case "shop":      return <GlowShopClient config={config} products={products.map((p, i) => ({
-        id: p.id, name: p.title, subtitle: p.description?.slice(0, 60) ?? "",
-        category: "Skincare", price: p.variants?.find(v => v.calculated_price?.calculated_amount != null)?.calculated_price?.calculated_amount ?? 0,
-        image: p.thumbnail ?? "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
-        hoverImage: p.thumbnail ?? "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80",
-        rating: 4.5, reviews: 128, skinTypes: [], concerns: [], description: p.description ?? "", keyIngredients: [], size: "",
-      }))} />
+      case "shop":      return <GlowShopClient config={config} products={glowProducts} />
       case "cart":      return <GlowCartClient config={config} />
       case "checkout":  return <GlowCheckoutClient config={config} />
       case "about":     return <GlowAboutClient config={config} />

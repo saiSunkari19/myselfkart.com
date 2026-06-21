@@ -3,6 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { NavBar, Footer, Reveal, GoldDivider, TrustStrip } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 import ab from "./_about.module.css"
 
@@ -75,6 +76,7 @@ const TIMELINE = [
 ]
 
 export function AboutClient({ config }: { config?: import("../../../../lib/store-config").StoreConfig | null }) {
+  const { basePath } = useTemplateConfig()
   const colorVars = {
     ...(config?.primary_color ? { "--charcoal": config.primary_color } : {}),
     ...(config?.accent_color  ? { "--gold":     config.accent_color  } : {}),
@@ -102,7 +104,7 @@ export function AboutClient({ config }: { config?: import("../../../../lib/store
               We built Glow because we believed you deserved better — better ingredients, better transparency, better results.
             </p>
             <div className={ab.heroCtas}>
-              <Link href="/preview/glow/shop" className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#283616" }}>
+              <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#283616" }}>
                 Shop the Range
               </Link>
               <a href="#story" className={`${s.btn} ${s.btnOutlineLight}`}>Read Our Story</a>
@@ -304,7 +306,7 @@ export function AboutClient({ config }: { config?: import("../../../../lib/store
               Take our 2-minute skin quiz and we'll build you a personalised routine.
             </p>
             <div className={ab.ctaBtns}>
-              <Link href="/preview/glow/shop" className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#283616" }}>
+              <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnDark}`} style={{ background: "rgba(250,248,244,0.95)", color: "#283616" }}>
                 Shop All Products
               </Link>
               <a href="#" className={`${s.btn} ${s.btnOutlineLight}`}>Take the Skin Quiz</a>

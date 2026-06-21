@@ -4,6 +4,7 @@ import Link from "next/link"
 import { PageShell, ProductCard, Reveal, GoldDivider, NewsletterSection } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 
 const OCCASIONS = [
   { label: "Anniversary", icon: "💍", products: PRODUCTS.slice(1, 5) },
@@ -12,6 +13,7 @@ const OCCASIONS = [
 ]
 
 export default function GiftsPage() {
+  const { basePath } = useTemplateConfig()
   return (
     <PageShell>
       <section className={s.editorial} style={{ minHeight: 480 }}>
@@ -67,7 +69,7 @@ export default function GiftsPage() {
                   <span className={s.sectionLabel}>{occ.icon} Gifts for {occ.label}</span>
                   <h2 className={s.sectionTitle}>{occ.label} Gifts</h2>
                 </div>
-                <Link href="/preview/aurum/shop" className={`${s.btn} ${s.btnOutlineGold}`}>View All</Link>
+                <Link href={`${basePath}/shop`} className={`${s.btn} ${s.btnOutlineGold}`}>View All</Link>
               </div>
             </Reveal>
             <div className={s.productGrid4}>
