@@ -59,7 +59,7 @@ export default function FAQPage() {
         <div className={`${s.pageTitle} ${s.sectionCenter}`}>
           <div className={s.pageTitleLabel}>Help centre</div>
           <h1 className={s.pageTitleText}>Frequently Asked Questions</h1>
-          <p className={s.pageTitleSub}>Everything you need to know. Can't find the answer? <Link href={`${basePath}/contact`} style={{ color: "#c4956a" }}>Contact us</Link>.</p>
+          <p className={s.pageTitleSub}>Everything you need to know. Can't find the answer? <Link href={`${basePath}/about`} style={{ color: "#c4956a" }}>Contact us</Link>.</p>
         </div>
 
         <div className={s.faqList}>
@@ -84,7 +84,7 @@ export default function FAQPage() {
             <p style={{ fontSize: 14, color: "#6b6560", marginBottom: 24 }}>
               Our team usually replies within a few hours on weekdays.
             </p>
-            <Link href={`${basePath}/contact`} className={s.btn}>Get in Touch</Link>
+            <Link href={`${basePath}/about`} className={s.btn}>Get in Touch</Link>
           </div>
         </div>
       </div>

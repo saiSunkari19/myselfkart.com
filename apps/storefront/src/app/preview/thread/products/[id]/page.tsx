@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { PageShell, ProductCard, NewsletterSection } from "../../_components"
+import { PageShell, ProductCard } from "../../_components"
 import { PRODUCTS } from "../../_data"
 import { useTemplateConfig } from "../../../../../lib/template-config-context"
 import s from "../../_styles.module.css"
@@ -159,7 +159,6 @@ export default function ProductDetailPage() {
           </section>
         )}
       </div>
-      <NewsletterSection />
     </PageShell>
   )
 }

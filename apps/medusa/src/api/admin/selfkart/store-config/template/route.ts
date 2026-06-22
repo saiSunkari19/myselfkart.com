@@ -6,7 +6,7 @@ import {
   setTemplateId,
   TemplateAlreadySetError,
 } from "../../../../../platform/repository"
-import { TEMPLATE_IDS } from "../../../../../platform/templates"
+import { SELECTABLE_TEMPLATE_IDS } from "../../../../../platform/templates"
 import { requireTenantContext } from "../../../../../modules/tenant-context"
 
 /**
@@ -22,9 +22,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
 
   const { template_id } = req.body as { template_id?: string }
 
-  if (!template_id || !TEMPLATE_IDS.has(template_id)) {
+  if (!template_id || !SELECTABLE_TEMPLATE_IDS.has(template_id as any)) {
     res.status(400).json({
-      message: `Invalid template. Valid options: ${[...TEMPLATE_IDS].join(", ")}`,
+      message: `Invalid template. Valid options: ${[...SELECTABLE_TEMPLATE_IDS].join(", ")}`,
     })
     return
   }

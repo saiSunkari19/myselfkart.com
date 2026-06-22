@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { Suspense, useState, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import { PageShell, ProductCard, Reveal } from "../_components"
 import { PRODUCTS } from "../_data"
 import s from "../_styles.module.css"
@@ -55,12 +56,15 @@ function applyFilters(filters: Filters, sort: string) {
   return list
 }
 
-export default function ShopPage() {
+function ShopContent() {
+  const searchParams = useSearchParams()
   const [sort, setSort] = useState("Relevance")
   const [view, setView] = useState<"grid" | "list">("grid")
   const [openSections, setOpenSections] = useState(["Category", "Brand", "Price Range"])
   const [filters, setFilters] = useState<Filters>({
-    search: "", category: [], brand: [], rating: [], discount: [], priceMin: "", priceMax: ""
+    search: searchParams.get("q") ?? "",
+    category: searchParams.get("category") ? [searchParams.get("category") as string] : [],
+    brand: [], rating: [], discount: [], priceMin: "", priceMax: ""
   })
 
   const toggleSection = (label: string) =>
@@ -236,5 +240,13 @@ export default function ShopPage() {
         </div>
       </div>
     </PageShell>
+  )
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopContent />
+    </Suspense>
   )
 }

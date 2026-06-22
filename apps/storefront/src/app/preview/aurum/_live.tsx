@@ -182,7 +182,9 @@ function Hero({ config, hasDeals }: { config: StoreConfig | null; hasDeals: bool
   const heroCta = config?.hero_cta
   const heroImage = config?.hero_image_url ?? "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=1600&q=90"
   return (
-    <section className={s.hero} style={{ height: "100vh" }}>
+    // margin: 0 overrides the global `section { margin: 2rem 0 }` rule
+    // (globals.css) — otherwise it leaves an unwanted 2rem gap above TrustStrip.
+    <section className={s.hero} style={{ height: "100vh", margin: 0 }}>
       <img src={heroImage} alt={config?.hero_heading ?? "Aurum"} className={s.heroBg} />
       <div className={s.heroOverlay} />
       <div className={s.heroContent} style={{ paddingTop: 60 }}>
@@ -214,17 +216,20 @@ function Hero({ config, hasDeals }: { config: StoreConfig | null; hasDeals: bool
   )
 }
 
-/* ---- Trust strip (brand chrome) ---- */
-function TrustStrip() {
+const DEFAULT_TRUST_STRIP = [
+  { icon: "🏅", label: "BIS Hallmarked", sub: "916 & 925 certified" },
+  { icon: "💎", label: "GIA Certified", sub: "Every diamond verified" },
+  { icon: "🔒", label: "Secure Packaging", sub: "Insured delivery" },
+  { icon: "↩️", label: "30-Day Returns", sub: "Hassle-free exchange" },
+]
+
+/* ---- Trust strip — falls back to brand-chrome defaults when not customized. ---- */
+function TrustStrip({ config }: { config: StoreConfig | null }) {
+  const items = config?.sections?.trust_strip?.items ?? DEFAULT_TRUST_STRIP
   return (
     <div className={s.trustStrip}>
       <div className={s.trustInner}>
-        {[
-          { icon: "🏅", label: "BIS Hallmarked", sub: "916 & 925 certified" },
-          { icon: "💎", label: "GIA Certified", sub: "Every diamond verified" },
-          { icon: "🔒", label: "Secure Packaging", sub: "Insured delivery" },
-          { icon: "↩️", label: "30-Day Returns", sub: "Hassle-free exchange" },
-        ].map(item => (
+        {items.map((item: typeof DEFAULT_TRUST_STRIP[number]) => (
           <div key={item.label} className={s.trustItem}>
             <span className={s.trustIcon}>{item.icon}</span>
             <div>
@@ -292,26 +297,36 @@ function CollectionsSection({ categories }: { categories: HomeProps["categories"
   )
 }
 
-/* ---- Craftsmanship editorial (brand chrome) ---- */
-function CraftsmanshipSection() {
+const DEFAULT_CRAFTSMANSHIP = {
+  image: "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=85",
+  label: "Our Promise",
+  title: "Three generations<br />of mastery.",
+  body: "Every piece is made by hand in our atelier by master artisans whose skills have passed through generations. Hallmarked, certified, and crafted to be worn for a lifetime.",
+  cta_label: "Shop the Collection →",
+}
+
+/* ---- Craftsmanship editorial — falls back to brand-chrome defaults. ---- */
+function CraftsmanshipSection({ config }: { config: StoreConfig | null }) {
+  const b = { ...DEFAULT_CRAFTSMANSHIP, ...(config?.sections?.craftsmanship ?? {}) }
   return (
     <section className={`${s.section} ${s.sectionDark}`}>
       <div className={s.container}>
         <div className={s.aboutHero} style={{ gap: 80 }}>
           <div className={s.aboutHeroImg}>
-            <img src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=85" alt="Craftsmanship" />
+            <img src={b.image} alt="Craftsmanship" />
           </div>
           <div>
-            <span className={s.sectionLabel}>Our Promise</span>
-            <h2 className={s.sectionTitle} style={{ color: "#fff" }}>
-              Three generations<br />of mastery.
-            </h2>
+            <span className={s.sectionLabel}>{b.label}</span>
+            <h2
+              className={s.sectionTitle}
+              style={{ color: "#fff" }}
+              dangerouslySetInnerHTML={{ __html: b.title }}
+            />
             <GoldDivider />
             <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.9, margin: "0 0 32px", maxWidth: 400 }}>
-              Every piece is made by hand in our atelier by master artisans whose skills have passed
-              through generations. Hallmarked, certified, and crafted to be worn for a lifetime.
+              {b.body}
             </p>
-            <Link href="/shop" className={`${s.btn} ${s.btnOutlineGold}`}>Shop the Collection →</Link>
+            <Link href="/shop" className={`${s.btn} ${s.btnOutlineGold}`}>{b.cta_label}</Link>
           </div>
         </div>
       </div>
@@ -319,8 +334,16 @@ function CraftsmanshipSection() {
   )
 }
 
-/* ---- Certifications (brand chrome) ---- */
-function CertificationSection() {
+const DEFAULT_CERTIFICATION = [
+  { icon: "🏅", title: "BIS Hallmarked", desc: "Every gold piece is hallmarked under the Bureau of Indian Standards." },
+  { icon: "💎", title: "GIA Certified", desc: "Diamonds graded by the Gemological Institute of America." },
+  { icon: "🔬", title: "Gemstone Certified", desc: "Coloured gemstones certified by the most respected gem labs." },
+  { icon: "🛡️", title: "Lifetime Exchange", desc: "Exchange your jewellery at full value, any time, at any store." },
+]
+
+/* ---- Certifications — falls back to brand-chrome defaults. ---- */
+function CertificationSection({ config }: { config: StoreConfig | null }) {
+  const items = config?.sections?.certification?.items ?? DEFAULT_CERTIFICATION
   return (
     <section className={`${s.section} ${s.sectionCream}`}>
       <div className={s.container}>
@@ -333,12 +356,7 @@ function CertificationSection() {
           </p>
         </div>
         <div className={s.certGrid}>
-          {[
-            { icon: "🏅", title: "BIS Hallmarked", desc: "Every gold piece is hallmarked under the Bureau of Indian Standards." },
-            { icon: "💎", title: "GIA Certified", desc: "Diamonds graded by the Gemological Institute of America." },
-            { icon: "🔬", title: "Gemstone Certified", desc: "Coloured gemstones certified by the most respected gem labs." },
-            { icon: "🛡️", title: "Lifetime Exchange", desc: "Exchange your jewellery at full value, any time, at any store." },
-          ].map(item => (
+          {items.map((item: typeof DEFAULT_CERTIFICATION[number]) => (
             <div key={item.title} className={s.certCard}>
               <div className={s.certLogo}>{item.icon}</div>
               <div className={s.certTitle}>{item.title}</div>
@@ -351,8 +369,15 @@ function CertificationSection() {
   )
 }
 
-/* ---- Testimonials (brand chrome) ---- */
-function Testimonials() {
+const DEFAULT_AURUM_TESTIMONIALS = [
+  { name: "Sunita Kapoor", city: "Mumbai", stars: 5, piece: "Royal Kundan Bridal Set", text: "The bridal set was beyond anything I imagined. The craftsmanship is extraordinary." },
+  { name: "Anil Mehta", city: "Delhi", stars: 5, piece: "Solitaire Diamond Ring", text: "The certificate, the presentation, the service — everything was perfection." },
+  { name: "Kavitha Rajan", city: "Bangalore", stars: 5, piece: "Gold Temple Bangles", text: "The detail of the carvings, the weight of the gold — this is heirloom jewellery." },
+]
+
+/* ---- Testimonials — falls back to brand-chrome defaults. ---- */
+function Testimonials({ config }: { config: StoreConfig | null }) {
+  const items = config?.sections?.testimonials?.items ?? DEFAULT_AURUM_TESTIMONIALS
   return (
     <section className={s.section}>
       <div className={s.container}>
@@ -362,11 +387,7 @@ function Testimonials() {
           <GoldDivider />
         </div>
         <div className={s.testimonialsGrid}>
-          {[
-            { name: "Sunita Kapoor", city: "Mumbai", stars: 5, piece: "Royal Kundan Bridal Set", text: "The bridal set was beyond anything I imagined. The craftsmanship is extraordinary." },
-            { name: "Anil Mehta", city: "Delhi", stars: 5, piece: "Solitaire Diamond Ring", text: "The certificate, the presentation, the service — everything was perfection." },
-            { name: "Kavitha Rajan", city: "Bangalore", stars: 5, piece: "Gold Temple Bangles", text: "The detail of the carvings, the weight of the gold — this is heirloom jewellery." },
-          ].map((t, i) => (
+          {items.map((t: typeof DEFAULT_AURUM_TESTIMONIALS[number], i: number) => (
             <div key={i} className={s.testimonialCard}>
               <div className={s.testimonialStars}>{"★".repeat(t.stars)}</div>
               <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
@@ -386,18 +407,26 @@ function Testimonials() {
   )
 }
 
-/* ---- Newsletter (brand chrome) ---- */
-function Newsletter() {
+const DEFAULT_AURUM_NEWSLETTER = {
+  label: "Private Circle",
+  title: "First access. Always.",
+  sub: "New collections, private previews, and invitations to exclusive events.",
+  button_label: "Join",
+}
+
+/* ---- Newsletter — falls back to brand-chrome defaults. ---- */
+function Newsletter({ config }: { config: StoreConfig | null }) {
+  const n = { ...DEFAULT_AURUM_NEWSLETTER, ...(config?.sections?.newsletter ?? {}) }
   return (
     <section className={s.newsletter}>
-      <div className={s.newsletterLabel}>Private Circle</div>
-      <h2 className={s.newsletterTitle}>First access. Always.</h2>
+      <div className={s.newsletterLabel}>{n.label}</div>
+      <h2 className={s.newsletterTitle}>{n.title}</h2>
       <p className={s.newsletterSub}>
-        New collections, private previews, and invitations to exclusive events.
+        {n.sub}
       </p>
       <div className={s.newsletterForm}>
         <input className={s.newsletterInput} type="email" placeholder="Your email address" />
-        <button className={s.newsletterBtn}>Join</button>
+        <button className={s.newsletterBtn}>{n.button_label}</button>
       </div>
       <p className={s.newsletterPrivacy}>No spam. Unsubscribe anytime. We value your privacy.</p>
     </section>
@@ -411,7 +440,7 @@ export function AurumLivePage({ config, products, newArrivals, deals, categories
     <div className={s.page} style={aurumColorVars(config)}>
       <AurumNav config={config} hasDeals={hasDeals} categories={categories} />
       <Hero config={config} hasDeals={hasDeals} />
-      <TrustStrip />
+      <TrustStrip config={config} />
       <CollectionsSection categories={categories} />
       <ProductSection
         label="Just Arrived" title="New Arrivals"
@@ -419,20 +448,20 @@ export function AurumLivePage({ config, products, newArrivals, deals, categories
         products={newArrivals.slice(0, 3)} cta={{ label: "View All", href: "/shop" }}
         cream grid3
       />
-      <CraftsmanshipSection />
+      <CraftsmanshipSection config={config} />
       <ProductSection
         label="Most Loved" title="Bestsellers"
         sub="Our most celebrated pieces, cherished by families across India."
         products={products.slice(0, 4)} cta={{ label: "Shop All", href: "/shop" }}
       />
-      <CertificationSection />
+      <CertificationSection config={config} />
       <ProductSection
         label="Limited Time" title="Special Offers"
         sub="Exceptional pieces at exceptional value."
         products={deals.slice(0, 4)} cta={{ label: "View Offers", href: "/deals" }}
       />
-      <Testimonials />
-      <Newsletter />
+      <Testimonials config={config} />
+      <Newsletter config={config} />
       <AurumFooter config={config} hasDeals={hasDeals} />
     </div>
   )

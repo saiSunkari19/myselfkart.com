@@ -927,6 +927,9 @@ export type StoreConfig = {
   is_published: boolean
   // Filters
   filter_config: FilterConfig | null
+  // Per-template homepage section content (testimonials, banners, etc.) —
+  // shape validated against the locked template's schema in platform/templates.ts
+  sections: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }
@@ -989,7 +992,7 @@ export async function setTemplateId(
  * Updates only the customization fields — never touches template_id.
  * Upserts the row so it works even if the seller hasn't saved before.
  */
-const JSON_FIELDS = ["hero_cta", "trust_badges", "filter_config"] as const
+const JSON_FIELDS = ["hero_cta", "trust_badges", "filter_config", "sections"] as const
 
 function serializeJsonFields(fields: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...fields }

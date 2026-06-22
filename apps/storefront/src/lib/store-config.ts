@@ -26,6 +26,18 @@ export type FilterConfig = {
   labels: Record<string, string>
 }
 
+/**
+ * Per-template homepage section content, keyed by section id (e.g. "hero",
+ * "testimonials", "why_buy"). Shape per section depends on its type — list
+ * sections (testimonials, feature lists) store `{ items: Record<string, any>[] }`;
+ * a slider hero stores `{ images: string[] }`; everything else (single hero,
+ * editorial banner, newsletter) stores its fields directly as an object.
+ * The exact field names per section/template are defined in
+ * apps/medusa/src/platform/templates.ts — themes read this with a fallback
+ * to their own hardcoded demo content when a section hasn't been customized.
+ */
+export type SectionsConfig = Record<string, any>
+
 export type StoreConfig = {
   template_id: string | null
   // Branding
@@ -70,6 +82,8 @@ export type StoreConfig = {
   free_shipping_threshold: number | null
   cod_enabled: boolean
   whatsapp_notifications_enabled: boolean
+  // Per-template homepage sections (testimonials, banners, etc.)
+  sections: SectionsConfig | null
 }
 
 // ---------------------------------------------------------------------------

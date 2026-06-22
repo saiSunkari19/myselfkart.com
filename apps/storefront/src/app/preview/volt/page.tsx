@@ -68,15 +68,15 @@ function Hero() {
 }
 
 function CategoryBar() {
-  const [active, setActive] = useState("All")
-  const cats = ["All", ...CATEGORIES.slice(0, 8).map(c => c.name)]
+  const cats = CATEGORIES.slice(0, 8).map(c => c.name)
   return (
     <div className={s.categoryBar}>
       <div className={s.categoryBarInner}>
+        <Link href="/preview/volt/shop" className={s.categoryBarItem}>All</Link>
         {cats.map(cat => (
-          <button key={cat} className={`${s.categoryBarItem} ${cat === active ? s.categoryBarItemActive : ""}`} onClick={() => setActive(cat)}>
+          <Link key={cat} href={`/preview/volt/shop?category=${encodeURIComponent(cat)}`} className={s.categoryBarItem}>
             {cat}
-          </button>
+          </Link>
         ))}
       </div>
     </div>

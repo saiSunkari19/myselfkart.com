@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
 import { listTenantProducts } from "../../lib/medusa/products"
@@ -14,7 +14,6 @@ import VoltBrandsPage from "../preview/volt/brands/page"
 import VoltCategoriesPage from "../preview/volt/categories/page"
 import VoltBestSellersPage from "../preview/volt/best-sellers/page"
 import VoltNewLaunchesPage from "../preview/volt/new-launches/page"
-import VoltContactPage from "../preview/volt/contact/page"
 import VoltFaqPage from "../preview/volt/faq/page"
 import VoltPrivacyPage from "../preview/volt/privacy/page"
 import VoltTermsPage from "../preview/volt/terms/page"
@@ -38,7 +37,6 @@ import ThreadCartPage from "../preview/thread/cart/page"
 import ThreadCheckoutPage from "../preview/thread/checkout/page"
 import ThreadAboutPage from "../preview/thread/about/page"
 import ThreadCategoriesPage from "../preview/thread/categories/page"
-import ThreadContactPage from "../preview/thread/contact/page"
 import ThreadFaqPage from "../preview/thread/faq/page"
 import ThreadPrivacyPage from "../preview/thread/privacy/page"
 import ThreadTermsPage from "../preview/thread/terms/page"
@@ -65,7 +63,6 @@ import EventpassCartPage from "../preview/eventpass/cart/page"
 import EventpassCheckoutPage from "../preview/eventpass/checkout/page"
 import EventpassAboutPage from "../preview/eventpass/about/page"
 import EventpassCategoriesPage from "../preview/eventpass/categories/page"
-import EventpassContactPage from "../preview/eventpass/contact/page"
 import EventpassFaqPage from "../preview/eventpass/faq/page"
 import EventpassPrivacyPage from "../preview/eventpass/privacy/page"
 import EventpassTermsPage from "../preview/eventpass/terms/page"
@@ -108,7 +105,8 @@ export default async function TemplateSubPage({
       case "categories":    return wrap(<VoltCategoriesPage />)
       case "best-sellers":  return wrap(<VoltBestSellersPage />)
       case "new-launches":  return wrap(<VoltNewLaunchesPage />)
-      case "contact":       return wrap(<VoltContactPage />)
+      // Contact was merged into the About page — redirect old links there.
+      case "contact":       return redirect("/about")
       case "faq":           return wrap(<VoltFaqPage />)
       case "privacy":       return wrap(<VoltPrivacyPage />)
       case "terms":         return wrap(<VoltTermsPage />)
@@ -160,7 +158,8 @@ export default async function TemplateSubPage({
       case "checkout":     return wrap(<ThreadCheckoutPage />)
       case "about":        return wrap(<ThreadAboutPage />)
       case "categories":   return wrap(<ThreadCategoriesPage />)
-      case "contact":      return wrap(<ThreadContactPage />)
+      // Contact was merged into the About page — redirect old links there.
+      case "contact":      return redirect("/about")
       case "faq":          return wrap(<ThreadFaqPage />)
       case "privacy":      return wrap(<ThreadPrivacyPage />)
       case "terms":        return wrap(<ThreadTermsPage />)
@@ -205,7 +204,8 @@ export default async function TemplateSubPage({
       case "checkout":     return wrap(<EventpassCheckoutPage />)
       case "about":        return wrap(<EventpassAboutPage />)
       case "categories":   return wrap(<EventpassCategoriesPage />)
-      case "contact":      return wrap(<EventpassContactPage />)
+      // Contact was merged into the About page — redirect old links there.
+      case "contact":      return redirect("/about")
       case "faq":          return wrap(<EventpassFaqPage />)
       case "privacy":      return wrap(<EventpassPrivacyPage />)
       case "terms":        return wrap(<EventpassTermsPage />)

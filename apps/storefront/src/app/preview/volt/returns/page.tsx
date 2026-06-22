@@ -39,7 +39,7 @@ export default function ReturnsPage() {
           ))}
           <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "24px", textAlign: "center" }}>
             <p style={{ fontSize: 14, color: "var(--text2)", marginBottom: 12 }}>Need help with a return? Our support team is here for you.</p>
-            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
+            <Link href={`${basePath}/about`} className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
           </div>
         </div>
       </div>

@@ -91,7 +91,7 @@ export default function FAQPage() {
           <div style={{ fontSize: 36, marginBottom: 16 }}>💬</div>
           <h3 style={{ color: T.text, fontWeight: 700, marginBottom: 8, marginTop: 0 }}>Still have questions?</h3>
           <p style={{ color: T.textMuted, fontSize: 14, margin: "0 0 20px" }}>Our support team typically responds within 2 hours.</p>
-          <a href={`${basePath}/contact`} style={{ textDecoration: "none" }}>
+          <a href={`${basePath}/about`} style={{ textDecoration: "none" }}>
             <button style={{
               background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
               color: "#fff", border: "none", borderRadius: 12,

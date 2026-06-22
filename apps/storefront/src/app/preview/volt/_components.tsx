@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { type Product } from "./_data"
 import { useTemplateConfig } from "../../../lib/template-config-context"
 import s from "./_styles.module.css"
@@ -110,7 +111,9 @@ export function ProductCard({ product, compact = false }: { product: Product; co
 // ---- Nav ----
 export function NavBar() {
   const { basePath, config } = useTemplateConfig()
+  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
+  const [search, setSearch] = useState("")
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 10)
     window.addEventListener("scroll", h, { passive: true })
@@ -120,6 +123,10 @@ export function NavBar() {
   const announcementText = config?.announcement_enabled && config.announcement_text
     ? config.announcement_text
     : "🎉 VOLT SALE — Up to 40% off on top brands"
+  const runSearch = () => {
+    const q = search.trim()
+    router.push(q ? `${basePath}/shop?q=${encodeURIComponent(q)}` : `${basePath}/shop`)
+  }
   return (
     <>
       <div className={s.announcementBar}>
@@ -138,8 +145,14 @@ export function NavBar() {
             }
           </Link>
           <div className={s.navSearch}>
-            <input className={s.navSearchInput} placeholder="Search for phones, laptops, TVs & more..." />
-            <button className={s.navSearchBtn}>🔍</button>
+            <input
+              className={s.navSearchInput}
+              placeholder="Search for phones, laptops, TVs & more..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && runSearch()}
+            />
+            <button className={s.navSearchBtn} onClick={runSearch}>🔍</button>
           </div>
           <div className={s.navLinks}>
             <Link href={`${basePath}/deals`} className={s.navLink}>Deals</Link>
@@ -175,7 +188,7 @@ export function Footer() {
           </div>
           {[
             { title: "Shop", links: [["Smartphones", `${basePath}/shop`], ["Laptops", `${basePath}/shop`], ["Audio", `${basePath}/shop`], ["Deals", `${basePath}/deals`], ["New Launches", `${basePath}/new-launches`]] },
-            { title: "Help", links: [["FAQs", `${basePath}/faq`], ["Warranty", `${basePath}/warranty`], ["Shipping", `${basePath}/shipping`], ["Returns", `${basePath}/returns`], ["Contact", `${basePath}/contact`]] },
+            { title: "Help", links: [["FAQs", `${basePath}/faq`], ["Warranty", `${basePath}/warranty`], ["Shipping", `${basePath}/shipping`], ["Returns", `${basePath}/returns`], ["Contact", `${basePath}/about`]] },
             { title: "Company", links: [["About Us", `${basePath}/about`], ["Brands", `${basePath}/brands`], ["Privacy Policy", `${basePath}/privacy`], ["Terms", `${basePath}/terms`]] },
             { title: "Contact", links: [["1800-VOLT-CARE", "#"], ["support@volt.in", "#"], ["Mon–Sat 9am–9pm", "#"], ["Live Chat", "#"]] },
           ].map(col => (

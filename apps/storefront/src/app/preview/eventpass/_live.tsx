@@ -394,8 +394,15 @@ function CategoriesSection({ categories, accent }: { categories: HomeProps["cate
   )
 }
 
-/** How it works — static brand chrome. */
-function HowItWorksSection() {
+const DEFAULT_HOW_IT_WORKS = [
+  { step: "01", title: "Discover", desc: "Browse curated events across categories and dates.", icon: "🔍" },
+  { step: "02", title: "Choose tickets", desc: "Pick your ticket type and set quantity. Done.", icon: "🎟️" },
+  { step: "03", title: "Book instantly", desc: "Guest checkout. E-tickets delivered in seconds.", icon: "⚡" },
+]
+
+/** How it works — falls back to brand-chrome defaults when not customized. */
+function HowItWorksSection({ config }: { config: StoreConfig | null }) {
+  const steps = config?.sections?.how_it_works?.items ?? DEFAULT_HOW_IT_WORKS
   return (
     <section style={{ padding: "72px 40px", background: T.bg }}>
       <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
@@ -404,11 +411,7 @@ function HowItWorksSection() {
         </div>
         <h2 style={{ color: T.text, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, margin: "0 0 40px", letterSpacing: "-0.5px" }}>How it works</h2>
         <div className="ep-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
-          {[
-            { step: "01", title: "Discover", desc: "Browse curated events across categories and dates.", icon: "🔍" },
-            { step: "02", title: "Choose tickets", desc: "Pick your ticket type and set quantity. Done.", icon: "🎟️" },
-            { step: "03", title: "Book instantly", desc: "Guest checkout. E-tickets delivered in seconds.", icon: "⚡" },
-          ].map(item => (
+          {steps.map((item: typeof DEFAULT_HOW_IT_WORKS[number]) => (
             <div key={item.step}>
               <div style={{
                 width: 64, height: 64, borderRadius: 18,
@@ -452,7 +455,7 @@ export function EventpassLivePage({ config, products, newArrivals, deals, catego
         label="Editor's picks" title="Featured Events"
         products={featured.slice(0, 6)} accent={accent} cta={{ href: "/shop" }}
       />
-      <HowItWorksSection />
+      <HowItWorksSection config={config} />
       <EventGridSection
         label="Limited time" title="Special Offers"
         subtitle="Tickets at honest prices — book before they're gone."

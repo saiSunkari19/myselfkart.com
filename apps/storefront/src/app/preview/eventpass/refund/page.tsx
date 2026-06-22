@@ -65,7 +65,7 @@ export default function RefundPage() {
           borderRadius: T.radiusLg, padding: "28px 32px", textAlign: "center",
         }}>
           <p style={{ color: T.textMuted, fontSize: 14, margin: "0 0 16px" }}>Need help with a refund?</p>
-          <a href={`${basePath}/contact`} style={{ textDecoration: "none" }}>
+          <a href={`${basePath}/about`} style={{ textDecoration: "none" }}>
             <button style={{
               background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
               color: "#fff", border: "none", borderRadius: 12,

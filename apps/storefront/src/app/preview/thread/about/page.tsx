@@ -1,6 +1,6 @@
 "use client"
 
-import { PageShell, NewsletterSection } from "../_components"
+import { PageShell } from "../_components"
 import s from "../_styles.module.css"
 
 export default function AboutPage() {
@@ -76,30 +76,30 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Team */}
+        {/* Contact — merged in from the old standalone /contact page */}
         <section className={s.sectionTight}>
           <div className={s.sectionCenter} style={{ marginBottom: 48 }}>
-            <div className={s.sectionLabel}>The people</div>
-            <h2 className={s.sectionTitle}>Meet the Team</h2>
+            <div className={s.sectionLabel}>Get in touch</div>
+            <h2 className={s.sectionTitle}>We'd love to hear from you</h2>
           </div>
-          <div className={s.teamGrid}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
             {[
-              { name: "Kavita Nair", role: "Founder & Creative Director", initials: "KN" },
-              { name: "Rohan Mehta", role: "Head of Production", initials: "RM" },
-              { name: "Sanya Gupta", role: "Lead Designer", initials: "SG" },
-              { name: "Arjun Das", role: "Sustainability Lead", initials: "AD" },
-            ].map(person => (
-              <div key={person.name} className={s.teamCard}>
-                <div className={s.teamAvatar}>{person.initials}</div>
-                <div className={s.teamName}>{person.name}</div>
-                <div className={s.teamRole}>{person.role}</div>
+              { icon: "📧", title: "Email", text: "hello@thread.in" },
+              { icon: "📱", title: "Phone", text: "+91 98000 00000\nMon–Fri, 10am–6pm IST" },
+              { icon: "📍", title: "Studio", text: "14 Linking Road, Bandra West\nMumbai, 400050" },
+              { icon: "⏱️", title: "Response Time", text: "Within 1 business day" },
+            ].map(item => (
+              <div key={item.title} className={s.contactItem}>
+                <div className={s.contactItemIcon}>{item.icon}</div>
+                <div>
+                  <div className={s.contactItemTitle}>{item.title}</div>
+                  <div className={s.contactItemText} style={{ whiteSpace: "pre-line" }}>{item.text}</div>
+                </div>
               </div>
             ))}
           </div>
         </section>
       </div>
-
-      <NewsletterSection />
     </PageShell>
   )
 }
