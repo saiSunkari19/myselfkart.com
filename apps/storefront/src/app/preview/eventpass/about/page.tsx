@@ -86,57 +86,6 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Values — list with dividers, no cards */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 60px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
-          <div>
-            <p style={{ color: T.textLight, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16 }}>
-              What we stand for
-            </p>
-            <h2 style={{ color: T.text, fontSize: 30, fontWeight: 900, margin: 0, lineHeight: 1.2, letterSpacing: "-0.5px" }}>
-              Principles we don't compromise on
-            </h2>
-          </div>
-          <div>
-            {[
-              {
-                number: "01",
-                title: "Speed over signup walls",
-                body: "Every extra step between intent and booking loses someone who genuinely wanted to go. We've removed every step we could justify removing.",
-              },
-              {
-                number: "02",
-                title: "No tracking, no spam",
-                body: "We don't store your card. We don't track you across the web. We don't sell your data. You give us your email for a ticket, not a newsletter.",
-              },
-              {
-                number: "03",
-                title: "Curated, not ranked by budget",
-                body: "Events are chosen by humans who actually attend them — not sorted by whoever paid for placement. The best event for you should be visible regardless of marketing spend.",
-              },
-              {
-                number: "04",
-                title: "Fair to the people putting on the show",
-                body: "5% fee. Fast payouts. No surprise charges after the contract is signed. Organisers take the risk of running an event — we don't pile on.",
-              },
-            ].map((v, i) => (
-              <div key={v.number} style={{
-                display: "grid", gridTemplateColumns: "48px 1fr",
-                gap: 24, padding: "32px 0",
-                borderTop: `1px solid ${T.border}`,
-              }}>
-                <div style={{ color: T.textLight, fontSize: 13, fontWeight: 700, paddingTop: 2 }}>{v.number}</div>
-                <div>
-                  <h3 style={{ color: T.text, fontWeight: 800, fontSize: 18, margin: "0 0 10px" }}>{v.title}</h3>
-                  <p style={{ color: T.textMuted, fontSize: 15, lineHeight: 1.8, margin: 0 }}>{v.body}</p>
-                </div>
-              </div>
-            ))}
-            <div style={{ borderTop: `1px solid ${T.border}` }} />
-          </div>
-        </div>
-      </div>
-
       {/* Image break */}
       <div style={{ position: "relative", height: 400, overflow: "hidden" }}>
         <img
@@ -159,42 +108,36 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Team — editorial list, no circles */}
+      {/* Contact — merged in from the old standalone /contact page */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 60px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 80 }}>
-          <div>
-            <p style={{ color: T.textLight, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16 }}>
-              The team
-            </p>
-            <h2 style={{ color: T.text, fontSize: 30, fontWeight: 900, margin: "0 0 16px", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
-              Small team.<br />Big events.
-            </h2>
-            <p style={{ color: T.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-              We're a team of 8 based in Mumbai. Most of us have worked in events, music, or hospitality before. We built this because we lived the problem.
-            </p>
-          </div>
-          <div>
-            {[
-              { name: "Aarav Mehta", role: "Co-founder & CEO", note: "Previously at BookMyShow. Has been to 200+ events, regrets maybe 3." },
-              { name: "Nisha Patel", role: "Co-founder & Head of Design", note: "Designed for Zomato and Swiggy. Believes the checkout flow is the product." },
-              { name: "Rohan Sharma", role: "Engineering Lead", note: "Built payments infra at Razorpay. Obsessed with sub-100ms checkout." },
-              { name: "Priya Iyer", role: "Head of Partnerships", note: "Spent 6 years booking artists for festivals across South Asia." },
-            ].map((p, i) => (
-              <div key={p.name} style={{
-                display: "grid", gridTemplateColumns: "1fr auto",
-                gap: 24, padding: "28px 0",
-                borderTop: `1px solid ${T.border}`,
-                alignItems: "start",
-              }}>
-                <div>
-                  <div style={{ color: T.text, fontWeight: 800, fontSize: 17, marginBottom: 4 }}>{p.name}</div>
-                  <div style={{ color: T.accent, fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{p.role}</div>
-                  <div style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.7 }}>{p.note}</div>
-                </div>
+        <p style={{ color: T.textLight, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16 }}>
+          Get in touch
+        </p>
+        <h2 style={{ color: T.text, fontSize: 30, fontWeight: 900, margin: "0 0 32px", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
+          Have a question? We typically respond within 2 hours.
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+          {[
+            { icon: "📧", title: "Email Support", desc: "support@eventpass.in", sub: "We reply within 2 hours" },
+            { icon: "💬", title: "Live Chat", desc: "Available Mon–Sat, 10am–7pm", sub: "Average response: 5 minutes" },
+            { icon: "📞", title: "Phone", desc: "+91 98765 00000", sub: "Mon–Fri, 10am–6pm" },
+            { icon: "🏢", title: "Office", desc: "Mumbai, Maharashtra, India", sub: "Not open to walk-ins" },
+          ].map(item => (
+            <div key={item.title} style={{
+              display: "flex", flexDirection: "column", gap: 12, background: T.bgSubtle,
+              border: `1px solid ${T.border}`, borderRadius: T.radiusLg, padding: "20px 24px",
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12, background: T.accentLight,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+              }}>{item.icon}</div>
+              <div>
+                <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{item.title}</div>
+                <div style={{ color: T.textMuted, fontSize: 14 }}>{item.desc}</div>
+                <div style={{ color: T.textLight, fontSize: 12, marginTop: 2 }}>{item.sub}</div>
               </div>
-            ))}
-            <div style={{ borderTop: `1px solid ${T.border}` }} />
-          </div>
+            </div>
+          ))}
         </div>
       </div>
 

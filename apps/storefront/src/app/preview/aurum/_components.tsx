@@ -92,10 +92,7 @@ export const NavBar = () => {
         <div className={s.navInner}>
           <div className={s.navLeft}>
             {[
-              { label: "Collections", href: `${basePath}/collections` },
               { label: "Shop", href: `${basePath}/shop` },
-              { label: "Bridal", href: `${basePath}/bridal` },
-              { label: "New Arrivals", href: `${basePath}/new-arrivals` },
             ].map(item => (
               <Link key={item.label} href={item.href} className={s.navLink}>{item.label}</Link>
             ))}

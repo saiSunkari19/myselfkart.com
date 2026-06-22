@@ -28,7 +28,6 @@ export const NavBar = () => {
 
           <div className={s.navActions}>
             <Link href={`${basePath}/about`} className={s.navIconBtn}>About</Link>
-            <Link href={`${basePath}/contact`} className={s.navIconBtn}>Contact</Link>
             <Link href={`${basePath}/cart`} className={s.navIconBtn}>
               Bag <span className={s.cartBadge}>2</span>
             </Link>
@@ -71,7 +70,6 @@ export const Footer = () => {
               title: "Company",
               links: [
                 { label: "About Us", href: `${basePath}/about` },
-                { label: "Contact", href: `${basePath}/contact` },
                 { label: "FAQ", href: `${basePath}/faq` },
               ],
             },
@@ -143,16 +141,3 @@ export const PageShell = ({ children }: { children: React.ReactNode }) => (
   </div>
 )
 
-export const NewsletterSection = () => (
-  <div className={s.newsletter}>
-    <div className={s.sectionLabel}>Stay in the loop</div>
-    <h2 className={s.sectionTitle}>Early access. New arrivals.</h2>
-    <p style={{ color: "#6b6560", fontSize: 15, marginBottom: 14 }}>
-      New drops, restocks, and quiet sales. Only to the people who signed up first.
-    </p>
-    <div className={s.newsletterForm}>
-      <input className={s.newsletterInput} placeholder="your@email.com" type="email" />
-      <button className={s.newsletterBtn}>Subscribe</button>
-    </div>
-  </div>
-)

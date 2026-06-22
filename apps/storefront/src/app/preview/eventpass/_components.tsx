@@ -70,7 +70,6 @@ export const NavBar = () => {
             { label: "Discover", href: `${basePath}/events` },
             { label: "Categories", href: `${basePath}/categories` },
             { label: "About", href: `${basePath}/about` },
-            { label: "Contact", href: `${basePath}/contact` },
           ].map(item => (
             <Link key={item.label} href={item.href} style={{
               color: T.textMuted, textDecoration: "none",
@@ -101,13 +100,6 @@ export const NavBar = () => {
               </span>
             )}
           </Link>
-          <button className="ep-nav-cta" style={{
-            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-            color: "#fff", border: "none", borderRadius: T.radiusSm,
-            padding: "9px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer",
-          }}>
-            List your event
-          </button>
           {/* Hamburger — mobile only */}
           <button
             className="ep-hamburger"
@@ -133,7 +125,6 @@ export const NavBar = () => {
             { label: "Discover", href: `${basePath}/events` },
             { label: "Categories", href: `${basePath}/categories` },
             { label: "About", href: `${basePath}/about` },
-            { label: "Contact", href: `${basePath}/contact` },
             { label: "🛒 Cart", href: `${basePath}/cart` },
           ].map(item => (
             <Link key={item.label} href={item.href}
@@ -150,7 +141,6 @@ export const NavBar = () => {
         @media (max-width: 768px) {
           .ep-nav-links { display: none !important; }
           .ep-nav-cart { display: none !important; }
-          .ep-nav-cta { display: none !important; }
           .ep-hamburger { display: flex !important; }
         }
       `}</style>
@@ -199,7 +189,6 @@ export const Footer = () => {
             title: "Help",
             links: [
               { label: "FAQ", href: `${basePath}/faq` },
-              { label: "Contact", href: `${basePath}/contact` },
               { label: "About", href: `${basePath}/about` },
               { label: "Refund Policy", href: `${basePath}/refund` },
             ],
@@ -315,8 +304,8 @@ export const EventCard = ({ event }: { event: Event }) => {
 // ---------------------------------------------------------------------------
 
 export const SectionHeader = ({
-  label, title, subtitle, action,
-}: { label: string; title: string; subtitle?: string; action?: React.ReactNode }) => (
+  label, title, subtitle, action, centered,
+}: { label: string; title: string; subtitle?: string; action?: React.ReactNode; centered?: boolean }) => (
   <div style={{ marginBottom: 14 }}>
     {/* Label → Heading: 0px gap */}
     <div style={{
@@ -328,17 +317,19 @@ export const SectionHeader = ({
         {label}
       </span>
     </div>
-    {/* Title row — action (e.g. "View all") sits inline with heading */}
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    {/* Title row — action (e.g. "View all") sits inline with heading. Flexbox
+        ignores the parent's textAlign, so a centered header needs justifyContent
+        flipped explicitly rather than relying on text-align: center. */}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: centered ? "center" : "space-between", gap: 16 }}>
       <h2 style={{
         color: T.text, fontSize: "clamp(22px, 3vw, 36px)",
         fontWeight: 800, margin: 0, letterSpacing: "-0.5px",
       }}>{title}</h2>
       {action && <div style={{ flexShrink: 0 }}>{action}</div>}
     </div>
-    {/* Heading → Subtitle: 10px gap */}
+    {/* Heading → Subtitle: 0 gap; Subtitle → next block: 30px gap */}
     {subtitle && (
-      <p style={{ color: T.textMuted, fontSize: 16, margin: "10px 0 0" }}>{subtitle}</p>
+      <p style={{ color: T.textMuted, fontSize: 16, margin: "0 0 30px" }}>{subtitle}</p>
     )}
   </div>
 )

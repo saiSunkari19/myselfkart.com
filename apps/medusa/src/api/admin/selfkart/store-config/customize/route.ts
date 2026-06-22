@@ -8,6 +8,7 @@ import {
   type StoreCustomizationFields,
 } from "../../../../../platform/repository"
 import { requireTenantContext } from "../../../../../modules/tenant-context"
+import { validateSections, InvalidSectionError } from "../../../../../platform/templates"
 
 /**
  * PUT /admin/selfkart/store-config/customize
@@ -127,6 +128,22 @@ export async function PUT(req: MedusaRequest, res: MedusaResponse): Promise<void
 
   // ── Filters ──────────────────────────────────────────────────────────────────
   json("filter_config")
+
+  // ── Sections (per-template homepage content) ─────────────────────────────────
+  // Body sends only the section(s) being edited — merge into the existing
+  // sections map (don't let saving "testimonials" wipe out a saved "hero").
+  if ("sections" in body && body.sections !== null && typeof body.sections === "object") {
+    try {
+      const validated = validateSections(existing.template_id, body.sections as Record<string, unknown>)
+      fields.sections = { ...(existing.sections ?? {}), ...validated }
+    } catch (err) {
+      if (err instanceof InvalidSectionError) {
+        res.status(400).json({ message: err.message })
+        return
+      }
+      throw err
+    }
+  }
 
   const config = await updateStoreCustomization(knex, tenantId, fields)
 

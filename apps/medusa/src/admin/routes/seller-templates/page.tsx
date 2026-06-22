@@ -19,6 +19,26 @@ import { useEffect, useRef, useState } from "react"
 
 type TemplateId = "eventpass" | "thread" | "aurum" | "volt" | "glow"
 
+type SectionFieldType = "text" | "richtext" | "image" | "icon" | "number"
+
+type SectionFieldDef = {
+  key: string
+  label: string
+  type: SectionFieldType
+  required?: boolean
+}
+
+type SectionDef = {
+  id: string
+  type: "hero" | "testimonial-list" | "feature-list" | "editorial-banner" | "newsletter"
+  label: string
+  list: boolean
+  minItems?: number
+  maxItems?: number
+  maxImages?: number
+  fields: SectionFieldDef[]
+}
+
 type Template = {
   id: TemplateId
   name: string
@@ -27,6 +47,7 @@ type Template = {
   preview_path: string
   thumbnail_url: string
   is_default: boolean
+  sections: SectionDef[]
 }
 
 const STOREFRONT_BASE =
@@ -111,6 +132,8 @@ type StoreConfig = {
   is_published: boolean
   // Filters
   filter_config: FilterConfig | null
+  // Per-template homepage section content (testimonials, banners, etc.)
+  sections: Record<string, any> | null
 }
 
 type ConfigResponse = {
@@ -773,6 +796,7 @@ type TabId =
   | "branding"
   | "theme"
   | "homepage"
+  | "sections"
   | "policies"
   | "contact"
   | "seo"
@@ -783,6 +807,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "branding", label: "Branding" },
   { id: "theme", label: "Theme" },
   { id: "homepage", label: "Homepage" },
+  { id: "sections", label: "Sections" },
   { id: "policies", label: "Policies" },
   { id: "contact", label: "Contact" },
   { id: "seo", label: "SEO" },
@@ -1582,6 +1607,320 @@ const FiltersTab = ({ config }: { config: StoreConfig }) => {
 }
 
 // ---------------------------------------------------------------------------
+// SectionsTab — schema-driven editor for the locked template's homepage
+// sections. The form shown is generated from `template.sections`, so a
+// template with a single-image hero gets one upload slot, a template with a
+// slider hero gets a repeatable image list, a template with no testimonials
+// section gets no testimonial editor, etc.
+// ---------------------------------------------------------------------------
+
+const GenericImageUpload = ({
+  value,
+  onChange,
+  uploadLabel = "Upload image",
+}: {
+  value: string
+  onChange: (url: string) => void
+  uploadLabel?: string
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = async (file: File) => {
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append("files", file)
+      const res = await fetch("/admin/uploads", {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.message ?? "Upload failed")
+      const url: string = body.files?.[0]?.url ?? ""
+      if (url) onChange(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Upload failed")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) handleFile(f)
+          e.target.value = ""
+        }}
+      />
+      {value && (
+        <img
+          src={value}
+          alt=""
+          className="h-14 w-20 rounded border border-ui-border-base object-cover bg-ui-bg-subtle"
+        />
+      )}
+      <Button
+        variant="secondary"
+        size="small"
+        type="button"
+        isLoading={uploading}
+        onClick={() => inputRef.current?.click()}
+      >
+        {value ? "Replace" : uploadLabel}
+      </Button>
+      {value && (
+        <Button variant="transparent" size="small" type="button" onClick={() => onChange("")}>
+          Remove
+        </Button>
+      )}
+    </div>
+  )
+}
+
+/** Renders a single field per its SectionFieldDef.type. */
+const SectionField = ({
+  field,
+  value,
+  onChange,
+}: {
+  field: SectionFieldDef
+  value: any
+  onChange: (v: any) => void
+}) => {
+  switch (field.type) {
+    case "image":
+      return (
+        <FieldRow label={field.label}>
+          <GenericImageUpload value={value ?? ""} onChange={onChange} />
+        </FieldRow>
+      )
+    case "richtext":
+      return (
+        <FieldRow label={field.label}>
+          <StyledTextarea value={value ?? ""} onChange={onChange} rows={2} />
+        </FieldRow>
+      )
+    case "number":
+      return (
+        <FieldRow label={field.label}>
+          <Input
+            type="number"
+            min={1}
+            max={5}
+            value={value ?? ""}
+            onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+          />
+        </FieldRow>
+      )
+    case "icon":
+      return (
+        <FieldRow label={field.label} hint="Paste an emoji, e.g. 🏆">
+          <Input value={value ?? ""} onChange={(e) => onChange(e.target.value)} className="w-20" />
+        </FieldRow>
+      )
+    default:
+      return (
+        <FieldRow label={field.label}>
+          <Input value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+        </FieldRow>
+      )
+  }
+}
+
+const emptyItem = (fields: SectionFieldDef[]): Record<string, any> =>
+  Object.fromEntries(fields.map((f) => [f.key, f.type === "number" ? null : ""]))
+
+/** One section block — single form, repeatable list, or multi-image hero. */
+const SectionEditor = ({
+  def,
+  value,
+  onSave,
+}: {
+  def: SectionDef
+  value: any
+  onSave: (sectionId: string, value: any) => Promise<void>
+}) => {
+  const [saving, setSaving] = useState(false)
+
+  // Hero with maxImages > 1 — repeatable image-only list (slider slides)
+  const isImageSlider = def.type === "hero" && (def.maxImages ?? 1) > 1
+
+  const [items, setItems] = useState<Record<string, any>[]>(() => {
+    if (def.list) return Array.isArray(value?.items) ? value.items : []
+    if (isImageSlider) return Array.isArray(value?.images) ? value.images.map((url: string) => ({ image: url })) : []
+    return []
+  })
+  const [single, setSingle] = useState<Record<string, any>>(() =>
+    !def.list && !isImageSlider ? (value ?? emptyItem(def.fields)) : {}
+  )
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      let payload: any
+      if (def.list) {
+        payload = { items }
+      } else if (isImageSlider) {
+        payload = { images: items.map((it) => it.image).filter(Boolean) }
+      } else {
+        payload = single
+      }
+      await onSave(def.id, payload)
+      toast.success(`${def.label} saved.`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save section.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const canAddMore = def.maxItems === undefined || items.length < def.maxItems
+  const canRemove = def.minItems === undefined || items.length > def.minItems
+
+  return (
+    <SectionBlock title={def.label}>
+      {def.list && (
+        <div className="flex flex-col gap-4">
+          {items.map((item, idx) => (
+            <div key={idx} className="flex flex-col gap-3 rounded-md border border-ui-border-base p-4">
+              {def.fields.map((f) => (
+                <SectionField
+                  key={f.key}
+                  field={f}
+                  value={item[f.key]}
+                  onChange={(v) =>
+                    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [f.key]: v } : it)))
+                  }
+                />
+              ))}
+              <div className="flex justify-end">
+                <Button
+                  variant="transparent"
+                  size="small"
+                  type="button"
+                  disabled={!canRemove}
+                  onClick={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ))}
+          <Button
+            variant="secondary"
+            size="small"
+            type="button"
+            disabled={!canAddMore}
+            onClick={() => setItems((prev) => [...prev, emptyItem(def.fields)])}
+          >
+            Add {def.label.toLowerCase()} item
+          </Button>
+          {def.minItems !== undefined && (
+            <Text size="xsmall" className="text-ui-fg-muted">
+              {items.length} of {def.minItems}–{def.maxItems ?? "∞"} items.
+            </Text>
+          )}
+        </div>
+      )}
+
+      {isImageSlider && (
+        <div className="flex flex-col gap-4">
+          {items.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-3">
+              <GenericImageUpload
+                value={item.image ?? ""}
+                onChange={(v) => setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, image: v } : it)))}
+                uploadLabel="Upload slide"
+              />
+              <Button variant="transparent" size="small" type="button" onClick={() => setItems((prev) => prev.filter((_, i) => i !== idx))}>
+                Remove
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="secondary"
+            size="small"
+            type="button"
+            disabled={items.length >= (def.maxImages ?? 1)}
+            onClick={() => setItems((prev) => [...prev, { image: "" }])}
+          >
+            Add slide
+          </Button>
+          <Text size="xsmall" className="text-ui-fg-muted">
+            {items.length} of {def.maxImages} slides.
+          </Text>
+        </div>
+      )}
+
+      {!def.list && !isImageSlider && (
+        <div className="flex flex-col gap-4">
+          {def.fields.map((f) => (
+            <SectionField
+              key={f.key}
+              field={f}
+              value={single[f.key]}
+              onChange={(v) => setSingle((prev) => ({ ...prev, [f.key]: v }))}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <Button variant="primary" size="small" onClick={handleSave} isLoading={saving}>
+          Save {def.label.toLowerCase()}
+        </Button>
+      </div>
+    </SectionBlock>
+  )
+}
+
+const SectionsTab = ({ config, template }: { config: StoreConfig; template: Template | undefined }) => {
+  if (!template) {
+    return (
+      <div className="p-6">
+        <Text size="small" className="text-ui-fg-subtle">
+          Select a template before customizing sections.
+        </Text>
+      </div>
+    )
+  }
+
+  const saved = config.sections ?? {}
+
+  const handleSave = async (sectionId: string, value: any) => {
+    const updated = await apiFetch<{ config: StoreConfig }>(
+      "/admin/selfkart/store-config/customize",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sections: { [sectionId]: value } }),
+      }
+    )
+    config.sections = updated.config.sections
+  }
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <Text size="small" className="text-ui-fg-subtle">
+        These are the sections {template.name} actually has on its homepage —
+        only what's listed here can be customized for this template.
+      </Text>
+      {template.sections.map((def) => (
+        <SectionEditor key={def.id} def={def} value={saved[def.id]} onSave={handleSave} />
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // CustomizeView — tabbed advanced settings
 // ---------------------------------------------------------------------------
 
@@ -1603,6 +1942,7 @@ const CustomizeView = ({
       case "branding":  return <BrandingTab config={config} />
       case "theme":     return <ThemeTab config={config} />
       case "homepage":  return <HomepageTab config={config} />
+      case "sections":  return <SectionsTab config={config} template={selectedTemplate} />
       case "policies":  return <PoliciesTab config={config} />
       case "contact":   return <ContactTab config={config} />
       case "seo":       return <SEOTab config={config} />
@@ -1724,11 +2064,13 @@ const SellerTemplatesPage = () => {
   // returned by the API; fall back to the dev default only when it's missing.
   const storefrontBase = storefrontUrl || STOREFRONT_BASE
 
-  // State 1: no template yet → pick one
+  // State 1: no template yet → pick one. Glow is set aside for now — not
+  // offered in the picker, but its template entry (with section schema)
+  // still exists for when it's re-enabled.
   if (!config?.template_id || showPicker) {
     return (
       <TemplatePicker
-        templates={templates}
+        templates={templates.filter((t) => t.id !== "glow")}
         storefrontBase={storefrontBase}
         onConfirmed={(updated) => { setConfig(updated); setShowPicker(false) }}
       />

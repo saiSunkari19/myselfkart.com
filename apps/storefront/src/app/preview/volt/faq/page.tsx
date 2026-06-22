@@ -31,7 +31,7 @@ export default function FAQPage() {
         <div className={s.container}>
           <div className={s.pageHeaderLabel}>Help Centre</div>
           <div className={s.pageHeaderTitle}>Frequently Asked Questions</div>
-          <div className={s.pageHeaderSub}>Can't find an answer? <Link href={`${basePath}/contact`} style={{ color: "var(--accent)" }}>Contact us</Link></div>
+          <div className={s.pageHeaderSub}>Can't find an answer? <Link href={`${basePath}/about`} style={{ color: "var(--accent)" }}>Contact us</Link></div>
         </div>
       </div>
       <div className={s.container}>
@@ -56,7 +56,7 @@ export default function FAQPage() {
             <div style={{ fontSize: 24, marginBottom: 10 }}>💬</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Still have questions?</div>
             <p style={{ fontSize: 13.5, color: "var(--text2)", marginBottom: 16 }}>Our team typically responds within 2 hours.</p>
-            <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
+            <Link href={`${basePath}/about`} className={`${s.btn} ${s.btnPrimary}`}>Contact Support</Link>
           </div>
         </div>
       </div>

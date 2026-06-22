@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string; q?: string }>
 }) {
   const tenant = await resolveTenant()
 
@@ -18,14 +18,24 @@ export default async function ShopPage({
   if (tenant.status === "draft") return <StorefrontStatePage state="draft" />
   if (tenant.status === "suspended") return <StorefrontStatePage state="suspended" />
 
-  const [{ category }, [products, config]] = await Promise.all([
+  const [{ category, q }, [products, config]] = await Promise.all([
     searchParams,
     Promise.all([listTenantProducts(tenant), fetchStoreConfig(tenant)]),
   ])
 
   const categories = resolveCategories(products)
   const activeCategory = category && categories.some(c => c.id === category) ? category : null
-  const filtered = activeCategory ? filterByCategory(products, activeCategory) : products
+  let filtered = activeCategory ? filterByCategory(products, activeCategory) : products
+
+  if (q?.trim()) {
+    const needle = q.trim().toLowerCase()
+    filtered = filtered.filter(
+      p =>
+        p.title.toLowerCase().includes(needle) ||
+        (p.description ?? "").toLowerCase().includes(needle) ||
+        p.tags.some(t => t.value.toLowerCase().includes(needle))
+    )
+  }
 
   const Theme = getTheme(config?.template_id)
   return (

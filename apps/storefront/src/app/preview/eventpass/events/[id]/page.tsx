@@ -64,7 +64,7 @@ export default function EventDetailPage() {
             <div style={{ display: "flex", gap: 4, marginBottom: 32, borderBottom: `1px solid ${T.border}` }}>
               {(["overview", "schedule", "faq"] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                  border: "none", background: "none", cursor: "pointer",
+                  border: "none", borderRadius: 0, background: "none", cursor: "pointer",
                   padding: "12px 20px", fontSize: 15, fontWeight: 600, textTransform: "capitalize",
                   color: activeTab === tab ? T.accent : T.textMuted,
                   borderBottom: activeTab === tab ? `2px solid ${T.accent}` : "2px solid transparent",
