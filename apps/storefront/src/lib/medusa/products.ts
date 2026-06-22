@@ -27,11 +27,18 @@ export type StoreCategory = {
   handle: string | null
 }
 
+export type StoreProductImage = {
+  url: string
+}
+
 export type StoreProduct = {
   id: string
   title: string
   handle: string | null
   thumbnail: string | null
+  // Full gallery, separate from `thumbnail` — Medusa sellers often set several
+  // photos per product. Empty when the seller only ever set a thumbnail.
+  images: StoreProductImage[]
   description: string | null
   created_at: string | null
   tags: StoreTag[]
@@ -45,7 +52,7 @@ export type StoreProduct = {
 // price for that region's currency. The price is in major units (e.g. 49.99) —
 // render it directly, never divide by 100.
 const PRODUCT_FIELDS =
-  "id,title,handle,thumbnail,description,created_at,*tags,categories.id,categories.name,categories.handle,*variants,variants.calculated_price"
+  "id,title,handle,thumbnail,images.url,description,created_at,*tags,categories.id,categories.name,categories.handle,*variants,variants.calculated_price"
 
 /**
  * Lists products for the resolved tenant. The per-tenant SDK attaches the

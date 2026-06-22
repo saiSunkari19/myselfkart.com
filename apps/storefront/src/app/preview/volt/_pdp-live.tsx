@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { AddToCart } from "../../../components/add-to-cart"
 import { PageLoader, Footer, Reveal } from "./_components"
@@ -8,8 +9,10 @@ import type { PdpProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
 /** Volt product-detail slot — real product + add-to-cart, themed in Volt. */
-export function VoltPdpLivePage({ config, product, variants, related }: PdpProps) {
+export function VoltPdpLivePage({ config, cartCount, product, variants, related }: PdpProps) {
   const relatedCards = related.map(viewToVolt)
+  const [activeImage, setActiveImage] = useState(0)
+  const images = product.images
 
   const colorOverrides = {
     ...(config?.accent_color ? { "--accent": config.accent_color } : {}),
@@ -22,7 +25,7 @@ export function VoltPdpLivePage({ config, product, variants, related }: PdpProps
   return (
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.main}>
         <div className={s.container}>
           <div style={{ fontSize: 13, color: "var(--text3)", padding: "20px 0" }}>
@@ -33,10 +36,29 @@ export function VoltPdpLivePage({ config, product, variants, related }: PdpProps
 
           <section className={s.section} style={{ paddingTop: 0 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
-              <div className={s.productCardImg} style={{ borderRadius: 16, overflow: "hidden", background: "var(--bg2,#f1f5f9)" }}>
-                {product.thumbnail
-                  ? <img src={product.thumbnail} alt={product.title} style={{ width: "100%", objectFit: "cover" }} />
-                  : <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", fontSize: 48 }}>🛍️</div>}
+              <div>
+                <div className={s.productCardImg} style={{ borderRadius: 16, overflow: "hidden", background: "var(--bg2,#f1f5f9)" }}>
+                  {images.length > 0
+                    ? <img src={images[activeImage]} alt={product.title} style={{ width: "100%", objectFit: "cover" }} />
+                    : <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", fontSize: 48 }}>🛍️</div>}
+                </div>
+                {images.length > 1 && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    {images.map((url, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActiveImage(i)}
+                        style={{
+                          width: 56, height: 56, borderRadius: 8, overflow: "hidden", padding: 0, cursor: "pointer",
+                          border: activeImage === i ? "2px solid var(--accent)" : "1px solid var(--border)",
+                          background: "var(--bg2,#f1f5f9)",
+                        }}
+                      >
+                        <img src={url} alt={`${product.title} view ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>

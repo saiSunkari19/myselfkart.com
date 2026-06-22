@@ -60,18 +60,10 @@ export const TEMPLATES: Template[] = [
     thumbnail_url: "/templates/eventpass.png",
     is_default: true,
     sections: [
-      {
-        id: "hero",
-        type: "hero",
-        label: "Hero",
-        list: false,
-        maxImages: 1,
-        fields: [
-          { key: "image", label: "Hero image", type: "image", required: true },
-          { key: "heading", label: "Heading", type: "richtext" },
-          { key: "sub", label: "Subtext", type: "text" },
-        ],
-      },
+      // Hero is customized via the dedicated Branding tab (hero_image_url /
+      // hero_heading / hero_subtext / hero_cta), not here — see InvalidSectionError
+      // history: a "hero" entry here was a dead duplicate since _live.tsx never
+      // reads config.sections.hero.
       {
         id: "how_it_works",
         type: "feature-list",
@@ -97,18 +89,7 @@ export const TEMPLATES: Template[] = [
     thumbnail_url: "/templates/thread.png",
     is_default: false,
     sections: [
-      {
-        id: "hero",
-        type: "hero",
-        label: "Hero",
-        list: false,
-        maxImages: 1,
-        fields: [
-          { key: "image", label: "Hero image", type: "image", required: true },
-          { key: "heading", label: "Heading", type: "richtext" },
-          { key: "sub", label: "Subtext", type: "text" },
-        ],
-      },
+      // Hero is customized via the dedicated Branding tab, not here — see note above.
       {
         id: "editorial_banner",
         type: "editorial-banner",
@@ -149,19 +130,7 @@ export const TEMPLATES: Template[] = [
     thumbnail_url: "/templates/aurum.png",
     is_default: false,
     sections: [
-      {
-        id: "hero",
-        type: "hero",
-        label: "Hero",
-        list: false,
-        maxImages: 1,
-        fields: [
-          { key: "image", label: "Hero image", type: "image", required: true },
-          { key: "label", label: "Label", type: "text" },
-          { key: "heading", label: "Heading", type: "richtext" },
-          { key: "sub", label: "Subtext", type: "text" },
-        ],
-      },
+      // Hero is customized via the dedicated Branding tab, not here — see note above.
       {
         id: "trust_strip",
         type: "feature-list",
@@ -240,18 +209,7 @@ export const TEMPLATES: Template[] = [
     thumbnail_url: "/templates/volt.png",
     is_default: false,
     sections: [
-      {
-        id: "hero",
-        type: "hero",
-        label: "Hero",
-        list: false,
-        maxImages: 1,
-        fields: [
-          { key: "image", label: "Hero image", type: "image", required: true },
-          { key: "heading", label: "Heading", type: "richtext" },
-          { key: "sub", label: "Subtext", type: "text" },
-        ],
-      },
+      // Hero is customized via the dedicated Branding tab, not here — see note above.
       {
         id: "why_buy",
         type: "feature-list",
@@ -302,18 +260,10 @@ export const TEMPLATES: Template[] = [
     thumbnail_url: "/templates/glow.png",
     is_default: false,
     // Set aside for now — not offered in the picker yet (see SELECTABLE_TEMPLATE_IDS).
-    // Hero supports a slider (maxImages > 1), unlike the other templates.
     sections: [
-      {
-        id: "hero",
-        type: "hero",
-        label: "Hero",
-        list: false,
-        maxImages: 6,
-        fields: [
-          { key: "image", label: "Slide image", type: "image", required: true },
-        ],
-      },
+      // Hero is customized via the dedicated Branding tab, not here — see note above.
+      // (Glow's _live.tsx only reads config.hero_image_url today, a single image —
+      // the slider concept isn't wired up yet either, so there's nothing to keep here.)
       {
         id: "testimonials",
         type: "testimonial-list",
@@ -381,15 +331,18 @@ export function validateSections(
     }
 
     if (def.list) {
-      if (!Array.isArray(value)) {
+      // The Customize UI always sends list sections as { items: [...] }, not a
+      // bare array — match that shape here, or every list save throws.
+      const items = (value as { items?: unknown[] })?.items
+      if (!Array.isArray(items)) {
         throw new InvalidSectionError(`Section "${sectionId}" must be a list of items.`)
       }
-      if (def.minItems !== undefined && value.length < def.minItems) {
+      if (def.minItems !== undefined && items.length < def.minItems) {
         throw new InvalidSectionError(
           `Section "${sectionId}" needs at least ${def.minItems} item(s).`
         )
       }
-      if (def.maxItems !== undefined && value.length > def.maxItems) {
+      if (def.maxItems !== undefined && items.length > def.maxItems) {
         throw new InvalidSectionError(
           `Section "${sectionId}" allows at most ${def.maxItems} item(s).`
         )

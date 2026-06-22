@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView, CategoryView } from "../../../lib/views"
 import type { HomeProps, NavProps } from "../../../lib/themes/types"
+import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
 import {
   PageLoader, TrustStrip, Reveal, Stars, Badge, Footer,
 } from "./_components"
@@ -86,11 +87,12 @@ export function LiveProductCard({ product }: { product: Product }) {
 }
 
 /* ---- Config-aware NavBar (drives store name / logo / announcement) ---- */
-export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = false }: {
+export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = false, cartCount = 0 }: {
   storeName: string
   logoUrl: string | null
   announcementText: string | null
   hasDeals?: boolean
+  cartCount?: number
 }) {
   const [scrolled, setScrolled] = useState(false)
   const [search, setSearch] = useState("")
@@ -132,7 +134,9 @@ export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = fa
             <Link href="/shop" className={s.navLink}>Shop</Link>
             {hasDeals && <Link href="/deals" className={s.navLink}>Deals</Link>}
             <Link href="/account" className={s.navLink}>Account</Link>
-            <Link href="/cart" className={s.navCart}>🛒 Cart</Link>
+            <Link href="/cart" className={s.navCart}>
+              🛒 Cart{cartCount > 0 && <span className={s.cartCount}>{cartCount}</span>}
+            </Link>
           </div>
         </div>
       </nav>
@@ -141,7 +145,7 @@ export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = fa
 }
 
 /* ---- Volt nav slot (StoreTheme.Nav) ---- */
-export function VoltNav({ config, hasDeals }: NavProps) {
+export function VoltNav({ config, hasDeals, cartCount }: NavProps) {
   const announcementEnabled = config?.announcement_enabled ?? true
   return (
     <LiveNavBar
@@ -149,6 +153,7 @@ export function VoltNav({ config, hasDeals }: NavProps) {
       logoUrl={config?.logo_url ?? null}
       announcementText={announcementEnabled ? (config?.announcement_text ?? null) : null}
       hasDeals={hasDeals}
+      cartCount={cartCount}
     />
   )
 }
@@ -228,7 +233,7 @@ const DEFAULT_NEWSLETTER = {
 }
 
 /* ---- Home slot (StoreTheme.Home) — renders the tenant's real products ---- */
-export function VoltLivePage({ config, products: productViews, categories, deals: dealViews, newArrivals }: HomeProps) {
+export function VoltLivePage({ config, cartCount, products: productViews, categories, deals: dealViews, newArrivals }: HomeProps) {
   const storeName = config?.store_name ?? "VOLT"
 
   const products = productViews.map(viewToVolt)
@@ -260,7 +265,7 @@ export function VoltLivePage({ config, products: productViews, categories, deals
   return (
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={hasDeals} categories={categories} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <div className={s.main}>
         <Hero config={config} featured={newLaunches[0] ?? allProducts[0] ?? null} />
         <TrustStrip />
@@ -384,23 +389,24 @@ export function VoltLivePage({ config, products: productViews, categories, deals
                 </div>
               </div>
             </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
-              {reviews.map((r: typeof DEFAULT_REVIEWS[number], i: number) => (
-                <Reveal key={r.name} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <div className={s.reviewCard}>
-                    <div className={s.reviewHeader}>
-                      <div className={s.reviewAvatar}>{r.avatar}</div>
-                      <div>
-                        <div className={s.reviewName}>{r.name}</div>
-                        <Stars rating={r.rating} />
-                      </div>
+            <TestimonialSlider
+              items={reviews}
+              gap={16}
+              accentColor="var(--accent, #2563eb)"
+              renderItem={(r: typeof DEFAULT_REVIEWS[number], i: number) => (
+                <div key={i} className={s.reviewCard}>
+                  <div className={s.reviewHeader}>
+                    <div className={s.reviewAvatar}>{r.avatar}</div>
+                    <div>
+                      <div className={s.reviewName}>{r.name}</div>
+                      <Stars rating={r.rating} />
                     </div>
-                    <p className={s.reviewText}>{r.text}</p>
-                    <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 10 }}>Verified purchase · {r.product}</div>
                   </div>
-                </Reveal>
-              ))}
-            </div>
+                  <p className={s.reviewText}>{r.text}</p>
+                  <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 10 }}>Verified purchase · {r.product}</div>
+                </div>
+              )}
+            />
           </div>
         </section>
 

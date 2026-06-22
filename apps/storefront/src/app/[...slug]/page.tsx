@@ -40,6 +40,7 @@ import ThreadCategoriesPage from "../preview/thread/categories/page"
 import ThreadFaqPage from "../preview/thread/faq/page"
 import ThreadPrivacyPage from "../preview/thread/privacy/page"
 import ThreadTermsPage from "../preview/thread/terms/page"
+import ThreadReturnsPage from "../preview/thread/returns/page"
 import ThreadConfirmationPage from "../preview/thread/confirmation/page"
 
 // ── Aurum sub-page imports ──
@@ -55,6 +56,8 @@ import AurumContactPage from "../preview/aurum/contact/page"
 import AurumFaqPage from "../preview/aurum/faq/page"
 import AurumPrivacyPage from "../preview/aurum/privacy/page"
 import AurumTermsPage from "../preview/aurum/terms/page"
+import AurumReturnsPage from "../preview/aurum/returns/page"
+import AurumShippingPage from "../preview/aurum/shipping/page"
 import AurumConfirmationPage from "../preview/aurum/confirmation/page"
 
 // ── Eventpass sub-page imports ──
@@ -66,6 +69,7 @@ import EventpassCategoriesPage from "../preview/eventpass/categories/page"
 import EventpassFaqPage from "../preview/eventpass/faq/page"
 import EventpassPrivacyPage from "../preview/eventpass/privacy/page"
 import EventpassTermsPage from "../preview/eventpass/terms/page"
+import EventpassRefundPage from "../preview/eventpass/refund/page"
 import EventpassConfirmationPage from "../preview/eventpass/confirmation/page"
 
 export const dynamic = "force-dynamic"
@@ -163,6 +167,7 @@ export default async function TemplateSubPage({
       case "faq":          return wrap(<ThreadFaqPage />)
       case "privacy":      return wrap(<ThreadPrivacyPage />)
       case "terms":        return wrap(<ThreadTermsPage />)
+      case "returns":      return wrap(<ThreadReturnsPage />)
       case "confirmation": return wrap(<ThreadConfirmationPage />)
     }
   }
@@ -187,6 +192,8 @@ export default async function TemplateSubPage({
       case "faq":           return wrap(<AurumFaqPage />)
       case "privacy":       return wrap(<AurumPrivacyPage />)
       case "terms":         return wrap(<AurumTermsPage />)
+      case "returns":       return wrap(<AurumReturnsPage />)
+      case "shipping":      return wrap(<AurumShippingPage />)
       case "confirmation":  return wrap(<AurumConfirmationPage />)
     }
   }
@@ -209,6 +216,7 @@ export default async function TemplateSubPage({
       case "faq":          return wrap(<EventpassFaqPage />)
       case "privacy":      return wrap(<EventpassPrivacyPage />)
       case "terms":        return wrap(<EventpassTermsPage />)
+      case "refund":       return wrap(<EventpassRefundPage />)
       case "confirmation": return wrap(<EventpassConfirmationPage />)
     }
   }

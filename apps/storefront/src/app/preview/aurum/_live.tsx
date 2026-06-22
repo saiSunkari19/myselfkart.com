@@ -5,6 +5,7 @@ import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
 import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
+import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
 import s from "./_styles.module.css"
 
 /**
@@ -77,7 +78,7 @@ function GoldDivider() {
 }
 
 /* ---- Nav (live routes) ---- */
-export function AurumNav({ config, hasDeals }: NavProps) {
+export function AurumNav({ config, hasDeals, cartCount = 0 }: NavProps) {
   const storeName = config?.store_name ?? "Aurum"
   const tagline = config?.tagline ?? "Fine Jewellery"
   const announcementEnabled = config?.announcement_enabled ?? true
@@ -124,7 +125,9 @@ export function AurumNav({ config, hasDeals }: NavProps) {
 
           <div className={s.navRight}>
             <Link href="/account" className={s.navIconBtn}>Account</Link>
-            <Link href="/cart" className={s.navIconBtn}>Bag</Link>
+            <Link href="/cart" className={s.navIconBtn}>
+              Bag{cartCount > 0 && <span className={s.cartCount}>{cartCount}</span>}
+            </Link>
           </div>
         </div>
       </nav>
@@ -166,6 +169,16 @@ export function AurumFooter({ config, hasDeals }: FooterProps & { hasDeals?: boo
             {config?.instagram_url && <li><a href={config.instagram_url} className={s.footerLink}>Instagram</a></li>}
             {config?.youtube_url && <li><a href={config.youtube_url} className={s.footerLink}>YouTube</a></li>}
             {config?.contact_email && <li><a href={`mailto:${config.contact_email}`} className={s.footerLink}>{config.contact_email}</a></li>}
+          </ul>
+        </div>
+        <div>
+          <div className={s.footerColTitle}>Legal</div>
+          <ul className={s.footerLinks}>
+            <li><Link href="/about" className={s.footerLink}>About Us</Link></li>
+            <li><Link href="/returns" className={s.footerLink}>Returns</Link></li>
+            <li><Link href="/shipping" className={s.footerLink}>Shipping</Link></li>
+            <li><Link href="/privacy" className={s.footerLink}>Privacy Policy</Link></li>
+            <li><Link href="/terms" className={s.footerLink}>Terms</Link></li>
           </ul>
         </div>
       </div>
@@ -386,8 +399,11 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
           <h2 className={s.sectionTitle}>Words that honour us.</h2>
           <GoldDivider />
         </div>
-        <div className={s.testimonialsGrid}>
-          {items.map((t: typeof DEFAULT_AURUM_TESTIMONIALS[number], i: number) => (
+        <TestimonialSlider
+          items={items}
+          gap={28}
+          accentColor="var(--aurum-gold, #b08d4f)"
+          renderItem={(t: typeof DEFAULT_AURUM_TESTIMONIALS[number], i: number) => (
             <div key={i} className={s.testimonialCard}>
               <div className={s.testimonialStars}>{"★".repeat(t.stars)}</div>
               <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
@@ -400,8 +416,8 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+        />
       </div>
     </section>
   )
@@ -434,11 +450,11 @@ function Newsletter({ config }: { config: StoreConfig | null }) {
 }
 
 /* ---- Home slot ---- */
-export function AurumLivePage({ config, products, newArrivals, deals, categories }: HomeProps) {
+export function AurumLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
   const hasDeals = deals.length > 0
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={hasDeals} categories={categories} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <Hero config={config} hasDeals={hasDeals} />
       <TrustStrip config={config} />
       <CollectionsSection categories={categories} />

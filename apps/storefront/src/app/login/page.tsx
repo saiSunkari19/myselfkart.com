@@ -6,6 +6,7 @@ import { getCurrentCustomer } from "../../lib/medusa/customer"
 import { getTheme } from "../../lib/themes"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
+import { getCartItemCount } from "../../lib/cart/item-count"
 
 export const dynamic = "force-dynamic"
 
@@ -31,11 +32,15 @@ export default async function LoginPage({
   const customer = await getCurrentCustomer(tenant, token)
   if (customer) redirect(dest)
 
-  const config = await fetchStoreConfig(tenant)
+  const [config, cartCount] = await Promise.all([
+    fetchStoreConfig(tenant),
+    getCartItemCount(tenant),
+  ])
   const Theme = getTheme(config?.template_id)
   return (
     <Theme.Login
       config={config}
+      cartCount={cartCount}
       next={dest}
       error={error ?? null}
       notice={reset ? "Your password has been reset. Please sign in." : null}

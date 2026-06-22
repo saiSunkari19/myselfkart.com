@@ -6,10 +6,10 @@ import { aurumColorVars } from "./_color-vars"
 import s from "./_styles.module.css"
 
 /** Aurum login + account slots — shared auth/account UI in Aurum chrome. */
-export function AurumLoginPage({ config, next, error, notice }: LoginProps) {
+export function AurumLoginPage({ config, cartCount, next, error, notice }: LoginProps) {
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container} style={{ padding: "56px 0" }}>
           <LoginForm next={next} error={error} notice={notice} accent={config?.accent_color ?? undefined} />
@@ -21,10 +21,10 @@ export function AurumLoginPage({ config, next, error, notice }: LoginProps) {
 }
 
 export function AurumAccountPage(props: AccountProps) {
-  const { config } = props
+  const { config, cartCount } = props
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container} style={{ padding: "40px 0" }}>
           <AccountContent {...props} accent={config?.accent_color ?? undefined} />

@@ -19,6 +19,8 @@ import { useEffect, useRef, useState } from "react"
 
 type TemplateId = "eventpass" | "thread" | "aurum" | "volt" | "glow"
 
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
+
 type SectionFieldType = "text" | "richtext" | "image" | "icon" | "number"
 
 type SectionFieldDef = {
@@ -320,6 +322,10 @@ const LogoUpload = ({
   const [uploading, setUploading] = useState(false)
 
   const handleFile = async (file: File) => {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 5MB.`)
+      return
+    }
     setUploading(true)
     try {
       const form = new FormData()
@@ -1627,6 +1633,10 @@ const GenericImageUpload = ({
   const [uploading, setUploading] = useState(false)
 
   const handleFile = async (file: File) => {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 5MB.`)
+      return
+    }
     setUploading(true)
     try {
       const form = new FormData()

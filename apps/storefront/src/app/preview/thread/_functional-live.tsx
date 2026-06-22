@@ -13,6 +13,7 @@ import {
 import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { ThreadNav, ThreadFooter, threadColorVars } from "./_live"
+import { SubmitButton } from "../../../components/submit-button"
 import s from "./_styles.module.css"
 
 /**
@@ -22,11 +23,11 @@ import s from "./_styles.module.css"
  */
 
 /* ---- Cart ---- */
-export function ThreadCartLivePage({ config, cart }: CartProps) {
+export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.page} style={threadColorVars(config)}>
-        <ThreadNav config={config} hasDeals={false} categories={[]} />
+        <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.pageShell}>
           <div className={s.container}>
             <div className={s.emptyState}>
@@ -47,7 +48,7 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
 
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageTitle}>
@@ -73,7 +74,18 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
                         <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
                         <button className={s.qtyBtn} type="submit" aria-label="Decrease quantity">−</button>
                       </form>
-                      <span className={s.qtyVal}>{item.quantity}</span>
+                      <form action={updateLineItemAction} style={{ display: "inline" }}>
+                        <input type="hidden" name="line_item_id" value={item.id} />
+                        <input
+                          type="number"
+                          name="quantity"
+                          min={1}
+                          defaultValue={item.quantity}
+                          className={s.qtyInput}
+                          onBlur={e => e.currentTarget.form?.requestSubmit()}
+                          onKeyDown={e => e.key === "Enter" && e.currentTarget.form?.requestSubmit()}
+                        />
+                      </form>
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
                         <input type="hidden" name="line_item_id" value={item.id} />
                         <input type="hidden" name="quantity" value={item.quantity + 1} />
@@ -126,13 +138,13 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
 }
 
 /* ---- Checkout ---- */
-export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
+export function ThreadCheckoutLivePage({ config, cart, cartCount, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   const storeName = config?.store_name ?? "Thread"
 
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.page} style={threadColorVars(config)}>
-        <ThreadNav config={config} hasDeals={false} categories={[]} />
+        <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.pageShell}>
           <div className={s.container}>
             <div className={s.emptyState}>
@@ -167,7 +179,7 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
 
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageTitle}>
@@ -216,7 +228,7 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
                     </select>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <button type="submit" className={`${s.btn} ${s.btnFull}`}>Save &amp; Continue</button>
+                    <SubmitButton className={`${s.btn} ${s.btnFull}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
                   </div>
                 </form>
               </div>
@@ -236,7 +248,7 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
                         <span>{formatMoney(option.amount ?? 0, cur)}</span>
                       </label>
                     ))}
-                    <button type="submit" className={`${s.btn} ${s.btnOutline}`} style={{ marginTop: 12 }}>Use this method</button>
+                    <SubmitButton className={`${s.btn} ${s.btnOutline}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
                   </form>
                 )}
               </div>
@@ -248,7 +260,7 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
                   hasRazorpay ? (
                     <RazorpayCheckout storeName={storeName} accentColor={config?.accent_color ?? undefined} email={cart.email} />
                   ) : (
-                    <form action={placeOrderAction}><button type="submit" className={`${s.btn} ${s.btnFull}`}>Place Order</button></form>
+                    <form action={placeOrderAction}><SubmitButton className={`${s.btn} ${s.btnFull}`} pendingLabel="Placing order…">Place Order</SubmitButton></form>
                   )
                 ) : (
                   <p className={s.cartItemMeta}>Complete the steps above to pay.</p>
@@ -288,11 +300,11 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
 }
 
 /* ---- Order confirmation ---- */
-export function ThreadOrderLivePage({ config, order }: OrderProps) {
+export function ThreadOrderLivePage({ config, cartCount, order }: OrderProps) {
   const cur = order.currency_code
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.confirmationWrap}>

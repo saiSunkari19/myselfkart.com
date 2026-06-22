@@ -6,10 +6,10 @@ import { threadColorVars } from "./_color-vars"
 import s from "./_styles.module.css"
 
 /** Thread login + account slots — shared auth/account UI in Thread chrome. */
-export function ThreadLoginPage({ config, next, error, notice }: LoginProps) {
+export function ThreadLoginPage({ config, cartCount, next, error, notice }: LoginProps) {
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container} style={{ padding: "56px 0" }}>
           <LoginForm next={next} error={error} notice={notice} accent={config?.accent_color ?? undefined} />
@@ -21,10 +21,10 @@ export function ThreadLoginPage({ config, next, error, notice }: LoginProps) {
 }
 
 export function ThreadAccountPage(props: AccountProps) {
-  const { config } = props
+  const { config, cartCount } = props
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container} style={{ padding: "40px 0" }}>
           <AccountContent {...props} accent={config?.accent_color ?? undefined} />

@@ -5,6 +5,7 @@ import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
 import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
+import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
 import s from "./_styles.module.css"
 
 /**
@@ -67,7 +68,7 @@ export function ThreadProductCard({ product, index = 0 }: { product: ProductView
 }
 
 /* ---- Nav (live routes) ---- */
-export function ThreadNav({ config, hasDeals }: NavProps) {
+export function ThreadNav({ config, hasDeals, cartCount = 0 }: NavProps) {
   const storeName = config?.store_name ?? "Thread"
   const announcementEnabled = config?.announcement_enabled ?? true
   const announcementText = config?.announcement_text
@@ -95,7 +96,9 @@ export function ThreadNav({ config, hasDeals }: NavProps) {
           </Link>
           <div className={s.navActions}>
             <Link href="/account" className={s.navIconBtn}>Account</Link>
-            <Link href="/cart" className={s.navIconBtn}>Bag</Link>
+            <Link href="/cart" className={s.navIconBtn}>
+              Bag{cartCount > 0 && <span className={s.cartBadge}>{cartCount}</span>}
+            </Link>
           </div>
         </div>
       </nav>
@@ -125,6 +128,16 @@ export function ThreadFooter({ config, hasDeals }: FooterProps & { hasDeals?: bo
               <li><Link href="/shop" className={s.footerLink}>All Products</Link></li>
               {hasDeals && <li><Link href="/deals" className={s.footerLink}>Sale</Link></li>}
               <li><Link href="/cart" className={s.footerLink}>Your Bag</Link></li>
+            </ul>
+          </div>
+          <div>
+            <div className={s.footerColTitle}>Help</div>
+            <ul className={s.footerLinks}>
+              <li><Link href="/about" className={s.footerLink}>About Us</Link></li>
+              <li><Link href="/faq" className={s.footerLink}>FAQs</Link></li>
+              <li><Link href="/returns" className={s.footerLink}>Returns</Link></li>
+              <li><Link href="/privacy" className={s.footerLink}>Privacy Policy</Link></li>
+              <li><Link href="/terms" className={s.footerLink}>Terms</Link></li>
             </ul>
           </div>
         </div>
@@ -274,8 +287,10 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
           <div className={s.sectionLabel}>What they say</div>
           <h2 className={s.sectionTitle}>Loved by wearers</h2>
         </div>
-        <div className={s.testimonialsGrid}>
-          {items.map((t: typeof DEFAULT_THREAD_TESTIMONIALS[number], i: number) => (
+        <TestimonialSlider
+          items={items}
+          gap={24}
+          renderItem={(t: typeof DEFAULT_THREAD_TESTIMONIALS[number], i: number) => (
             <div key={i} className={s.testimonialCard}>
               <div className={s.testimonialStars}>{"★".repeat(t.stars)}</div>
               <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
@@ -287,19 +302,19 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+        />
       </div>
     </section>
   )
 }
 
 /* ---- Home slot ---- */
-export function ThreadLivePage({ config, products, newArrivals, deals, categories }: HomeProps) {
+export function ThreadLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
   const hasDeals = deals.length > 0
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={hasDeals} categories={categories} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <Hero config={config} hasDeals={hasDeals} />
       <ProductSection
         label="Just dropped" title="New Arrivals"

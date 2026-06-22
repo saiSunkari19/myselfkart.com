@@ -8,6 +8,7 @@ import { getDeals, getNewArrivals } from "../lib/merchandising"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../lib/store-config"
+import { getCartItemCount } from "../lib/cart/item-count"
 
 export const dynamic = "force-dynamic"
 
@@ -26,9 +27,10 @@ export default async function HomePage() {
     return <StorefrontStatePage state="suspended" />
   }
 
-  const [products, config] = await Promise.all([
+  const [products, config, cartCount] = await Promise.all([
     listTenantProducts(tenant),
     fetchStoreConfig(tenant),
+    getCartItemCount(tenant),
   ])
 
   // Every storefront template is now ported into the theme registry (volt, glow,
@@ -40,6 +42,7 @@ export default async function HomePage() {
     return (
       <Theme.Home
         config={config}
+        cartCount={cartCount}
         products={mapProducts(products)}
         categories={resolveCategories(products)}
         deals={mapProducts(getDeals(products))}

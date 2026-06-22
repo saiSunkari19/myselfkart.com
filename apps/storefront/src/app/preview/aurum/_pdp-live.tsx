@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { AddToCart } from "../../../components/add-to-cart"
 import type { PdpProps } from "../../../lib/themes/types"
@@ -7,13 +8,16 @@ import { AurumNav, AurumFooter, AurumProductCard, aurumColorVars } from "./_live
 import s from "./_styles.module.css"
 
 /** Aurum product-detail slot — real product + real add-to-cart, Aurum-styled. */
-export function AurumPdpLivePage({ config, product, variants, related }: PdpProps) {
-  const img = product.thumbnail ?? "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=900&q=90"
+export function AurumPdpLivePage({ config, cartCount, product, variants, related }: PdpProps) {
+  const images = product.images.length > 0
+    ? product.images
+    : ["https://images.unsplash.com/photo-1606800052052-a08af7148866?w=900&q=90"]
+  const [activeImg, setActiveImg] = useState(0)
   const inr = (a: number | null | undefined) => `₹${(a ?? 0).toLocaleString("en-IN")}`
 
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.breadcrumb}>
@@ -28,11 +32,24 @@ export function AurumPdpLivePage({ config, product, variants, related }: PdpProp
             {/* Gallery */}
             <div className={s.productGallery}>
               <div className={s.productMainImg}>
-                <img src={img} alt={product.title} />
+                <img src={images[activeImg]} alt={product.title} />
                 {product.isOnSale && (
                   <span style={{ position: "absolute", top: 16, left: 16 }} className={`${s.productBadge} ${s.badgeLimited}`}>Sale</span>
                 )}
               </div>
+              {images.length > 1 && (
+                <div className={s.productThumbs}>
+                  {images.map((url, i) => (
+                    <div
+                      key={i}
+                      className={`${s.productThumb} ${activeImg === i ? s.active : ""}`}
+                      onClick={() => setActiveImg(i)}
+                    >
+                      <img src={url} alt={`${product.title} view ${i + 1}`} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Info */}

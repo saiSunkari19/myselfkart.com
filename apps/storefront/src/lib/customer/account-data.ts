@@ -14,6 +14,7 @@ import { getRegion } from "../medusa/region"
 import { fetchStoreConfig, type StoreConfig } from "../store-config"
 import { resolveTenant } from "../tenant/resolve-tenant"
 import { getCustomerToken } from "./cookie"
+import { getCartItemCount } from "../cart/item-count"
 
 export type AccountData = {
   config: StoreConfig | null
@@ -21,6 +22,7 @@ export type AccountData = {
   orders: CustomerOrderListItem[]
   addresses: CustomerAddressView[]
   countries: { iso_2: string; display_name?: string | null }[]
+  cartCount: number
 }
 
 /**
@@ -38,11 +40,12 @@ export async function loadAccountData(next = "/account"): Promise<AccountData> {
     redirect(`/login?next=${encodeURIComponent(next)}`)
   }
 
-  const [config, orders, addresses, region] = await Promise.all([
+  const [config, orders, addresses, region, cartCount] = await Promise.all([
     fetchStoreConfig(tenant),
     listCustomerOrders(tenant, token),
     listCustomerAddresses(tenant, token),
     getRegion(tenant),
+    getCartItemCount(tenant),
   ])
 
   return {
@@ -51,5 +54,6 @@ export async function loadAccountData(next = "/account"): Promise<AccountData> {
     orders,
     addresses,
     countries: region?.countries ?? [],
+    cartCount,
   }
 }
