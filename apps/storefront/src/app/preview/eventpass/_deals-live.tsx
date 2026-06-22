@@ -12,13 +12,13 @@ import {
 } from "./_live"
 
 /** Eventpass deals slot — real discounted events; honest empty state when none. */
-export function EventpassDealsLivePage({ config, deals }: DealsProps) {
+export function EventpassDealsLivePage({ config, cartCount, deals }: DealsProps) {
   const accent = eventAccent(config)
   const hasDeals = deals.length > 0
 
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={hasDeals} categories={[]} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={[]} />
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "48px 40px 72px" }}>
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "inline-flex", background: T.accentLight, borderRadius: 100, padding: "5px 14px", marginBottom: 12 }}>

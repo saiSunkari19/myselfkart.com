@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { PageShell, GoldDivider } from "../_components"
 import s from "../_styles.module.css"

@@ -10,15 +10,15 @@ import {
   eventAccent,
   pageShell,
 } from "./_live"
+import { Pagination } from "../../../components/pagination"
 
 /** Eventpass shop slot — "browse events" listing: real products + category filter. */
-export function EventpassShopLivePage({ config, products, categories, activeCategory }: ShopProps) {
+export function EventpassShopLivePage({ config, cartCount, products, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
   const accent = eventAccent(config)
-  const totalCount = products.length
 
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={false} categories={categories} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "48px 40px 72px" }}>
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "inline-flex", background: T.accentLight, borderRadius: 100, padding: "5px 14px", marginBottom: 12 }}>
@@ -78,9 +78,23 @@ export function EventpassShopLivePage({ config, products, categories, activeCate
                 <Link href="/" style={{ color: accent, fontWeight: 600, textDecoration: "none" }}>← Back to Home</Link>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
-                {products.map((p, i) => <EventpassEventCard key={p.id} product={p} index={i} accent={accent} />)}
-              </div>
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+                  {products.map((p, i) => <EventpassEventCard key={p.id} product={p} index={i} accent={accent} />)}
+                </div>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  buildHref={p => `/shop?${activeCategory ? `category=${activeCategory}&` : ""}page=${p}`}
+                  style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    minWidth: 36, height: 36, padding: "0 10px",
+                    border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
+                    fontSize: 13, fontWeight: 600, color: T.textMuted, textDecoration: "none",
+                  }}
+                  activeStyle={{ background: accent, color: "#fff", borderColor: accent }}
+                />
+              </>
             )}
           </div>
         </div>

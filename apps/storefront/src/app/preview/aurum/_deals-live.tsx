@@ -6,11 +6,11 @@ import { AurumNav, AurumFooter, AurumProductCard, aurumColorVars } from "./_live
 import s from "./_styles.module.css"
 
 /** Aurum deals slot — real sale products; honest empty state when none. */
-export function AurumDealsLivePage({ config, deals }: DealsProps) {
+export function AurumDealsLivePage({ config, cartCount, deals }: DealsProps) {
   const hasDeals = deals.length > 0
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={hasDeals} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageHeader}>

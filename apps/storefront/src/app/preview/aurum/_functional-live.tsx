@@ -13,6 +13,7 @@ import {
 import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { AurumNav, AurumFooter, aurumColorVars } from "./_live"
+import { SubmitButton } from "../../../components/submit-button"
 import s from "./_styles.module.css"
 
 /**
@@ -22,11 +23,11 @@ import s from "./_styles.module.css"
  */
 
 /* ---- Cart ---- */
-export function AurumCartLivePage({ config, cart }: CartProps) {
+export function AurumCartLivePage({ config, cart, cartCount }: CartProps) {
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.page} style={aurumColorVars(config)}>
-        <AurumNav config={config} hasDeals={false} categories={[]} />
+        <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.pageShell}>
           <div className={s.container}>
             <div className={s.emptyState} style={{ padding: "120px 0" }}>
@@ -46,7 +47,7 @@ export function AurumCartLivePage({ config, cart }: CartProps) {
 
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageHeader} style={{ textAlign: "left", padding: "60px 0 40px", marginBottom: 0 }}>
@@ -72,7 +73,18 @@ export function AurumCartLivePage({ config, cart }: CartProps) {
                         <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
                         <button className={s.qtyBtn} type="submit" aria-label="Decrease quantity">−</button>
                       </form>
-                      <span className={s.qtyVal}>{item.quantity}</span>
+                      <form action={updateLineItemAction} style={{ display: "inline" }}>
+                        <input type="hidden" name="line_item_id" value={item.id} />
+                        <input
+                          type="number"
+                          name="quantity"
+                          min={1}
+                          defaultValue={item.quantity}
+                          className={s.qtyInput}
+                          onBlur={e => e.currentTarget.form?.requestSubmit()}
+                          onKeyDown={e => e.key === "Enter" && e.currentTarget.form?.requestSubmit()}
+                        />
+                      </form>
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
                         <input type="hidden" name="line_item_id" value={item.id} />
                         <input type="hidden" name="quantity" value={item.quantity + 1} />
@@ -123,13 +135,13 @@ export function AurumCartLivePage({ config, cart }: CartProps) {
 }
 
 /* ---- Checkout ---- */
-export function AurumCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
+export function AurumCheckoutLivePage({ config, cart, cartCount, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   const storeName = config?.store_name ?? "Aurum"
 
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.page} style={aurumColorVars(config)}>
-        <AurumNav config={config} hasDeals={false} categories={[]} />
+        <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.pageShell}>
           <div className={s.container}>
             <div className={s.emptyState} style={{ padding: "120px 0" }}>
@@ -165,7 +177,7 @@ export function AurumCheckoutLivePage({ config, cart, shippingOptions, countries
 
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div style={{ padding: "40px 0 0" }}>
@@ -213,7 +225,7 @@ export function AurumCheckoutLivePage({ config, cart, shippingOptions, countries
                     </select>
                   </div>
                   <div className={s.formGroupFull}>
-                    <button type="submit" className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`}>Save &amp; Continue</button>
+                    <SubmitButton className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
                   </div>
                 </form>
               </div>
@@ -233,7 +245,7 @@ export function AurumCheckoutLivePage({ config, cart, shippingOptions, countries
                         <span>{formatMoney(option.amount ?? 0, cur)}</span>
                       </label>
                     ))}
-                    <button type="submit" className={`${s.btn} ${s.btnOutlineGold}`} style={{ marginTop: 12 }}>Use this method</button>
+                    <SubmitButton className={`${s.btn} ${s.btnOutlineGold}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
                   </form>
                 )}
               </div>
@@ -245,7 +257,7 @@ export function AurumCheckoutLivePage({ config, cart, shippingOptions, countries
                   hasRazorpay ? (
                     <RazorpayCheckout storeName={storeName} accentColor={config?.accent_color ?? undefined} email={cart.email} />
                   ) : (
-                    <form action={placeOrderAction}><button type="submit" className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`}>Place Order</button></form>
+                    <form action={placeOrderAction}><SubmitButton className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`} pendingLabel="Placing order…">Place Order</SubmitButton></form>
                   )
                 ) : (
                   <p className={s.cartItemMeta}>Complete the steps above to pay.</p>
@@ -289,11 +301,11 @@ export function AurumCheckoutLivePage({ config, cart, shippingOptions, countries
 }
 
 /* ---- Order confirmation ---- */
-export function AurumOrderLivePage({ config, order }: OrderProps) {
+export function AurumOrderLivePage({ config, cartCount, order }: OrderProps) {
   const cur = order.currency_code
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={[]} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.confirmWrap}>

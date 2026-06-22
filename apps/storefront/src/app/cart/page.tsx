@@ -19,6 +19,8 @@ export default async function CartPage() {
     fetchStoreConfig(tenant),
   ])
 
+  const cartCount = cart?.items.reduce((n, i) => n + i.quantity, 0) ?? 0
+
   const Theme = getTheme(config?.template_id)
-  return <Theme.Cart config={config} cart={cart} />
+  return <Theme.Cart config={config} cart={cart} cartCount={cartCount} />
 }

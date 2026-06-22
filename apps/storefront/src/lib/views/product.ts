@@ -18,6 +18,8 @@ export type ProductView = {
   title: string
   description: string
   thumbnail: string | null
+  /** Full gallery (thumbnail first if set), falling back to [thumbnail] or []. */
+  images: string[]
   /** Lowest payable price across variants (major units), or null if unpriced. */
   price: number | null
   /** List price when on sale (major units), else null. */
@@ -48,6 +50,7 @@ export function mapProduct(p: StoreProduct): ProductView {
     title: p.title,
     description: p.description ?? "",
     thumbnail: p.thumbnail,
+    images: p.images?.length ? p.images.map(i => i.url) : p.thumbnail ? [p.thumbnail] : [],
     price: cp?.calculated_amount ?? null,
     originalPrice: onSale ? (cp?.original_amount ?? null) : null,
     currencyCode: cp?.currency_code ?? null,

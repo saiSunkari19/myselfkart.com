@@ -3,14 +3,14 @@
 import Link from "next/link"
 import type { ShopProps } from "../../../lib/themes/types"
 import { AurumNav, AurumFooter, AurumProductCard, aurumColorVars } from "./_live"
+import { Pagination } from "../../../components/pagination"
 import s from "./_styles.module.css"
 
 /** Aurum shop/listing slot — real products + real category filter (live routes). */
-export function AurumShopLivePage({ config, products, categories, activeCategory }: ShopProps) {
-  const totalCount = products.length
+export function AurumShopLivePage({ config, cartCount, products, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
   return (
     <div className={s.page} style={aurumColorVars(config)}>
-      <AurumNav config={config} hasDeals={false} categories={categories} />
+      <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageHeader}>
@@ -55,9 +55,18 @@ export function AurumShopLivePage({ config, products, categories, activeCategory
                   <p className={s.emptyText}>Check back soon.</p>
                 </div>
               ) : (
-                <div className={s.productGrid}>
-                  {products.map((p, i) => <AurumProductCard key={p.id} product={p} index={i} />)}
-                </div>
+                <>
+                  <div className={s.productGrid}>
+                    {products.map((p, i) => <AurumProductCard key={p.id} product={p} index={i} />)}
+                  </div>
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    buildHref={p => `/shop?${activeCategory ? `category=${activeCategory}&` : ""}page=${p}`}
+                    className={s.pageLink}
+                    activeClassName={`${s.pageLink} ${s.pageLinkActive}`}
+                  />
+                </>
               )}
             </div>
           </div>

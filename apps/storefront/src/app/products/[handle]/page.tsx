@@ -8,6 +8,7 @@ import {
 } from "../../../lib/medusa/products"
 import { resolveTenant } from "../../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../../lib/store-config"
+import { getCartItemCount } from "../../../lib/cart/item-count"
 
 export const dynamic = "force-dynamic"
 
@@ -25,10 +26,11 @@ export default async function ProductPage({
     notFound()
   }
 
-  const [product, config, all] = await Promise.all([
+  const [product, config, all, cartCount] = await Promise.all([
     getTenantProductByHandle(tenant, handle),
     fetchStoreConfig(tenant),
     listTenantProducts(tenant),
+    getCartItemCount(tenant),
   ])
   if (!product) {
     notFound()
@@ -44,6 +46,7 @@ export default async function ProductPage({
   return (
     <Theme.PDP
       config={config}
+      cartCount={cartCount}
       product={mapProduct(product)}
       variants={product.variants ?? []}
       related={mapProducts(related)}

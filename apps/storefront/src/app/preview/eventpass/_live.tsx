@@ -135,7 +135,7 @@ export function EventpassEventCard({
 // ---------------------------------------------------------------------------
 // Nav (live routes) — fresh, config from props, no useTemplateConfig
 // ---------------------------------------------------------------------------
-export function EventpassNav({ config, hasDeals }: NavProps) {
+export function EventpassNav({ config, hasDeals, cartCount = 0 }: NavProps) {
   const storeName = config?.store_name ?? "EventPass"
   return (
     <nav style={{
@@ -186,6 +186,12 @@ export function EventpassNav({ config, hasDeals }: NavProps) {
             borderRadius: T.radiusSm, border: `1px solid ${T.border}`,
           }}>
             🛒 Cart
+            {cartCount > 0 && (
+              <span style={{
+                background: T.accent, color: "#fff", fontSize: 10, fontWeight: 700,
+                borderRadius: 99, padding: "1px 6px", minWidth: 16, textAlign: "center",
+              }}>{cartCount}</span>
+            )}
           </Link>
         </div>
       </div>
@@ -210,7 +216,7 @@ export function EventpassFooter({ config }: FooterProps & { hasDeals?: boolean }
       padding: "64px 40px 40px",
     }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div className="ep-footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 48, marginBottom: 56 }}>
+        <div className="ep-footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 56 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{
@@ -240,6 +246,15 @@ export function EventpassFooter({ config }: FooterProps & { hasDeals?: boolean }
             <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 20 }}>Checkout</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <Link href="/checkout" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Book Tickets</Link>
+            </div>
+          </div>
+          <div>
+            <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 20 }}>Legal</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Link href="/about" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>About Us</Link>
+              <Link href="/refund" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Refund Policy</Link>
+              <Link href="/privacy" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Privacy Policy</Link>
+              <Link href="/terms" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Terms</Link>
             </div>
           </div>
         </div>
@@ -432,7 +447,7 @@ function HowItWorksSection({ config }: { config: StoreConfig | null }) {
 // ---------------------------------------------------------------------------
 // Home slot
 // ---------------------------------------------------------------------------
-export function EventpassLivePage({ config, products, newArrivals, deals, categories }: HomeProps) {
+export function EventpassLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
   const hasDeals = deals.length > 0
   const accent = eventAccent(config)
   const trending = newArrivals.length > 0 ? newArrivals : products
@@ -443,7 +458,7 @@ export function EventpassLivePage({ config, products, newArrivals, deals, catego
       <style>{`
         @media (max-width: 768px) { .ep-3col { grid-template-columns: 1fr !important; gap: 24px !important; } }
       `}</style>
-      <EventpassNav config={config} hasDeals={hasDeals} categories={categories} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <HeroSection config={config} accent={accent} hasDeals={hasDeals} />
       <EventGridSection
         label="Hot right now" title="Trending Events"

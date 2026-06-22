@@ -11,7 +11,7 @@ import s from "./_styles.module.css"
  * prices (Medusa Promotions land in Phase 3); this slot renders whatever real
  * deals it is handed, with an honest empty state when there are none.
  */
-export function VoltDealsLivePage({ config, deals: dealViews }: DealsProps) {
+export function VoltDealsLivePage({ config, cartCount, deals: dealViews }: DealsProps) {
   const storeName = config?.store_name ?? "VOLT"
   const deals = dealViews.map(viewToVolt)
   const hasDeals = deals.length > 0
@@ -25,7 +25,7 @@ export function VoltDealsLivePage({ config, deals: dealViews }: DealsProps) {
   return (
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={hasDeals} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={[]} />
       <div className={s.main}>
         <div style={{ background: "#0f172a", padding: "40px 0" }}>
           <div className={s.container}>

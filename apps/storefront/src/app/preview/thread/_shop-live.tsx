@@ -3,14 +3,14 @@
 import Link from "next/link"
 import type { ShopProps } from "../../../lib/themes/types"
 import { ThreadNav, ThreadFooter, ThreadProductCard, threadColorVars } from "./_live"
+import { Pagination } from "../../../components/pagination"
 import s from "./_styles.module.css"
 
 /** Thread shop/listing slot — real products + real category filter (live routes). */
-export function ThreadShopLivePage({ config, products, categories, activeCategory }: ShopProps) {
-  const totalCount = products.length
+export function ThreadShopLivePage({ config, cartCount, products, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={categories} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageTitle}>
@@ -48,9 +48,18 @@ export function ThreadShopLivePage({ config, products, categories, activeCategor
               {products.length === 0 ? (
                 <p className={s.pageTitleSub}>No products are available yet.</p>
               ) : (
-                <div className={s.productGrid}>
-                  {products.map((p, i) => <ThreadProductCard key={p.id} product={p} index={i} />)}
-                </div>
+                <>
+                  <div className={s.productGrid}>
+                    {products.map((p, i) => <ThreadProductCard key={p.id} product={p} index={i} />)}
+                  </div>
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    buildHref={p => `/shop?${activeCategory ? `category=${activeCategory}&` : ""}page=${p}`}
+                    className={s.pageLink}
+                    activeClassName={`${s.pageLink} ${s.pageLinkActive}`}
+                  />
+                </>
               )}
             </div>
           </div>
