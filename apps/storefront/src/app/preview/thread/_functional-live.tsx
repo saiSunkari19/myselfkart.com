@@ -99,7 +99,7 @@ export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
                     </div>
                     {maxQty !== undefined && (
                       <div className={s.cartItemMeta} style={{ color: atMax ? "#c0392b" : undefined }}>
-                        {atMax ? "Max available quantity reached" : maxQty <= 5 ? `Only ${maxQty} available` : null}
+                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
                       </div>
                     )}
                   </div>

@@ -37,7 +37,7 @@ export function AurumPdpLivePage({ config, cartCount, product, variants, related
                   <span style={{ position: "absolute", top: 16, left: 16 }} className={`${s.productBadge} ${s.badgeLimited}`}>Sale</span>
                 )}
               </div>
-              {images.length > 1 && (
+              {images.length > 0 && (
                 <div className={s.productThumbs}>
                   {images.map((url, i) => (
                     <div

@@ -98,7 +98,7 @@ export function AurumCartLivePage({ config, cart, cartCount }: CartProps) {
                     </div>
                     {maxQty !== undefined && (
                       <div className={s.cartItemMeta} style={{ color: atMax ? "#b8463a" : undefined }}>
-                        {atMax ? "Max available quantity reached" : maxQty <= 5 ? `Only ${maxQty} available` : null}
+                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
                       </div>
                     )}
                   </div>
