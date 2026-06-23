@@ -68,16 +68,26 @@ export async function updateLineItemAction(formData: FormData): Promise<void> {
   const tenant = await requireActiveTenant()
   const cartId = await getCartId()
   const lineItemId = String(formData.get("line_item_id") ?? "")
-  const quantity = Number(formData.get("quantity") ?? 0)
+  const requestedQuantity = Number(formData.get("quantity") ?? 0)
   if (!cartId || !lineItemId) {
     return
   }
 
-  if (quantity <= 0) {
+  if (requestedQuantity <= 0) {
     await deleteLineItem(tenant, cartId, lineItemId)
-  } else {
-    await updateLineItem(tenant, cartId, lineItemId, quantity)
+    revalidatePath("/cart")
+    return
   }
+
+  // Clamp to remaining stock so an over-eager +/- click (or a stale quantity
+  // typed into the input) never reaches Medusa as an invalid update — Medusa
+  // would reject it outright, surfacing as an unhandled error to the shopper.
+  const cart = await getCart(tenant, cartId)
+  const item = cart?.items.find(i => i.id === lineItemId)
+  const max = item?.availableQuantity == null ? Infinity : item.quantity + item.availableQuantity
+  const quantity = Math.min(requestedQuantity, max)
+
+  await updateLineItem(tenant, cartId, lineItemId, quantity)
   revalidatePath("/cart")
 }
 

@@ -1358,6 +1358,7 @@
   transition: background 0.2s;
 }
 .qtyBtn:hover { background: var(--bg2); }
+.qtyBtn:disabled { color: var(--text3); cursor: not-allowed; background: #fff; }
 .qtyVal {
   width: 36px;
   text-align: center;

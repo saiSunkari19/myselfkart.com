@@ -4,9 +4,15 @@ import React from "react"
 import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
-import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
+import type { HomeProps } from "../../../lib/themes/types"
 import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
+import { AurumNav, AurumFooter } from "./_components"
 import s from "./_styles.module.css"
+
+// Re-exported so existing imports of `AurumNav`/`AurumFooter` from "./_live"
+// keep working — the actual components now live in ./_components, which can
+// also render them for the static info pages (About/Privacy/...).
+export { AurumNav, AurumFooter }
 
 /**
  * Aurum theme — live slots. The Aurum (fine-jewellery) preview design fed REAL
@@ -74,119 +80,6 @@ function GoldDivider() {
       <div className={s.goldDiamond} style={{ opacity: 0.4 }} />
       <div className={s.goldDiamond} />
     </div>
-  )
-}
-
-/* ---- Nav (live routes) ---- */
-export function AurumNav({ config, hasDeals, cartCount = 0 }: NavProps) {
-  const storeName = config?.store_name ?? "Aurum"
-  const tagline = config?.tagline ?? "Fine Jewellery"
-  const announcementEnabled = config?.announcement_enabled ?? true
-  const announcementText = config?.announcement_text ?? null
-  return (
-    <>
-      {announcementEnabled && (
-        <div className={s.announcementBar}>
-          {announcementText ? (
-            <>
-              <span className={s.announcementDot} />
-              {announcementText}
-              <span className={s.announcementDot} />
-            </>
-          ) : (
-            <>
-              <span className={s.announcementDot} />
-              Free insured shipping on all orders above ₹10,000
-              <span className={s.announcementDot} />
-              <strong>BIS Hallmarked · GIA Certified · Lifetime Exchange</strong>
-              <span className={s.announcementDot} />
-              30-Day hassle-free returns
-            </>
-          )}
-        </div>
-      )}
-      <nav className={s.nav}>
-        <div className={s.navInner}>
-          <div className={s.navLeft}>
-            <Link href="/shop" className={s.navLink}>Shop</Link>
-            {hasDeals && <Link href="/deals" className={s.navLink}>Offers</Link>}
-          </div>
-
-          <Link href="/" className={s.navLogo}>
-            {config?.logo_url ? (
-              <img src={config.logo_url} alt={storeName} style={{ height: 40, objectFit: "contain" }} />
-            ) : (
-              <>
-                <span className={s.navLogoText}>{storeName}</span>
-                <span className={s.navLogoSub}>{tagline}</span>
-              </>
-            )}
-          </Link>
-
-          <div className={s.navRight}>
-            <Link href="/account" className={s.navIconBtn}>Account</Link>
-            <Link href="/cart" className={s.navIconBtn}>
-              Bag{cartCount > 0 && <span className={s.cartCount}>{cartCount}</span>}
-            </Link>
-          </div>
-        </div>
-      </nav>
-    </>
-  )
-}
-
-/* ---- Footer (live routes) ---- */
-export function AurumFooter({ config, hasDeals }: FooterProps & { hasDeals?: boolean }) {
-  const storeName = config?.store_name ?? "Aurum"
-  const tagline = config?.tagline ?? "Fine Jewellery"
-  return (
-    <footer className={s.footer}>
-      <div className={s.footerTop}>
-        <div className={s.footerBrand}>
-          <Link href="/" className={s.footerLogoText}>{storeName}</Link>
-          <span className={s.footerLogoSub}>{tagline}</span>
-          <p className={s.footerTagline}>
-            Jewellery crafted to endure. Every piece an heirloom in waiting.
-          </p>
-          <div className={s.footerGoldLine} />
-          <div className={s.footerCerts}>
-            {["BIS 916", "GIA", "ISO 9001", "BIS 925"].map(c => (
-              <span key={c} className={s.footerCertItem}>{c}</span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className={s.footerColTitle}>Shop</div>
-          <ul className={s.footerLinks}>
-            <li><Link href="/shop" className={s.footerLink}>All Jewellery</Link></li>
-            {hasDeals && <li><Link href="/deals" className={s.footerLink}>Offers</Link></li>}
-            <li><Link href="/cart" className={s.footerLink}>Your Bag</Link></li>
-          </ul>
-        </div>
-        <div>
-          <div className={s.footerColTitle}>Support</div>
-          <ul className={s.footerLinks}>
-            {config?.instagram_url && <li><a href={config.instagram_url} className={s.footerLink}>Instagram</a></li>}
-            {config?.youtube_url && <li><a href={config.youtube_url} className={s.footerLink}>YouTube</a></li>}
-            {config?.contact_email && <li><a href={`mailto:${config.contact_email}`} className={s.footerLink}>{config.contact_email}</a></li>}
-          </ul>
-        </div>
-        <div>
-          <div className={s.footerColTitle}>Legal</div>
-          <ul className={s.footerLinks}>
-            <li><Link href="/about" className={s.footerLink}>About Us</Link></li>
-            <li><Link href="/returns" className={s.footerLink}>Returns</Link></li>
-            <li><Link href="/shipping" className={s.footerLink}>Shipping</Link></li>
-            <li><Link href="/privacy" className={s.footerLink}>Privacy Policy</Link></li>
-            <li><Link href="/terms" className={s.footerLink}>Terms</Link></li>
-          </ul>
-        </div>
-      </div>
-      <div className={s.footerBottom}>
-        <span className={s.footerCopy}>© 2026 {storeName} Fine Jewellery. All rights reserved.</span>
-        <span className={s.footerBadge}>Crafted with Precision</span>
-      </div>
-    </footer>
   )
 }
 

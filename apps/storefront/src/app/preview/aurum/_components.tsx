@@ -4,6 +4,7 @@ import { useTemplateConfig } from "../../../lib/template-config-context"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { type Product } from "./_data"
+import type { NavProps, FooterProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
 // ---------------------------------------------------------------------------
@@ -68,46 +69,60 @@ export const PageLoader = () => {
 // Navbar
 // ---------------------------------------------------------------------------
 
-export const NavBar = () => {
-  const { basePath, config } = useTemplateConfig()
+// Single canonical nav, used by every page (live shop/cart/PDP AND the static
+// About/Privacy/Terms/etc. info pages) so the header never drifts out of sync.
+// basePath is read from context internally (empty on live, "/preview/aurum" in
+// the template-picker demo).
+export function AurumNav({ config, hasDeals, cartCount = 0 }: NavProps) {
+  const { basePath } = useTemplateConfig()
   const storeName = config?.store_name ?? "Aurum"
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", h, { passive: true })
-    return () => window.removeEventListener("scroll", h)
-  }, [])
-
+  const tagline = config?.tagline ?? "Fine Jewellery"
+  const announcementEnabled = config?.announcement_enabled ?? true
+  const announcementText = config?.announcement_text ?? null
   return (
     <>
-      <div className={s.announcementBar}>
-        <span className={s.announcementDot} />
-        Free insured shipping on all orders above ₹10,000
-        <span className={s.announcementDot} />
-        <strong>BIS Hallmarked · GIA Certified · Lifetime Exchange</strong>
-        <span className={s.announcementDot} />
-        30-Day hassle-free returns
-      </div>
-      <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
+      {announcementEnabled && (
+        <div className={s.announcementBar}>
+          {announcementText ? (
+            <>
+              <span className={s.announcementDot} />
+              {announcementText}
+              <span className={s.announcementDot} />
+            </>
+          ) : (
+            <>
+              <span className={s.announcementDot} />
+              Free insured shipping on all orders above ₹10,000
+              <span className={s.announcementDot} />
+              <strong>BIS Hallmarked · GIA Certified · Lifetime Exchange</strong>
+              <span className={s.announcementDot} />
+              30-Day hassle-free returns
+            </>
+          )}
+        </div>
+      )}
+      <nav className={s.nav}>
         <div className={s.navInner}>
           <div className={s.navLeft}>
-            {[
-              { label: "Shop", href: `${basePath}/shop` },
-            ].map(item => (
-              <Link key={item.label} href={item.href} className={s.navLink}>{item.label}</Link>
-            ))}
+            <Link href={`${basePath}/shop`} className={s.navLink}>Shop</Link>
+            {hasDeals && <Link href={`${basePath}/deals`} className={s.navLink}>Offers</Link>}
           </div>
 
           <Link href={basePath || "/"} className={s.navLogo}>
-            <span className={s.navLogoText}>{storeName}</span>
-            <span className={s.navLogoSub}>Fine Jewellery</span>
+            {config?.logo_url ? (
+              <img src={config.logo_url} alt={storeName} style={{ height: 40, objectFit: "contain" }} />
+            ) : (
+              <>
+                <span className={s.navLogoText}>{storeName}</span>
+                <span className={s.navLogoSub}>{tagline}</span>
+              </>
+            )}
           </Link>
 
           <div className={s.navRight}>
-            <Link href={`${basePath}/about`} className={s.navIconBtn}>About</Link>
-            <Link href={`${basePath}/store-locator`} className={s.navIconBtn}>Stores</Link>
+            <Link href={`${basePath}/account`} className={s.navIconBtn}>Account</Link>
             <Link href={`${basePath}/cart`} className={s.navIconBtn}>
-              Bag <span className={s.cartCount}>2</span>
+              Bag{cartCount > 0 && <span className={s.cartCount}>{cartCount}</span>}
             </Link>
           </div>
         </div>
@@ -116,21 +131,28 @@ export const NavBar = () => {
   )
 }
 
+/* ---- Static info pages (About/Privacy/Terms/...) pull real data from context ---- */
+export const NavBar = () => {
+  const { config, hasDeals, cartCount } = useTemplateConfig()
+  return <AurumNav config={config} hasDeals={hasDeals} cartCount={cartCount} categories={[]} />
+}
+
 // ---------------------------------------------------------------------------
 // Footer
 // ---------------------------------------------------------------------------
 
-export const Footer = () => {
-  const { basePath, config } = useTemplateConfig()
+/* ---- Aurum footer slot (StoreTheme.Footer) — used directly by live routes ---- */
+export function AurumFooter({ config, hasDeals }: FooterProps & { hasDeals?: boolean }) {
+  const { basePath } = useTemplateConfig()
   const storeName = config?.store_name ?? "Aurum"
   return (
     <footer className={s.footer}>
       <div className={s.footerTop}>
         <div className={s.footerBrand}>
           <Link href={basePath || "/"} className={s.footerLogoText}>{storeName}</Link>
-          <span className={s.footerLogoSub}>Fine Jewellery</span>
+          <span className={s.footerLogoSub}>{config?.tagline ?? "Fine Jewellery"}</span>
           <p className={s.footerTagline}>
-            Since 1987, we have crafted jewellery that endures. Every piece is an heirloom in waiting.
+            Jewellery crafted to endure. Every piece an heirloom in waiting.
           </p>
           <div className={s.footerGoldLine} />
           <div className={s.footerCerts}>
@@ -148,6 +170,7 @@ export const Footer = () => {
               { label: "Royal Bridal", href: `${basePath}/bridal` },
               { label: "Gemstone Garden", href: `${basePath}/collections` },
               { label: "New Arrivals", href: `${basePath}/new-arrivals` },
+              ...(hasDeals ? [{ label: "Offers", href: `${basePath}/deals` }] : []),
             ],
           },
           {
@@ -184,11 +207,17 @@ export const Footer = () => {
         ))}
       </div>
       <div className={s.footerBottom}>
-        <span className={s.footerCopy}>© 2026 {storeName} Fine Jewellery Pvt. Ltd. All rights reserved.</span>
+        <span className={s.footerCopy}>© 2026 {storeName} Fine Jewellery. All rights reserved.</span>
         <span className={s.footerBadge}>Crafted with Precision</span>
       </div>
     </footer>
   )
+}
+
+/* ---- Static info pages (About/Privacy/Terms/...) pull real data from context ---- */
+export const Footer = () => {
+  const { config, hasDeals } = useTemplateConfig()
+  return <AurumFooter config={config} hasDeals={hasDeals} />
 }
 
 // ---------------------------------------------------------------------------

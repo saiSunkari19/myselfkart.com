@@ -3,8 +3,8 @@
 import { useTemplateConfig } from "../../../lib/template-config-context"
 import Link from "next/link"
 import React from "react"
-import { useCart } from "./_cart"
 import { type Event } from "./_data"
+import type { NavProps, FooterProps } from "../../../lib/themes/types"
 
 // ---------------------------------------------------------------------------
 // Theme tokens
@@ -37,11 +37,14 @@ export const T = {
 // Navbar
 // ---------------------------------------------------------------------------
 
-export const NavBar = () => {
-  const { basePath, config } = useTemplateConfig()
+// Single canonical nav, used by every page (live events/cart/PDP AND the
+// static About/Privacy/Terms/etc. info pages) so the header never drifts out
+// of sync. basePath is read from context internally (empty on live,
+// "/preview/eventpass" in the template-picker demo).
+export function EventpassNav({ config, hasDeals, cartCount = 0 }: NavProps) {
+  const { basePath } = useTemplateConfig()
   const storeName = config?.store_name ?? "EventPass"
   const [menuOpen, setMenuOpen] = React.useState(false)
-  const { totalItems } = useCart()
   return (
     <nav style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
@@ -53,22 +56,28 @@ export const NavBar = () => {
         padding: "0 clamp(16px, 4vw, 40px)", height: 64,
       }}>
         <Link href={basePath || "/"} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 800, color: "#fff",
-          }}>E</div>
-          <span style={{ color: T.text, fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
-            {storeName}
-          </span>
+          {config?.logo_url ? (
+            <img src={config.logo_url} alt={storeName} style={{ height: 28, objectFit: "contain" }} />
+          ) : (
+            <>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 15, fontWeight: 800, color: "#fff",
+              }}>{storeName.charAt(0).toUpperCase()}</div>
+              <span style={{ color: T.text, fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
+                {storeName}
+              </span>
+            </>
+          )}
         </Link>
 
         {/* Desktop links */}
         <div className="ep-nav-links" style={{ display: "flex", gap: 28 }}>
           {[
-            { label: "Discover", href: `${basePath}/events` },
-            { label: "Categories", href: `${basePath}/categories` },
+            { label: "Discover", href: `${basePath}/shop` },
+            ...(hasDeals ? [{ label: "Offers", href: `${basePath}/deals` }] : []),
             { label: "About", href: `${basePath}/about` },
           ].map(item => (
             <Link key={item.label} href={item.href} style={{
@@ -79,6 +88,12 @@ export const NavBar = () => {
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <Link href={`${basePath}/account`} style={{
+            color: T.textMuted, textDecoration: "none",
+            fontSize: 14, fontWeight: 500, padding: "8px 14px",
+          }}>
+            Account
+          </Link>
           <Link href={`${basePath}/cart`} className="ep-nav-cart" style={{
             display: "flex", alignItems: "center", gap: 6,
             color: T.textMuted, textDecoration: "none",
@@ -87,7 +102,7 @@ export const NavBar = () => {
             position: "relative",
           }}>
             🛒 Cart
-            {totalItems > 0 && (
+            {cartCount > 0 && (
               <span style={{
                 position: "absolute", top: -7, right: -7,
                 background: T.accent, color: "#fff",
@@ -96,7 +111,7 @@ export const NavBar = () => {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 padding: "0 4px",
               }}>
-                {totalItems > 99 ? "99+" : totalItems}
+                {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
           </Link>
@@ -122,8 +137,8 @@ export const NavBar = () => {
           display: "flex", flexDirection: "column", gap: 16,
         }}>
           {[
-            { label: "Discover", href: `${basePath}/events` },
-            { label: "Categories", href: `${basePath}/categories` },
+            { label: "Discover", href: `${basePath}/shop` },
+            ...(hasDeals ? [{ label: "Offers", href: `${basePath}/deals` }] : []),
             { label: "About", href: `${basePath}/about` },
             { label: "🛒 Cart", href: `${basePath}/cart` },
           ].map(item => (
@@ -148,20 +163,28 @@ export const NavBar = () => {
   )
 }
 
+/* ---- Static info pages (About/Privacy/Terms/...) pull real data from context ---- */
+export const NavBar = () => {
+  const { config, hasDeals, cartCount } = useTemplateConfig()
+  return <EventpassNav config={config} hasDeals={hasDeals} cartCount={cartCount} categories={[]} />
+}
+
 // ---------------------------------------------------------------------------
 // Footer
 // ---------------------------------------------------------------------------
 
-export const Footer = () => {
-  const { basePath, config } = useTemplateConfig()
+/* ---- Eventpass footer slot (StoreTheme.Footer) — used directly by live routes ---- */
+export function EventpassFooter({ config, hasDeals }: FooterProps & { hasDeals?: boolean }) {
+  const { basePath } = useTemplateConfig()
   const storeName = config?.store_name ?? "EventPass"
+  const tagline = config?.tagline ?? "Premium event discovery and ticket booking. No account needed. Just great experiences."
   return (
   <footer style={{
     background: T.bgSubtle, borderTop: `1px solid ${T.border}`,
     padding: "64px 40px 40px",
   }}>
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 56 }}>
+      <div className="ep-footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 56 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <div style={{
@@ -169,20 +192,24 @@ export const Footer = () => {
               background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 15, fontWeight: 800, color: "#fff",
-            }}>E</div>
+            }}>{storeName.charAt(0).toUpperCase()}</div>
             <span style={{ color: T.text, fontWeight: 800, fontSize: 17 }}>{storeName}</span>
           </div>
-          <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, maxWidth: 260, margin: 0 }}>
-            Premium event discovery and ticket booking. No account needed. Just great experiences.
+          <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, maxWidth: 280, margin: 0 }}>
+            {tagline}
           </p>
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            {config?.instagram_url && <a href={config.instagram_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>Instagram</a>}
+            {config?.youtube_url && <a href={config.youtube_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>YouTube</a>}
+          </div>
         </div>
         {[
           {
             title: "Discover",
             links: [
-              { label: "All Events", href: `${basePath}/events` },
-              { label: "Categories", href: `${basePath}/categories` },
-              { label: "Cities", href: `${basePath}/events` },
+              { label: "All Events", href: `${basePath}/shop` },
+              ...(hasDeals ? [{ label: "Offers", href: `${basePath}/deals` }] : []),
+              { label: "Your Cart", href: `${basePath}/cart` },
             ],
           },
           {
@@ -220,16 +247,21 @@ export const Footer = () => {
         <span style={{ color: T.textLight, fontSize: 13 }}>
           © 2026 {storeName}. All rights reserved.
         </span>
-        <span style={{
-          color: T.accent, fontSize: 11, fontWeight: 600,
-          background: T.accentLight, padding: "4px 12px", borderRadius: 100,
-        }}>
-          Template Preview
-        </span>
       </div>
     </div>
+    <style>{`
+      @media (max-width: 768px) {
+        .ep-footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+      }
+    `}</style>
   </footer>
   )
+}
+
+/* ---- Static info pages (About/Privacy/Terms/...) pull real data from context ---- */
+export const Footer = () => {
+  const { config, hasDeals } = useTemplateConfig()
+  return <EventpassFooter config={config} hasDeals={hasDeals} />
 }
 
 // ---------------------------------------------------------------------------

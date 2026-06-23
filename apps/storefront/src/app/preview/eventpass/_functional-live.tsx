@@ -78,7 +78,10 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
 
         <div className="ep-cart-grid" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 32, alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {cart.items.map(item => (
+            {cart.items.map(item => {
+              const maxQty = item.availableQuantity == null ? undefined : item.quantity + item.availableQuantity
+              const atMax = maxQty !== undefined && item.quantity >= maxQty
+              return (
               <div key={item.id} style={{ ...cardStyle, display: "flex", gap: 16, alignItems: "center", padding: 16 }}>
                 <div style={{ width: 72, height: 72, borderRadius: T.radiusSm, overflow: "hidden", background: T.bgSubtle, flexShrink: 0 }}>
                   {item.thumbnail && <img src={item.thumbnail} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
@@ -99,6 +102,7 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                         type="number"
                         name="quantity"
                         min={1}
+                        max={maxQty}
                         defaultValue={item.quantity}
                         onBlur={e => e.currentTarget.form?.requestSubmit()}
                         onKeyDown={e => e.key === "Enter" && e.currentTarget.form?.requestSubmit()}
@@ -111,9 +115,23 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                     <form action={updateLineItemAction} style={{ display: "inline" }}>
                       <input type="hidden" name="line_item_id" value={item.id} />
                       <input type="hidden" name="quantity" value={item.quantity + 1} />
-                      <button type="submit" aria-label="Increase quantity" style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: "#fff", color: T.text, cursor: "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1 }}>+</button>
+                      <button
+                        type="submit"
+                        aria-label="Increase quantity"
+                        disabled={atMax}
+                        style={{
+                          width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`,
+                          background: "#fff", color: atMax ? T.textLight : T.text,
+                          cursor: atMax ? "not-allowed" : "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1,
+                        }}
+                      >+</button>
                     </form>
                   </div>
+                  {maxQty !== undefined && (
+                    <div style={{ fontSize: 12, marginTop: 6, color: atMax ? T.danger : T.textLight }}>
+                      {atMax ? "Max available quantity reached" : maxQty <= 5 ? `Only ${maxQty} available` : null}
+                    </div>
+                  )}
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ color: T.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{formatMoney(item.total, cur)}</div>
@@ -123,7 +141,8 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                   </form>
                 </div>
               </div>
-            ))}
+              )
+            })}
             <Link href="/shop" style={{ color: accent, textDecoration: "none", fontSize: 14, fontWeight: 600, marginTop: 4 }}>← Continue browsing</Link>
           </div>
 

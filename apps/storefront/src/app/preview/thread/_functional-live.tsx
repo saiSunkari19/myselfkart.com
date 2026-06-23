@@ -59,7 +59,10 @@ export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
 
           <div className={s.cartLayout}>
             <div>
-              {cart.items.map(item => (
+              {cart.items.map(item => {
+                const maxQty = item.availableQuantity == null ? undefined : item.quantity + item.availableQuantity
+                const atMax = maxQty !== undefined && item.quantity >= maxQty
+                return (
                 <div key={item.id} className={s.cartItem}>
                   {item.thumbnail ? (
                     <div className={s.cartItemImg}><img src={item.thumbnail} alt={item.title} /></div>
@@ -80,6 +83,7 @@ export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
                           type="number"
                           name="quantity"
                           min={1}
+                          max={maxQty}
                           defaultValue={item.quantity}
                           className={s.qtyInput}
                           onBlur={e => e.currentTarget.form?.requestSubmit()}
@@ -89,9 +93,14 @@ export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
                         <input type="hidden" name="line_item_id" value={item.id} />
                         <input type="hidden" name="quantity" value={item.quantity + 1} />
-                        <button className={s.qtyBtn} type="submit" aria-label="Increase quantity">+</button>
+                        <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
+                    {maxQty !== undefined && (
+                      <div className={s.cartItemMeta} style={{ color: atMax ? "#c0392b" : undefined }}>
+                        {atMax ? "Max available quantity reached" : maxQty <= 5 ? `Only ${maxQty} available` : null}
+                      </div>
+                    )}
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 8 }}>
@@ -103,7 +112,8 @@ export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
                     </form>
                   </div>
                 </div>
-              ))}
+                )
+              })}
 
               <div style={{ marginTop: 28 }}>
                 <Link href="/shop" className={`${s.btn} ${s.btnOutline}`}>← Continue Shopping</Link>
