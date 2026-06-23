@@ -9,6 +9,7 @@ const {
   getNewArrivals,
   getCategories,
   getProductCategories,
+  getProductCollections,
   productsInCategoryOrTag,
   isOnSale,
   discountPercent,
@@ -101,4 +102,28 @@ test("productsInCategoryOrTag matches a real category id OR a tag id", () => {
   assert.deepEqual(productsInCategoryOrTag(products, "t_men").map(p => p.id), ["p1", "p4"])
   // unknown id → empty
   assert.deepEqual(productsInCategoryOrTag(withCategories, "nope"), [])
+})
+
+// Seller-curated Medusa collections (surfaced alongside categories in the nav).
+const withCollections = [
+  { id: "a", handle: "a", title: "A", created_at: null, tags: [], categories: [], collection: { id: "pcol_new", title: "New Arrival", handle: "new-arrival" }, variants: [variant(20)] },
+  { id: "b", handle: "b", title: "B", created_at: null, tags: [], categories: [], collection: { id: "pcol_new", title: "New Arrival", handle: "new-arrival" }, variants: [variant(25)] },
+  { id: "c", handle: "c", title: "C", created_at: null, tags: [], categories: [], collection: { id: "pcol_best", title: "Best seller", handle: "best-seller" }, variants: [variant(40)] },
+  { id: "d", handle: "d", title: "D", created_at: null, tags: [], categories: [], collection: null, variants: [variant(15)] },
+]
+
+test("getProductCollections groups collections with counts, most-populated first", () => {
+  const cols = getProductCollections(withCollections)
+  assert.equal(cols.length, 2)
+  assert.equal(cols[0].id, "pcol_new")
+  assert.equal(cols[0].name, "New Arrival")
+  assert.equal(cols[0].count, 2)
+  assert.equal(cols.find(c => c.id === "pcol_best").count, 1)
+  // products in no collection don't fabricate a grouping
+  assert.deepEqual(getProductCollections([withCollections[3]]), [])
+})
+
+test("productsInCategoryOrTag matches a collection id too", () => {
+  assert.deepEqual(productsInCategoryOrTag(withCollections, "pcol_new").map(p => p.id), ["a", "b"])
+  assert.deepEqual(productsInCategoryOrTag(withCollections, "pcol_best").map(p => p.id), ["c"])
 })

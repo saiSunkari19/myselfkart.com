@@ -2,8 +2,10 @@ import type { StoreProduct } from "../medusa/products"
 import {
   getCategories,
   getProductCategories,
+  getProductCollections,
   productsInCategoryOrTag,
 } from "../merchandising"
+import type { DerivedCategory } from "../merchandising"
 
 /**
  * Theme-agnostic category view model.
@@ -44,17 +46,33 @@ export function deriveCategoriesFromTags(products: StoreProduct[]): CategoryView
   }))
 }
 
-/** Resolve the browse nav: real Medusa categories if any, else tag-derived. */
-export function resolveCategories(products: StoreProduct[]): CategoryView[] {
-  const real = getProductCategories(products)
-  const source = real.length > 0 ? real : getCategories(products)
-  return source.map(c => ({
+/** Map a derived grouping to its theme-agnostic view (with live filter href). */
+function toCategoryView(products: StoreProduct[], c: DerivedCategory): CategoryView {
+  return {
     id: c.id,
     name: c.name,
     count: c.count,
     href: `/shop?category=${c.id}`,
     image: representativeImage(products, c.id),
-  }))
+  }
+}
+
+/**
+ * Resolve the browse nav. Seller-curated **collections** are surfaced first
+ * (intentional groupings like "New Arrival"), followed by the product taxonomy:
+ * real Medusa categories if any, else tag-derived. All three flow through the
+ * same `CategoryView` shape, so themes render them identically and `?category=`
+ * filters by whichever id was clicked (see `filterByCategory`).
+ */
+export function resolveCategories(products: StoreProduct[]): CategoryView[] {
+  const collections = getProductCollections(products)
+  const real = getProductCategories(products)
+  const taxonomy = real.length > 0 ? real : getCategories(products)
+
+  const seen = new Set<string>()
+  return [...collections, ...taxonomy]
+    .filter(c => (seen.has(c.id) ? false : (seen.add(c.id), true)))
+    .map(c => toCategoryView(products, c))
 }
 
 /** Filter products by a browse id (real category id or tag id). */

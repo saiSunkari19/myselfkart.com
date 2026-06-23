@@ -113,12 +113,21 @@ Legend: `[ ]` todo · `[x]` done · `[~]` partial/interim
   `/shop?category=` filters by real category id **or** tag id (`filterByCategory`).
   Verified against live data: cloth tenant has 0 categories → falls back to tags;
   wiring activates automatically once a seller assigns categories.
-- [x] Product fetch carries `created_at`, `tags`, `categories`, `original_amount` — `lib/medusa/products.ts`
+- [x] Product fetch carries `created_at`, `tags`, `categories`, `collection`, `original_amount` — `lib/medusa/products.ts`
+- [x] **Real collections** surfaced in the browse nav. Product fetch carries the
+  Medusa `collection` relation; `getProductCollections()` derives seller-curated
+  collections ("New Arrival", "Best seller") and `resolveCategories()` prepends them
+  to the category/tag list so they show as filter chips on **Home + Shop** through the
+  existing `categories` prop — **no new theme slot**. `/shop?category=<collection_id>`
+  filters by collection membership (`productsInCategoryOrTag` matches category **or**
+  collection **or** tag id). Verified against live data (tenant `1ff9f60…`: New Arrival
+  = 5 products, Best seller = 2).
 - [n/a] ~~`getPromotions(tenant)` → time-limited deals~~ — **Medusa promotions are
   cart-level**, not a browseable store endpoint. Browseable "deals" = sale prices
   (price lists), already detected. A merchant "Sale" can be modelled as a category.
-- [ ] (optional / deferred) `app/collections/[handle]` route + `Theme.Collection`
-  slot — `sdk.store.collection.list` exists; add when a tenant uses collections
+- [ ] (optional / deferred) dedicated `app/collections/[handle]` landing route +
+  `Theme.Collection` slot — collections are now navigable via `/shop?category=`; a
+  bespoke per-collection landing page would add a slot every theme must implement.
   (adds a slot every theme must implement).
 
 ### Phase 4 — Port remaining live themes
@@ -167,6 +176,15 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
 - [x] **Duplicate-import visibility** — `prepare` now reports `existing_products` /
   `new_products` (handles already present → updated, not duplicated); the admin
   Product Upload page shows this + a "stock was reset" note.
+- [x] **Inventory items labelled by product, not "Default"** — Medusa's core import
+  names every inventory item after the *variant* title, so single-variant products
+  showed "Default" in the admin Inventory list and multi-variant ones showed a bare
+  option value ("M", "200 ml"). The post-import heal now backfills product-aware titles
+  (`ensureInventoryItemTitles` in `seed-tenant-inventory-resources.ts`, called from the
+  `complete` route): single/unnamed variant → `<Product Title>`, real variant title →
+  `<Product Title> - <Variant Title>`. Idempotent + tenant-scoped. Applied to existing
+  live data (192 items relabelled; 0 "Default" remain). Stock itself was always created
+  (levels exist) — this was purely a labelling bug.
 - [ ] (optional) Hard-block re-import behind an "allow updates" toggle
 - [ ] Document promotions reality (cart-level) + categories setup for sellers
 

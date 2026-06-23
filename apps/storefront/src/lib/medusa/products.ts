@@ -27,6 +27,12 @@ export type StoreCategory = {
   handle: string | null
 }
 
+export type StoreCollection = {
+  id: string
+  title: string
+  handle: string | null
+}
+
 export type StoreProduct = {
   id: string
   title: string
@@ -38,6 +44,10 @@ export type StoreProduct = {
   // Real Medusa product categories assigned to this product. Empty when the
   // seller hasn't set up categories — the browse nav then falls back to tags.
   categories: StoreCategory[]
+  // The Medusa collection this product belongs to (seller-curated grouping such
+  // as "New Arrival" / "Best seller"). null when the product is in no collection;
+  // surfaced alongside categories in the browse nav.
+  collection: StoreCollection | null
   variants: StoreVariant[]
 }
 
@@ -45,7 +55,7 @@ export type StoreProduct = {
 // price for that region's currency. The price is in major units (e.g. 49.99) —
 // render it directly, never divide by 100.
 const PRODUCT_FIELDS =
-  "id,title,handle,thumbnail,description,created_at,*tags,categories.id,categories.name,categories.handle,*variants,variants.calculated_price"
+  "id,title,handle,thumbnail,description,created_at,*tags,categories.id,categories.name,categories.handle,collection.id,collection.title,collection.handle,*variants,variants.calculated_price"
 
 /**
  * Lists products for the resolved tenant. The per-tenant SDK attaches the
