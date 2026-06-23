@@ -4,7 +4,13 @@ import Link from "next/link"
 import React from "react"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
-import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
+import type { HomeProps } from "../../../lib/themes/types"
+import { EventpassNav, EventpassFooter } from "./_components"
+
+// Re-exported so existing imports of `EventpassNav`/`EventpassFooter` from
+// "./_live" keep working — the actual components now live in ./_components,
+// which can also render them for the static info pages (About/Privacy/...).
+export { EventpassNav, EventpassFooter }
 
 /**
  * Eventpass theme — live slots. The Eventpass (events vertical) preview design
@@ -129,135 +135,6 @@ export function EventpassEventCard({
         </div>
       </div>
     </Link>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Nav (live routes) — fresh, config from props, no useTemplateConfig
-// ---------------------------------------------------------------------------
-export function EventpassNav({ config, hasDeals }: NavProps) {
-  const storeName = config?.store_name ?? "EventPass"
-  return (
-    <nav style={{
-      position: "sticky", top: 0, left: 0, right: 0, zIndex: 100,
-      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)",
-      borderBottom: `1px solid ${T.border}`,
-    }}>
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 clamp(16px, 4vw, 40px)", height: 64,
-      }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
-          {config?.logo_url ? (
-            <img src={config.logo_url} alt={storeName} style={{ height: 28, objectFit: "contain" }} />
-          ) : (
-            <>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 15, fontWeight: 800, color: "#fff",
-              }}>{storeName.charAt(0).toUpperCase()}</div>
-              <span style={{ color: T.text, fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
-                {storeName}
-              </span>
-            </>
-          )}
-        </Link>
-
-        <div className="ep-nav-links" style={{ display: "flex", gap: 28 }}>
-          <Link href="/shop" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Discover</Link>
-          {hasDeals && (
-            <Link href="/deals" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Offers</Link>
-          )}
-        </div>
-
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/account" style={{
-            color: T.textMuted, textDecoration: "none",
-            fontSize: 14, fontWeight: 500, padding: "8px 14px",
-          }}>
-            Account
-          </Link>
-          <Link href="/cart" style={{
-            display: "flex", alignItems: "center", gap: 6,
-            color: T.textMuted, textDecoration: "none",
-            fontSize: 14, fontWeight: 500, padding: "8px 14px",
-            borderRadius: T.radiusSm, border: `1px solid ${T.border}`,
-          }}>
-            🛒 Cart
-          </Link>
-        </div>
-      </div>
-      <style>{`
-        @media (max-width: 768px) {
-          .ep-nav-links { display: none !important; }
-        }
-      `}</style>
-    </nav>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Footer (live routes) — satisfies Footer(p: FooterProps)
-// ---------------------------------------------------------------------------
-export function EventpassFooter({ config }: FooterProps & { hasDeals?: boolean }) {
-  const storeName = config?.store_name ?? "EventPass"
-  const tagline = config?.tagline ?? "Premium event discovery and ticket booking. No account needed. Just great experiences."
-  return (
-    <footer style={{
-      background: T.bgSubtle, borderTop: `1px solid ${T.border}`,
-      padding: "64px 40px 40px",
-    }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div className="ep-footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 48, marginBottom: 56 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 15, fontWeight: 800, color: "#fff",
-              }}>{storeName.charAt(0).toUpperCase()}</div>
-              <span style={{ color: T.text, fontWeight: 800, fontSize: 17 }}>{storeName}</span>
-            </div>
-            <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, maxWidth: 280, margin: 0 }}>
-              {tagline}
-            </p>
-            <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-              {config?.instagram_url && <a href={config.instagram_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>Instagram</a>}
-              {config?.youtube_url && <a href={config.youtube_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>YouTube</a>}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 20 }}>Discover</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Link href="/shop" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>All Events</Link>
-              <Link href="/cart" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Your Cart</Link>
-            </div>
-          </div>
-          <div>
-            <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 20 }}>Checkout</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Link href="/checkout" style={{ color: T.textMuted, textDecoration: "none", fontSize: 14 }}>Book Tickets</Link>
-            </div>
-          </div>
-        </div>
-        <div style={{
-          borderTop: `1px solid ${T.border}`, paddingTop: 24,
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}>
-          <span style={{ color: T.textLight, fontSize: 13 }}>
-            © 2026 {storeName}. All rights reserved.
-          </span>
-        </div>
-      </div>
-      <style>{`
-        @media (max-width: 768px) {
-          .ep-footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
-        }
-      `}</style>
-    </footer>
   )
 }
 
@@ -394,8 +271,15 @@ function CategoriesSection({ categories, accent }: { categories: HomeProps["cate
   )
 }
 
-/** How it works — static brand chrome. */
-function HowItWorksSection() {
+const DEFAULT_HOW_IT_WORKS = [
+  { step: "01", title: "Discover", desc: "Browse curated events across categories and dates.", icon: "🔍" },
+  { step: "02", title: "Choose tickets", desc: "Pick your ticket type and set quantity. Done.", icon: "🎟️" },
+  { step: "03", title: "Book instantly", desc: "Guest checkout. E-tickets delivered in seconds.", icon: "⚡" },
+]
+
+/** How it works — falls back to brand-chrome defaults when not customized. */
+function HowItWorksSection({ config }: { config: StoreConfig | null }) {
+  const steps = config?.sections?.how_it_works?.items ?? DEFAULT_HOW_IT_WORKS
   return (
     <section style={{ padding: "72px 40px", background: T.bg }}>
       <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
@@ -404,11 +288,7 @@ function HowItWorksSection() {
         </div>
         <h2 style={{ color: T.text, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, margin: "0 0 40px", letterSpacing: "-0.5px" }}>How it works</h2>
         <div className="ep-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
-          {[
-            { step: "01", title: "Discover", desc: "Browse curated events across categories and dates.", icon: "🔍" },
-            { step: "02", title: "Choose tickets", desc: "Pick your ticket type and set quantity. Done.", icon: "🎟️" },
-            { step: "03", title: "Book instantly", desc: "Guest checkout. E-tickets delivered in seconds.", icon: "⚡" },
-          ].map(item => (
+          {steps.map((item: typeof DEFAULT_HOW_IT_WORKS[number]) => (
             <div key={item.step}>
               <div style={{
                 width: 64, height: 64, borderRadius: 18,
@@ -429,7 +309,7 @@ function HowItWorksSection() {
 // ---------------------------------------------------------------------------
 // Home slot
 // ---------------------------------------------------------------------------
-export function EventpassLivePage({ config, products, newArrivals, deals, categories }: HomeProps) {
+export function EventpassLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
   const hasDeals = deals.length > 0
   const accent = eventAccent(config)
   const trending = newArrivals.length > 0 ? newArrivals : products
@@ -440,7 +320,7 @@ export function EventpassLivePage({ config, products, newArrivals, deals, catego
       <style>{`
         @media (max-width: 768px) { .ep-3col { grid-template-columns: 1fr !important; gap: 24px !important; } }
       `}</style>
-      <EventpassNav config={config} hasDeals={hasDeals} categories={categories} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <HeroSection config={config} accent={accent} hasDeals={hasDeals} />
       <EventGridSection
         label="Hot right now" title="Trending Events"
@@ -452,7 +332,7 @@ export function EventpassLivePage({ config, products, newArrivals, deals, catego
         label="Editor's picks" title="Featured Events"
         products={featured.slice(0, 6)} accent={accent} cta={{ href: "/shop" }}
       />
-      <HowItWorksSection />
+      <HowItWorksSection config={config} />
       <EventGridSection
         label="Limited time" title="Special Offers"
         subtitle="Tickets at honest prices — book before they're gone."

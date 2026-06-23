@@ -13,6 +13,8 @@ import {
 import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { ThreadNav, ThreadFooter, threadColorVars } from "./_live"
+import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 import s from "./_styles.module.css"
 
 /**
@@ -22,11 +24,11 @@ import s from "./_styles.module.css"
  */
 
 /* ---- Cart ---- */
-export function ThreadCartLivePage({ config, cart }: CartProps) {
+export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.page} style={threadColorVars(config)}>
-        <ThreadNav config={config} hasDeals={false} categories={[]} />
+        <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.pageShell}>
           <div className={s.container}>
             <div className={s.emptyState}>
@@ -47,7 +49,7 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
 
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageTitle}>
@@ -58,7 +60,10 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
 
           <div className={s.cartLayout}>
             <div>
-              {cart.items.map(item => (
+              {cart.items.map(item => {
+                const maxQty = item.availableQuantity == null ? undefined : item.quantity + item.availableQuantity
+                const atMax = maxQty !== undefined && item.quantity >= maxQty
+                return (
                 <div key={item.id} className={s.cartItem}>
                   {item.thumbnail ? (
                     <div className={s.cartItemImg}><img src={item.thumbnail} alt={item.title} /></div>
@@ -73,13 +78,30 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
                         <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
                         <button className={s.qtyBtn} type="submit" aria-label="Decrease quantity">−</button>
                       </form>
-                      <span className={s.qtyVal}>{item.quantity}</span>
+                      <form action={updateLineItemAction} style={{ display: "inline" }}>
+                        <input type="hidden" name="line_item_id" value={item.id} />
+                        <input
+                          type="number"
+                          name="quantity"
+                          min={1}
+                          max={maxQty}
+                          defaultValue={item.quantity}
+                          className={s.qtyInput}
+                          onBlur={e => e.currentTarget.form?.requestSubmit()}
+                          onKeyDown={e => e.key === "Enter" && e.currentTarget.form?.requestSubmit()}
+                        />
+                      </form>
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
                         <input type="hidden" name="line_item_id" value={item.id} />
                         <input type="hidden" name="quantity" value={item.quantity + 1} />
-                        <button className={s.qtyBtn} type="submit" aria-label="Increase quantity">+</button>
+                        <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
+                    {maxQty !== undefined && (
+                      <div className={s.cartItemMeta} style={{ color: atMax ? "#c0392b" : undefined }}>
+                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
+                      </div>
+                    )}
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 8 }}>
@@ -91,7 +113,8 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
                     </form>
                   </div>
                 </div>
-              ))}
+                )
+              })}
 
               <div style={{ marginTop: 28 }}>
                 <Link href="/shop" className={`${s.btn} ${s.btnOutline}`}>← Continue Shopping</Link>
@@ -126,13 +149,13 @@ export function ThreadCartLivePage({ config, cart }: CartProps) {
 }
 
 /* ---- Checkout ---- */
-export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
+export function ThreadCheckoutLivePage({ config, cart, cartCount, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   const storeName = config?.store_name ?? "Thread"
 
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.page} style={threadColorVars(config)}>
-        <ThreadNav config={config} hasDeals={false} categories={[]} />
+        <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.pageShell}>
           <div className={s.container}>
             <div className={s.emptyState}>
@@ -167,7 +190,7 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
 
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageTitle}>
@@ -194,7 +217,7 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
               </div>
 
               {/* Step 1: Shipping address */}
-              <div className={s.formSection}>
+              <div className={s.formSection} id="thread-address-section">
                 <div className={s.formSectionTitle}>{hasAddress ? "✓ " : "1. "}Shipping Information</div>
                 {savedAddresses && savedAddresses.length > 0 ? (
                   <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? undefined} />
@@ -216,13 +239,16 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
                     </select>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <button type="submit" className={`${s.btn} ${s.btnFull}`}>Save &amp; Continue</button>
+                    <SubmitButton className={`${s.btn} ${s.btnFull}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                    <div style={{ textAlign: "center", marginTop: 8 }}>
+                      <SaveAndAdvance nextSectionId="thread-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                    </div>
                   </div>
                 </form>
               </div>
 
               {/* Step 2: Delivery method */}
-              <div className={s.formSection}>
+              <div className={s.formSection} id="thread-delivery-section">
                 <div className={s.formSectionTitle}>{hasShipping ? "✓ " : "2. "}Delivery Method</div>
                 {!hasAddress ? (
                   <p className={s.cartItemMeta}>Enter your shipping details to see delivery options.</p>
@@ -236,19 +262,20 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
                         <span>{formatMoney(option.amount ?? 0, cur)}</span>
                       </label>
                     ))}
-                    <button type="submit" className={`${s.btn} ${s.btnOutline}`} style={{ marginTop: 12 }}>Use this method</button>
+                    <SubmitButton className={`${s.btn} ${s.btnOutline}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                    <SaveAndAdvance nextSectionId="thread-payment-section" label="Delivery method saved" />
                   </form>
                 )}
               </div>
 
               {/* Step 3: Payment */}
-              <div className={s.formSection}>
+              <div className={s.formSection} id="thread-payment-section">
                 <div className={s.formSectionTitle}>3. Payment</div>
                 {hasAddress && hasShipping ? (
                   hasRazorpay ? (
                     <RazorpayCheckout storeName={storeName} accentColor={config?.accent_color ?? undefined} email={cart.email} />
                   ) : (
-                    <form action={placeOrderAction}><button type="submit" className={`${s.btn} ${s.btnFull}`}>Place Order</button></form>
+                    <form action={placeOrderAction}><SubmitButton className={`${s.btn} ${s.btnFull}`} pendingLabel="Placing order…">Place Order</SubmitButton></form>
                   )
                 ) : (
                   <p className={s.cartItemMeta}>Complete the steps above to pay.</p>
@@ -288,11 +315,11 @@ export function ThreadCheckoutLivePage({ config, cart, shippingOptions, countrie
 }
 
 /* ---- Order confirmation ---- */
-export function ThreadOrderLivePage({ config, order }: OrderProps) {
+export function ThreadOrderLivePage({ config, cartCount, order }: OrderProps) {
   const cur = order.currency_code
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.confirmationWrap}>

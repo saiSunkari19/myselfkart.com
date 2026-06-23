@@ -14,14 +14,14 @@ import {
 } from "./_live"
 
 /** Eventpass PDP slot — single event detail + real ticket/variant add-to-cart. */
-export function EventpassPdpLivePage({ config, product, variants, related }: PdpProps) {
+export function EventpassPdpLivePage({ config, cartCount, product, variants, related }: PdpProps) {
   const accent = eventAccent(config)
   const img = eventImage(product)
   const inr = (a: number | null | undefined) => `₹${(a ?? 0).toLocaleString("en-IN")}`
 
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={false} categories={[]} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "32px 40px 72px" }}>
         {/* Breadcrumb */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: T.textLight, marginBottom: 24 }}>

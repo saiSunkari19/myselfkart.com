@@ -55,17 +55,26 @@ export default function AboutPage() {
               </ul>
             </div>
           </Reveal>
+
+          {/* Contact — merged in from the old standalone /contact page */}
           <Reveal>
             <div className={s.infoSection}>
-              <h2>Leadership Team</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
-                {[{ name: "Vikram Nair", role: "Founder & CEO", img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&q=80" }, { name: "Priya Singh", role: "Co-Founder & COO", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&q=80" }, { name: "Rohan Gupta", role: "CTO", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80" }].map(p => (
-                  <div key={p.name} style={{ textAlign: "center" }}>
-                    <div style={{ width: 80, height: 80, borderRadius: "50%", overflow: "hidden", margin: "0 auto 12px", background: "var(--bg2)" }}>
-                      <img src={p.img} alt={p.name} />
+              <h2>Get in Touch</h2>
+              <p>We typically respond within 2 hours on business days.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 20 }}>
+                {[
+                  { icon: "📞", title: "Phone Support", lines: ["1800-VOLT-CARE (Toll Free)", "Mon–Sat 9am–9pm", "Sun 10am–6pm"] },
+                  { icon: "📧", title: "Email Support", lines: ["support@volt.in", "Response within 2 hours"] },
+                  { icon: "💬", title: "Live Chat", lines: ["Available on website", "Mon–Sat 9am–9pm"] },
+                ].map(item => (
+                  <div key={item.title} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px" }}>
+                    <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: 24 }}>{item.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{item.title}</div>
+                        {item.lines.map(l => <div key={l} style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>{l}</div>)}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{p.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--text3)" }}>{p.role}</div>
                   </div>
                 ))}
               </div>

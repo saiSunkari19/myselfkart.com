@@ -17,8 +17,11 @@ const HeroSection = () => {
   }
 
   return (
-    // Fix 1: paddingTop 64 accounts for fixed navbar; no top gap
-    <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden", paddingTop: 64 }}>
+    // Fix 1: paddingTop 64 accounts for fixed navbar; no top gap.
+    // margin: 0 overrides the global `section { margin: 2rem 0 }` rule
+    // (globals.css) — otherwise it adds an unwanted 2rem gap below the hero,
+    // visible as a white band before the next section's background colour.
+    <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden", paddingTop: 64, margin: 0 }}>
       <div style={{
         position: "absolute", inset: 0,
         backgroundImage: "url(https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&q=80)",
@@ -99,25 +102,6 @@ const HeroSection = () => {
             }}>
             Search
           </button>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
-          {[
-            { label: "🎵 Music", q: "Music" },
-            { label: "🎤 Conferences", q: "Conference" },
-            { label: "😂 Comedy", q: "Comedy" },
-            { label: "🎨 Art & Culture", q: "Art" },
-          ].map(tag => (
-            <button
-              key={tag.label}
-              onClick={() => { window.location.href = `/preview/eventpass/events?q=${tag.q}` }}
-              style={{
-                background: "#fff", border: `1px solid ${T.border}`,
-                color: T.textMuted, borderRadius: 100,
-                padding: "6px 16px", fontSize: 13, cursor: "pointer",
-                boxShadow: T.shadow,
-              }}>{tag.label}</button>
-          ))}
         </div>
       </div>
     </section>
@@ -247,7 +231,7 @@ const CitiesSection = () => (
 const HowItWorksSection = () => (
   <section style={{ padding: "80px 40px", background: T.bgSubtle }}>
     <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-      <SectionHeader label="Simple process" title="How it works" />
+      <SectionHeader label="Simple process" title="How it works" centered />
       <div className="ep-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
         {[
           { step: "01", title: "Discover", desc: "Browse hundreds of curated events across categories, cities, and dates.", icon: "🔍" },

@@ -5,6 +5,7 @@ import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
 import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
+import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
 import s from "./_styles.module.css"
 
 /**
@@ -67,7 +68,7 @@ export function ThreadProductCard({ product, index = 0 }: { product: ProductView
 }
 
 /* ---- Nav (live routes) ---- */
-export function ThreadNav({ config, hasDeals }: NavProps) {
+export function ThreadNav({ config, hasDeals, cartCount = 0 }: NavProps) {
   const storeName = config?.store_name ?? "Thread"
   const announcementEnabled = config?.announcement_enabled ?? true
   const announcementText = config?.announcement_text
@@ -95,7 +96,9 @@ export function ThreadNav({ config, hasDeals }: NavProps) {
           </Link>
           <div className={s.navActions}>
             <Link href="/account" className={s.navIconBtn}>Account</Link>
-            <Link href="/cart" className={s.navIconBtn}>Bag</Link>
+            <Link href="/cart" className={s.navIconBtn}>
+              Bag{cartCount > 0 && <span className={s.cartBadge}>{cartCount}</span>}
+            </Link>
           </div>
         </div>
       </nav>
@@ -125,6 +128,16 @@ export function ThreadFooter({ config, hasDeals }: FooterProps & { hasDeals?: bo
               <li><Link href="/shop" className={s.footerLink}>All Products</Link></li>
               {hasDeals && <li><Link href="/deals" className={s.footerLink}>Sale</Link></li>}
               <li><Link href="/cart" className={s.footerLink}>Your Bag</Link></li>
+            </ul>
+          </div>
+          <div>
+            <div className={s.footerColTitle}>Help</div>
+            <ul className={s.footerLinks}>
+              <li><Link href="/about" className={s.footerLink}>About Us</Link></li>
+              <li><Link href="/faq" className={s.footerLink}>FAQs</Link></li>
+              <li><Link href="/returns" className={s.footerLink}>Returns</Link></li>
+              <li><Link href="/privacy" className={s.footerLink}>Privacy Policy</Link></li>
+              <li><Link href="/terms" className={s.footerLink}>Terms</Link></li>
             </ul>
           </div>
         </div>
@@ -200,10 +213,10 @@ function CategoriesSection({ categories }: { categories: HomeProps["categories"]
   return (
     <section className={`${s.section} ${s.sectionSubtle}`}>
       <div className={s.container}>
-        <div className={s.sectionCenter}>
-          <div className={s.sectionLabel}>Browse the range</div>
-          <h2 className={s.sectionTitle}>Shop by Category</h2>
-          <p className={`${s.sectionSub} ${s.sectionSubCenter}`}>Find exactly what you&apos;re looking for, or discover something new.</p>
+        <div className={s.sectionCenter} style={{ marginBottom: 40 }}>
+          <div className={s.sectionLabel} style={{ marginBottom: 12 }}>Browse the range</div>
+          <h2 className={s.sectionTitle} style={{ marginBottom: 16 }}>Shop by Category</h2>
+          <p className={`${s.sectionSub} ${s.sectionSubCenter}`} style={{ marginBottom: 0 }}>Find exactly what you&apos;re looking for, or discover something new.</p>
         </div>
         <div className={s.categoryGrid}>
           {categories.map((cat) => (
@@ -225,22 +238,39 @@ function CategoriesSection({ categories }: { categories: HomeProps["categories"]
   )
 }
 
+const DEFAULT_EDITORIAL_BANNER = {
+  image: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=1400&q=85",
+  label: "The Edit",
+  title: "Built to<br />outlast the season.",
+  body: "Considered cuts and natural fabrics, made to be worn for years.",
+  cta_label: "Explore the Collection →",
+}
+
+const DEFAULT_THREAD_TESTIMONIALS = [
+  { name: "Ananya K.", city: "Bangalore", text: "Become my daily uniform. I've washed it 40 times and it only gets better. Worth every rupee.", stars: 5 },
+  { name: "Meera S.", city: "Mumbai", text: "Consistent sizing and fabric quality that's unmatched. Stunning in person.", stars: 5 },
+  { name: "Priyanka R.", city: "Delhi", text: "Ordered online, the return policy made it easy. The quality is real.", stars: 5 },
+]
+
 /* ---- Editorial banner (brand chrome) ---- */
-function EditorialBanner() {
+function EditorialBanner({ config }: { config: StoreConfig | null }) {
+  const b = { ...DEFAULT_EDITORIAL_BANNER, ...(config?.sections?.editorial_banner ?? {}) }
   return (
     <section className={s.section}>
       <div className={s.editorialBanner}>
-        <img src="https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=1400&q=85" alt="Editorial" className={s.editorialBannerBg} />
+        <img src={b.image} alt="Editorial" className={s.editorialBannerBg} />
         <div className={s.editorialBannerOverlay} />
         <div className={s.editorialContent}>
-          <div className={s.sectionLabel}>The Edit</div>
-          <h2 className={s.sectionTitle} style={{ color: "#fff", fontSize: "clamp(30px,4vw,52px)" }}>
-            Built to<br />outlast the season.
-          </h2>
+          <div className={s.sectionLabel}>{b.label}</div>
+          <h2
+            className={s.sectionTitle}
+            style={{ color: "#fff", fontSize: "clamp(30px,4vw,52px)" }}
+            dangerouslySetInnerHTML={{ __html: b.title }}
+          />
           <p className={s.sectionSub} style={{ color: "rgba(255,255,255,0.65)" }}>
-            Considered cuts and natural fabrics, made to be worn for years.
+            {b.body}
           </p>
-          <Link href="/shop" className={`${s.btn} ${s.btnWhite}`}>Explore the Collection →</Link>
+          <Link href="/shop" className={`${s.btn} ${s.btnWhite}`}>{b.cta_label}</Link>
         </div>
       </div>
     </section>
@@ -248,7 +278,8 @@ function EditorialBanner() {
 }
 
 /* ---- Testimonials (brand chrome) ---- */
-function Testimonials() {
+function Testimonials({ config }: { config: StoreConfig | null }) {
+  const items = config?.sections?.testimonials?.items ?? DEFAULT_THREAD_TESTIMONIALS
   return (
     <section className={`${s.section} ${s.sectionSubtle}`}>
       <div className={s.container}>
@@ -256,12 +287,10 @@ function Testimonials() {
           <div className={s.sectionLabel}>What they say</div>
           <h2 className={s.sectionTitle}>Loved by wearers</h2>
         </div>
-        <div className={s.testimonialsGrid}>
-          {[
-            { name: "Ananya K.", city: "Bangalore", text: "Become my daily uniform. I've washed it 40 times and it only gets better. Worth every rupee.", stars: 5 },
-            { name: "Meera S.", city: "Mumbai", text: "Consistent sizing and fabric quality that's unmatched. Stunning in person.", stars: 5 },
-            { name: "Priyanka R.", city: "Delhi", text: "Ordered online, the return policy made it easy. The quality is real.", stars: 5 },
-          ].map((t, i) => (
+        <TestimonialSlider
+          items={items}
+          gap={24}
+          renderItem={(t: typeof DEFAULT_THREAD_TESTIMONIALS[number], i: number) => (
             <div key={i} className={s.testimonialCard}>
               <div className={s.testimonialStars}>{"★".repeat(t.stars)}</div>
               <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
@@ -273,35 +302,19 @@ function Testimonials() {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+        />
       </div>
     </section>
   )
 }
 
-function Newsletter() {
-  return (
-    <div className={s.newsletter}>
-      <div className={s.sectionLabel}>Stay in the loop</div>
-      <h2 className={s.sectionTitle}>Early access. New arrivals.</h2>
-      <p style={{ color: "#6b6560", fontSize: 15, marginBottom: 14 }}>
-        New drops, restocks, and quiet sales. Only to the people who signed up first.
-      </p>
-      <div className={s.newsletterForm}>
-        <input className={s.newsletterInput} placeholder="your@email.com" type="email" />
-        <button className={s.newsletterBtn}>Subscribe</button>
-      </div>
-    </div>
-  )
-}
-
 /* ---- Home slot ---- */
-export function ThreadLivePage({ config, products, newArrivals, deals, categories }: HomeProps) {
+export function ThreadLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
   const hasDeals = deals.length > 0
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={hasDeals} categories={categories} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <Hero config={config} hasDeals={hasDeals} />
       <ProductSection
         label="Just dropped" title="New Arrivals"
@@ -309,18 +322,17 @@ export function ThreadLivePage({ config, products, newArrivals, deals, categorie
         products={newArrivals.slice(0, 4)} cta={{ label: "View All", href: "/shop" }}
       />
       <CategoriesSection categories={categories} />
-      <EditorialBanner />
+      <EditorialBanner config={config} />
       <ProductSection
         label="The collection" title="Shop All"
         products={products.slice(0, 8)} cta={{ label: "See All", href: "/shop" }}
       />
-      <Testimonials />
+      <Testimonials config={config} />
       <ProductSection
         label="Limited time" title="On Sale Now"
         sub="Last-season pieces at honest prices."
         products={deals.slice(0, 4)} cta={{ label: "Shop the Sale", href: "/deals" }}
       />
-      <Newsletter />
       <ThreadFooter config={config} hasDeals={hasDeals} />
     </div>
   )

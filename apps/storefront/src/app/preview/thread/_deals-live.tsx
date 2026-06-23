@@ -6,10 +6,10 @@ import { ThreadNav, ThreadFooter, ThreadProductCard, threadColorVars } from "./_
 import s from "./_styles.module.css"
 
 /** Thread deals slot — real sale products; honest empty state when none. */
-export function ThreadDealsLivePage({ config, deals }: DealsProps) {
+export function ThreadDealsLivePage({ config, cartCount, deals }: DealsProps) {
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={deals.length > 0} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={deals.length > 0} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.pageTitle}>

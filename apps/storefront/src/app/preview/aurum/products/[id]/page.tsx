@@ -3,16 +3,10 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { PageShell, ProductCard, Reveal, GoldDivider, NewsletterSection } from "../../_components"
+import { PageShell, ProductCard, Reveal, GoldDivider } from "../../_components"
 import { PRODUCTS } from "../../_data"
 import s from "../../_styles.module.css"
 import { useTemplateConfig } from "../../../../../lib/template-config-context"
-
-const REVIEWS = [
-  { name: "Anita S.", date: "March 2026", stars: 5, text: "Absolutely breathtaking. The quality is unmatched and the certificate gave me full confidence. Delivery was fast and the packaging was museum-quality.", product: "Verified Purchase" },
-  { name: "Rajesh M.", date: "February 2026", stars: 5, text: "Gifted this to my wife on our anniversary. She hasn't stopped wearing it. The craftsmanship is extraordinary — exactly as described. Worth every rupee.", product: "Verified Purchase" },
-  { name: "Priya K.", date: "January 2026", stars: 5, text: "The certificate made all the difference. Knowing it's properly certified and hallmarked gave me complete peace of mind. Beautiful piece.", product: "Verified Purchase" },
-]
 
 export default function ProductDetailPage() {
   const { basePath } = useTemplateConfig()
@@ -205,40 +199,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Reviews */}
-        {REVIEWS.length > 0 && (
-          <Reveal>
-            <div className={s.reviewsWrap}>
-              <div className={s.sectionHead}>
-                <div>
-                  <span className={s.sectionLabel}>Customer Experiences</span>
-                  <h2 className={s.sectionTitle} style={{ fontSize: 32 }}>Reviews</h2>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 40, fontWeight: 300, color: "#1a1410" }}>5.0</div>
-                  <div style={{ color: "#b8962e", letterSpacing: 2 }}>★★★★★</div>
-                  <div style={{ fontSize: 12, color: "#a09080", marginTop: 4 }}>{REVIEWS.length} reviews</div>
-                </div>
-              </div>
-              {REVIEWS.map((r, i) => (
-                <div key={i} className={s.reviewCard}>
-                  <div className={s.reviewHeader}>
-                    <div>
-                      <div className={s.reviewerName}>{r.name}</div>
-                      <div className={s.reviewStars}>{"★".repeat(r.stars)}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div className={s.reviewerDate}>{r.date}</div>
-                      <div className={s.reviewProduct}>{r.product}</div>
-                    </div>
-                  </div>
-                  <p className={s.reviewText}>{r.text}</p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-        )}
-
         {/* Related */}
         {related.length > 0 && (
           <section className={s.section}>
@@ -257,7 +217,6 @@ export default function ProductDetailPage() {
           </section>
         )}
       </div>
-      <NewsletterSection />
     </PageShell>
   )
 }

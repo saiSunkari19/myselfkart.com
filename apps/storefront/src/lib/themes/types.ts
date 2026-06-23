@@ -27,6 +27,8 @@ import type {
 export type ThemeContext = {
   /** Seller's store config (name, colours, fonts, hero, announcement…). */
   config: StoreConfig | null
+  /** Total item quantity in the visitor's cart, for the nav's bag/cart badge. */
+  cartCount?: number
 }
 
 export type HomeProps = ThemeContext & {
@@ -40,10 +42,17 @@ export type HomeProps = ThemeContext & {
 }
 
 export type ShopProps = ThemeContext & {
+  /** Products for the current page only. */
   products: ProductView[]
   categories: CategoryView[]
   /** Currently selected category id, or null for "All". */
   activeCategory: string | null
+  /** Current page number, 1-indexed. */
+  page: number
+  /** Total number of pages for the current filter/search. */
+  totalPages: number
+  /** Total matching products across all pages, for the "N products" count display. */
+  totalCount: number
 }
 
 export type PdpProps = ThemeContext & {

@@ -13,6 +13,8 @@ import {
 import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { EventpassNav, EventpassFooter, T, eventAccent, pageShell } from "./_live"
+import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 
 /**
  * Eventpass functional slots — the Eventpass visual language (inline `T` tokens,
@@ -42,7 +44,7 @@ function EmptyShell({ config, icon, title, sub }: { config: CartProps["config"];
   const accent = eventAccent(config)
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={false} categories={[]} />
+      <EventpassNav config={config} cartCount={0} hasDeals={false} categories={[]} />
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "80px 40px" }}>
         <div style={{ textAlign: "center", padding: "60px 24px", background: T.bgSubtle, border: `1px solid ${T.border}`, borderRadius: T.radiusLg }}>
           <div style={{ fontSize: 44, marginBottom: 16 }}>{icon}</div>
@@ -59,7 +61,7 @@ function EmptyShell({ config, icon, title, sub }: { config: CartProps["config"];
 }
 
 /* ---- Cart ---- */
-export function EventpassCartLivePage({ config, cart }: CartProps) {
+export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
   const accent = eventAccent(config)
   if (!cart || cart.items.length === 0) {
     return <EmptyShell config={config} icon="🛒" title="Your cart is empty" sub="Find an event and grab your tickets." />
@@ -70,14 +72,17 @@ export function EventpassCartLivePage({ config, cart }: CartProps) {
 
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={false} categories={[]} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "48px 40px 72px" }}>
         <h1 style={{ color: T.text, fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, margin: "0 0 6px", letterSpacing: "-1px" }}>Your Tickets</h1>
         <p style={{ color: T.textMuted, fontSize: 15, margin: "0 0 32px" }}>{itemCount} ticket{itemCount !== 1 ? "s" : ""} in your cart</p>
 
         <div className="ep-cart-grid" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 32, alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {cart.items.map(item => (
+            {cart.items.map(item => {
+              const maxQty = item.availableQuantity == null ? undefined : item.quantity + item.availableQuantity
+              const atMax = maxQty !== undefined && item.quantity >= maxQty
+              return (
               <div key={item.id} style={{ ...cardStyle, display: "flex", gap: 16, alignItems: "center", padding: 16 }}>
                 <div style={{ width: 72, height: 72, borderRadius: T.radiusSm, overflow: "hidden", background: T.bgSubtle, flexShrink: 0 }}>
                   {item.thumbnail && <img src={item.thumbnail} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
@@ -90,15 +95,44 @@ export function EventpassCartLivePage({ config, cart }: CartProps) {
                     <form action={updateLineItemAction} style={{ display: "inline" }}>
                       <input type="hidden" name="line_item_id" value={item.id} />
                       <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
-                      <button type="submit" aria-label="Decrease quantity" style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: "#fff", color: T.text, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>−</button>
+                      <button type="submit" aria-label="Decrease quantity" style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: "#fff", color: T.text, cursor: "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1 }}>−</button>
                     </form>
-                    <span style={{ minWidth: 24, textAlign: "center", fontWeight: 600, color: T.text }}>{item.quantity}</span>
+                    <form action={updateLineItemAction} style={{ display: "inline" }}>
+                      <input type="hidden" name="line_item_id" value={item.id} />
+                      <input
+                        type="number"
+                        name="quantity"
+                        min={1}
+                        max={maxQty}
+                        defaultValue={item.quantity}
+                        onBlur={e => e.currentTarget.form?.requestSubmit()}
+                        onKeyDown={e => e.key === "Enter" && e.currentTarget.form?.requestSubmit()}
+                        style={{
+                          width: 36, height: 28, textAlign: "center", fontWeight: 600, color: T.text,
+                          border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13,
+                        }}
+                      />
+                    </form>
                     <form action={updateLineItemAction} style={{ display: "inline" }}>
                       <input type="hidden" name="line_item_id" value={item.id} />
                       <input type="hidden" name="quantity" value={item.quantity + 1} />
-                      <button type="submit" aria-label="Increase quantity" style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: "#fff", color: T.text, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>+</button>
+                      <button
+                        type="submit"
+                        aria-label="Increase quantity"
+                        disabled={atMax}
+                        style={{
+                          width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`,
+                          background: "#fff", color: atMax ? T.textLight : T.text,
+                          cursor: atMax ? "not-allowed" : "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1,
+                        }}
+                      >+</button>
                     </form>
                   </div>
+                  {maxQty !== undefined && (
+                    <div style={{ fontSize: 12, marginTop: 6, color: atMax ? T.danger : T.textLight }}>
+                      {atMax ? "Max available quantity reached" : `${maxQty} available`}
+                    </div>
+                  )}
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ color: T.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{formatMoney(item.total, cur)}</div>
@@ -108,7 +142,8 @@ export function EventpassCartLivePage({ config, cart }: CartProps) {
                   </form>
                 </div>
               </div>
-            ))}
+              )
+            })}
             <Link href="/shop" style={{ color: accent, textDecoration: "none", fontSize: 14, fontWeight: 600, marginTop: 4 }}>← Continue browsing</Link>
           </div>
 
@@ -138,7 +173,7 @@ export function EventpassCartLivePage({ config, cart }: CartProps) {
 }
 
 /* ---- Checkout ---- */
-export function EventpassCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
+export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   const accent = eventAccent(config)
   const storeName = config?.store_name ?? "EventPass"
 
@@ -170,7 +205,7 @@ export function EventpassCheckoutLivePage({ config, cart, shippingOptions, count
 
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={false} categories={[]} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "32px 40px 72px" }}>
         <Link href="/cart" style={{ fontSize: 13, color: T.textMuted, textDecoration: "none", display: "inline-block", marginBottom: 8 }}>← Back to Cart</Link>
         <h1 style={{ color: T.text, fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, margin: "0 0 24px", letterSpacing: "-1px" }}>Checkout</h1>
@@ -192,7 +227,7 @@ export function EventpassCheckoutLivePage({ config, cart, shippingOptions, count
         <div className="ep-checkout-grid" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 32, alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Step 1: Contact details */}
-            <div style={cardStyle}>
+            <div style={cardStyle} id="ep-address-section">
               <div style={{ color: T.text, fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{hasAddress ? "✓ " : "1. "}Contact Details</div>
               {savedAddresses && savedAddresses.length > 0 ? (
                 <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? eventAccent(config)} />
@@ -213,12 +248,17 @@ export function EventpassCheckoutLivePage({ config, cart, shippingOptions, count
                     {countries.map(c => <option key={c.iso_2} value={c.iso_2}>{c.display_name ?? c.iso_2.toUpperCase()}</option>)}
                   </select>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}><button type="submit" style={{ ...primaryBtn, width: "100%" }}>Save &amp; Continue</button></div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <SubmitButton style={{ ...primaryBtn, width: "100%" }} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                  <div style={{ textAlign: "center", marginTop: 8 }}>
+                    <SaveAndAdvance nextSectionId="ep-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                  </div>
+                </div>
               </form>
             </div>
 
             {/* Step 2: Delivery */}
-            <div style={cardStyle}>
+            <div style={cardStyle} id="ep-delivery-section">
               <div style={{ color: T.text, fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{hasShipping ? "✓ " : "2. "}Delivery Method</div>
               {!hasAddress ? (
                 <p style={{ color: T.textMuted, fontSize: 14, margin: 0 }}>Enter your contact details to see delivery options.</p>
@@ -232,19 +272,20 @@ export function EventpassCheckoutLivePage({ config, cart, shippingOptions, count
                       <span style={{ color: T.text }}>{formatMoney(option.amount ?? 0, cur)}</span>
                     </label>
                   ))}
-                  <button type="submit" style={{ ...primaryBtn, background: "#fff", color: T.text, border: `1px solid ${T.border}`, marginTop: 12 }}>Use this method</button>
+                  <SubmitButton style={{ ...primaryBtn, background: "#fff", color: T.text, border: `1px solid ${T.border}`, marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                  <SaveAndAdvance nextSectionId="ep-payment-section" label="Delivery method saved" />
                 </form>
               )}
             </div>
 
             {/* Step 3: Payment */}
-            <div style={cardStyle}>
+            <div style={cardStyle} id="ep-payment-section">
               <div style={{ color: T.text, fontWeight: 700, fontSize: 15, marginBottom: 16 }}>3. Payment</div>
               {hasAddress && hasShipping ? (
                 hasRazorpay ? (
                   <RazorpayCheckout storeName={storeName} accentColor={config?.accent_color ?? undefined} email={cart.email} />
                 ) : (
-                  <form action={placeOrderAction}><button type="submit" style={{ ...primaryBtn, width: "100%" }}>Place Order</button></form>
+                  <form action={placeOrderAction}><SubmitButton style={{ ...primaryBtn, width: "100%" }} pendingLabel="Placing order…">Place Order</SubmitButton></form>
                 )
               ) : (
                 <p style={{ color: T.textMuted, fontSize: 14, margin: 0 }}>Complete the steps above to pay.</p>
@@ -284,13 +325,13 @@ export function EventpassCheckoutLivePage({ config, cart, shippingOptions, count
 }
 
 /* ---- Order confirmation ---- */
-export function EventpassOrderLivePage({ config, order }: OrderProps) {
+export function EventpassOrderLivePage({ config, cartCount, order }: OrderProps) {
   const accent = eventAccent(config)
   const cur = order.currency_code
 
   return (
     <div style={pageShell()}>
-      <EventpassNav config={config} hasDeals={false} categories={[]} />
+      <EventpassNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "64px 40px 72px" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{

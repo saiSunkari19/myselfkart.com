@@ -59,11 +59,14 @@ export default async function CheckoutPage({
     getPaymentConfig(tenant),
   ])
 
+  const cartCount = cart?.items.reduce((n, i) => n + i.quantity, 0) ?? 0
+
   const Theme = getTheme(config?.template_id)
   return (
     <Theme.Checkout
       config={config}
       cart={cart}
+      cartCount={cartCount}
       shippingOptions={shippingOptions}
       countries={region?.countries ?? []}
       hasRazorpay={Boolean(paymentConfig.razorpay)}

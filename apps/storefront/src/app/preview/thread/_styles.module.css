@@ -530,6 +530,7 @@
 .productDetailThumb.active { border-color: #1a1a1a; }
 .productDetailThumb img { width: 100%; height: 100%; object-fit: cover; }
 .productDetailMain {
+  grid-column: 2;
   border-radius: 16px;
   overflow: hidden;
   aspect-ratio: 3/4;
@@ -690,16 +691,19 @@
 .qtyBtn {
   width: 36px;
   height: 36px;
-  background: none;
+  background: #fff;
   border: none;
+  color: #1a1a1a;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
 }
 .qtyBtn:hover { background: #f0ebe2; }
+.qtyBtn:disabled { color: #c8c2b8; cursor: not-allowed; background: #fff; }
 .qtyVal {
   width: 40px;
   text-align: center;
@@ -708,6 +712,24 @@
   border-left: 1px solid #e8e4df;
   border-right: 1px solid #e8e4df;
   padding: 8px 0;
+}
+.qtyInput {
+  width: 44px;
+  height: 36px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  border: none;
+  border-left: 1px solid #e8e4df;
+  border-right: 1px solid #e8e4df;
+  background: #fff;
+  -moz-appearance: textfield;
+}
+.qtyInput::-webkit-inner-spin-button,
+.qtyInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .removeBtn {
   background: none;
@@ -956,6 +978,22 @@
   margin-bottom: 29px;
 }
 .shopCount { font-size: 14px; color: #6b6560; }
+.pageLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1.5px solid #e8e4df;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+.pageLink:hover { background: #f0ebe2; }
+.pageLinkActive { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 .sortSelect {
   padding: 8px 12px;
   border: 1.5px solid #e8e4df;

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { NavBar, Footer, ProductCard, NewsletterSection } from "./_components"
+import { NavBar, Footer, ProductCard } from "./_components"
 import { PRODUCTS, CATEGORIES } from "./_data"
 import s from "./_styles.module.css"
 
@@ -71,10 +71,10 @@ const NewArrivals = () => (
 const CategoriesSection = () => (
   <section className={`${s.section} ${s.sectionSubtle}`}>
     <div className={s.container}>
-      <div className={s.sectionCenter}>
-        <div className={s.sectionLabel}>Browse the range</div>
-        <h2 className={s.sectionTitle}>Shop by Category</h2>
-        <p className={`${s.sectionSub} ${s.sectionSubCenter}`}>Find exactly what you're looking for, or discover something new.</p>
+      <div className={s.sectionCenter} style={{ marginBottom: 40 }}>
+        <div className={s.sectionLabel} style={{ marginBottom: 12 }}>Browse the range</div>
+        <h2 className={s.sectionTitle} style={{ marginBottom: 16 }}>Shop by Category</h2>
+        <p className={`${s.sectionSub} ${s.sectionSubCenter}`} style={{ marginBottom: 0 }}>Find exactly what you're looking for, or discover something new.</p>
       </div>
       <div className={s.categoryGrid}>
         {CATEGORIES.map(cat => (
@@ -199,7 +199,6 @@ export default function ThreadHome() {
       <BestSellers />
       <Testimonials />
       <SaleSection />
-      <NewsletterSection />
       </div>
       <Footer />
     </div>

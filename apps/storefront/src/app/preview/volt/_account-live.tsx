@@ -6,11 +6,11 @@ import { VoltNav } from "./_live"
 import s from "./_styles.module.css"
 
 /** Volt login + account slots — shared auth/account UI in Volt chrome. */
-export function VoltLoginPage({ config, next, error, notice }: LoginProps) {
+export function VoltLoginPage({ config, cartCount, next, error, notice }: LoginProps) {
   return (
     <div className={s.pageShell}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.main}>
         <div className={s.container} style={{ padding: "56px 0" }}>
           <LoginForm next={next} error={error} notice={notice} accent={config?.accent_color ?? undefined} />
@@ -22,11 +22,11 @@ export function VoltLoginPage({ config, next, error, notice }: LoginProps) {
 }
 
 export function VoltAccountPage(props: AccountProps) {
-  const { config } = props
+  const { config, cartCount } = props
   return (
     <div className={s.pageShell}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.main}>
         <div className={s.container} style={{ padding: "40px 0" }}>
           <AccountContent {...props} accent={config?.accent_color ?? undefined} />

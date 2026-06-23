@@ -4,6 +4,7 @@ import { getTheme } from "../../../lib/themes"
 import { getTenantOrder } from "../../../lib/medusa/order"
 import { resolveTenant } from "../../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../../lib/store-config"
+import { getCartItemCount } from "../../../lib/cart/item-count"
 
 export const dynamic = "force-dynamic"
 
@@ -21,14 +22,15 @@ export default async function OrderConfirmationPage({
     notFound()
   }
 
-  const [order, config] = await Promise.all([
+  const [order, config, cartCount] = await Promise.all([
     getTenantOrder(tenant, id),
     fetchStoreConfig(tenant),
+    getCartItemCount(tenant),
   ])
   if (!order) {
     notFound()
   }
 
   const Theme = getTheme(config?.template_id)
-  return <Theme.Order config={config} order={order} />
+  return <Theme.Order config={config} cartCount={cartCount} order={order} />
 }

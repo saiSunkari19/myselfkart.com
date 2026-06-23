@@ -14,6 +14,8 @@ import {
 } from "../../../lib/cart/actions"
 import { formatMoney } from "../../../lib/format"
 import { OrderSummary } from "../../../components/storefront/order-summary"
+import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
@@ -33,12 +35,12 @@ function colorVars(config: CartProps["config"]) {
 }
 
 /* ---- Cart ---- */
-export function VoltCartLivePage({ config, cart }: CartProps) {
+export function VoltCartLivePage({ config, cart, cartCount }: CartProps) {
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.pageShell} style={colorVars(config)}>
         <PageLoader />
-        <VoltNav config={config} hasDeals={false} categories={[]} />
+        <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.main}>
           <div className={s.container}>
             <div className={s.emptyState}>
@@ -58,7 +60,7 @@ export function VoltCartLivePage({ config, cart }: CartProps) {
   return (
     <div className={s.pageShell} style={colorVars(config)}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.main}>
         <div className={s.pageHeader}>
           <div className={s.container}>
@@ -69,7 +71,10 @@ export function VoltCartLivePage({ config, cart }: CartProps) {
         <div className={s.container}>
           <div className={s.cartLayout}>
             <div>
-              {cart.items.map((item) => (
+              {cart.items.map((item) => {
+                const maxQty = item.availableQuantity == null ? undefined : item.quantity + item.availableQuantity
+                const atMax = maxQty !== undefined && item.quantity >= maxQty
+                return (
                 <div key={item.id} className={s.cartItem}>
                   {item.thumbnail ? (
                     <div className={s.cartItemImg}><img src={item.thumbnail} alt={item.title} /></div>
@@ -84,13 +89,30 @@ export function VoltCartLivePage({ config, cart }: CartProps) {
                         <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
                         <button className={s.qtyBtn} type="submit" aria-label="Decrease quantity">−</button>
                       </form>
-                      <span className={s.qtyVal}>{item.quantity}</span>
+                      <form action={updateLineItemAction} style={{ display: "inline" }}>
+                        <input type="hidden" name="line_item_id" value={item.id} />
+                        <input
+                          type="number"
+                          name="quantity"
+                          min={1}
+                          max={maxQty}
+                          defaultValue={item.quantity}
+                          className={s.qtyInput}
+                          onBlur={e => e.currentTarget.form?.requestSubmit()}
+                          onKeyDown={e => e.key === "Enter" && e.currentTarget.form?.requestSubmit()}
+                        />
+                      </form>
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
                         <input type="hidden" name="line_item_id" value={item.id} />
                         <input type="hidden" name="quantity" value={item.quantity + 1} />
-                        <button className={s.qtyBtn} type="submit" aria-label="Increase quantity">+</button>
+                        <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
+                    {maxQty !== undefined && (
+                      <div className={s.cartItemMeta} style={{ color: atMax ? "#dc2626" : undefined }}>
+                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
+                      </div>
+                    )}
                   </div>
                   <div className={s.cartItemPrice}>
                     <div className={s.priceMain}>{formatMoney(item.total, cur)}</div>
@@ -100,7 +122,8 @@ export function VoltCartLivePage({ config, cart }: CartProps) {
                     </form>
                   </div>
                 </div>
-              ))}
+                )
+              })}
               <Link href="/shop" className={`${s.btn} ${s.btnSecondary}`} style={{ marginTop: 8 }}>← Continue Shopping</Link>
             </div>
             <div className={s.orderSummary}>
@@ -120,14 +143,14 @@ export function VoltCartLivePage({ config, cart }: CartProps) {
 }
 
 /* ---- Checkout ---- */
-export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
+export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions, countries, hasRazorpay, error, savedAddresses, customer }: CheckoutProps) {
   const storeName = config?.store_name ?? "VOLT"
 
   if (!cart || cart.items.length === 0) {
     return (
       <div className={s.pageShell} style={colorVars(config)}>
         <PageLoader />
-        <VoltNav config={config} hasDeals={false} categories={[]} />
+        <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
         <div className={s.main}>
           <div className={s.container}>
             <div className={s.emptyState}>
@@ -150,7 +173,7 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
   return (
     <div className={s.pageShell} style={colorVars(config)}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.main}>
         <div className={s.pageHeader}>
           <div className={s.container}>
@@ -164,7 +187,7 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
           <div className={s.checkoutLayout}>
             <div className={s.checkoutForm}>
               {/* Step 1: Shipping address */}
-              <div className={s.formCard}>
+              <div className={s.formCard} id="volt-address-section">
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>{hasAddress ? "✓" : "1"}</div>
                   <div className={s.formCardHeadTitle}>Shipping Information</div>
@@ -190,14 +213,17 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
                       </select>
                     </div>
                     <div className={s.formGroupFull}>
-                      <button type="submit" className={`${s.btn} ${s.btnPrimary}`}>Save &amp; Continue</button>
+                      <SubmitButton className={`${s.btn} ${s.btnPrimary}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                      <div style={{ textAlign: "center", marginTop: 8 }}>
+                        <SaveAndAdvance nextSectionId="volt-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                      </div>
                     </div>
                   </form>
                 </div>
               </div>
 
               {/* Step 2: Shipping method */}
-              <div className={s.formCard}>
+              <div className={s.formCard} id="volt-delivery-section">
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>{hasShipping ? "✓" : "2"}</div>
                   <div className={s.formCardHeadTitle}>Delivery Method</div>
@@ -215,14 +241,15 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
                           <span>{formatMoney(option.amount ?? 0, cur)}</span>
                         </label>
                       ))}
-                      <button type="submit" className={`${s.btn} ${s.btnSecondary}`} style={{ marginTop: 12 }}>Use this method</button>
+                      <SubmitButton className={`${s.btn} ${s.btnSecondary}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                      <SaveAndAdvance nextSectionId="volt-payment-section" label="Delivery method saved" />
                     </form>
                   )}
                 </div>
               </div>
 
               {/* Step 3: Payment */}
-              <div className={s.formCard}>
+              <div className={s.formCard} id="volt-payment-section">
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>3</div>
                   <div className={s.formCardHeadTitle}>Payment</div>
@@ -232,7 +259,7 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
                     hasRazorpay ? (
                       <RazorpayCheckout storeName={storeName} accentColor={config?.accent_color ?? undefined} email={cart.email} />
                     ) : (
-                      <form action={placeOrderAction}><button type="submit" className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`}>Place Order</button></form>
+                      <form action={placeOrderAction}><SubmitButton className={`${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`} pendingLabel="Placing order…">Place Order</SubmitButton></form>
                     )
                   ) : (
                     <p className={s.cartItemMeta}>Complete the steps above to pay.</p>
@@ -271,11 +298,11 @@ export function VoltCheckoutLivePage({ config, cart, shippingOptions, countries,
 }
 
 /* ---- Order confirmation ---- */
-export function VoltOrderLivePage({ config, order }: OrderProps) {
+export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
   return (
     <div className={s.pageShell} style={colorVars(config)}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={[]} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.main}>
         <div className={s.container}>
           <section className={s.section}>

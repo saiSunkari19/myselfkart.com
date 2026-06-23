@@ -1,6 +1,7 @@
 import "server-only"
 
 import { getTenantMedusa } from "./client"
+import { getVariantAvailability } from "./products"
 import type { TenantResolution } from "../tenant/types"
 
 export type CartAddress = {
@@ -24,6 +25,17 @@ export type CartLineItem = {
   thumbnail: string | null
   product_title: string | null
   variant_title: string | null
+  /**
+   * Remaining units the variant's stock allows for this line item, or
+   * `null` when stock isn't tracked (`manage_inventory: false`) or
+   * backorders are allowed — i.e. there's no real cap to enforce.
+   */
+  availableQuantity: number | null
+}
+
+type RawCartLineItem = Omit<CartLineItem, "availableQuantity"> & {
+  product?: { id?: string } | null
+  variant?: { id?: string } | null
 }
 
 export type CartShippingMethod = {
@@ -59,11 +71,37 @@ export type ShippingOption = {
 // units — render directly, never divide by 100.
 const CART_FIELDS =
   "id,email,currency_code,total,subtotal,tax_total,shipping_total,item_total," +
-  "*items,*items.product,*items.variant,*shipping_address,*billing_address," +
+  "*items,*items.product,*items.variant," +
+  "*shipping_address,*billing_address," +
   "*shipping_methods,*payment_collection,*payment_collection.payment_sessions"
 
-function asCart(cart: unknown): Cart {
-  return cart as Cart
+/**
+ * `inventory_quantity` never resolves through the cart's nested
+ * `items.variant.*` field selection (Medusa only injects it on `/store/
+ * products` routes) — so stock is looked up separately, by product id, via
+ * `getVariantAvailability`, and merged in here. Items whose variant isn't
+ * found there default to unlimited rather than silently capping at zero.
+ */
+async function asCart(tenant: TenantResolution, cart: unknown): Promise<Cart> {
+  const raw = cart as Omit<Cart, "items"> & { items: RawCartLineItem[] }
+  const productIds = [...new Set(raw.items.map(i => i.product?.id).filter((id): id is string => Boolean(id)))]
+  // A failure here must never hide the cart itself — fall back to unlimited
+  // (no stock cap shown) rather than letting the error bubble up.
+  const availability = await getVariantAvailability(tenant, productIds).catch(
+    () => ({}) as Record<string, { availableQuantity: number | null }>
+  )
+
+  return {
+    ...raw,
+    items: raw.items.map(item => {
+      const variantId = item.variant?.id
+      const { product: _product, variant: _variant, ...rest } = item
+      return {
+        ...rest,
+        availableQuantity: variantId ? availability[variantId]?.availableQuantity ?? null : null,
+      }
+    }),
+  }
 }
 
 export async function createCart(
@@ -72,7 +110,7 @@ export async function createCart(
 ): Promise<Cart> {
   const sdk = getTenantMedusa(tenant)
   const { cart } = await sdk.store.cart.create({ region_id: regionId })
-  return asCart(cart)
+  return asCart(tenant, cart)
 }
 
 export async function getCart(
@@ -82,7 +120,7 @@ export async function getCart(
   const sdk = getTenantMedusa(tenant)
   try {
     const { cart } = await sdk.store.cart.retrieve(cartId, { fields: CART_FIELDS })
-    return asCart(cart)
+    return asCart(tenant, cart)
   } catch {
     // Unknown / foreign / completed cart: RLS + sales-channel scoping mean a
     // cart from another tenant simply isn't found here.
@@ -101,7 +139,7 @@ export async function addLineItem(
     variant_id: variantId,
     quantity,
   })
-  return asCart(cart)
+  return asCart(tenant, cart)
 }
 
 export async function updateLineItem(
@@ -114,7 +152,7 @@ export async function updateLineItem(
   const { cart } = await sdk.store.cart.updateLineItem(cartId, lineItemId, {
     quantity,
   })
-  return asCart(cart)
+  return asCart(tenant, cart)
 }
 
 export async function deleteLineItem(
@@ -138,7 +176,7 @@ export async function setCustomerDetails(
     shipping_address: address,
     billing_address: address,
   })
-  return asCart(cart)
+  return asCart(tenant, cart)
 }
 
 export async function listShippingOptions(
@@ -161,7 +199,7 @@ export async function addShippingMethod(
   const { cart } = await sdk.store.cart.addShippingMethod(cartId, {
     option_id: optionId,
   })
-  return asCart(cart)
+  return asCart(tenant, cart)
 }
 
 const MANUAL_PAYMENT_PROVIDER_ID = "pp_system_default"

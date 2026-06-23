@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { AddToCart } from "../../../components/add-to-cart"
 import type { PdpProps } from "../../../lib/themes/types"
@@ -7,13 +8,16 @@ import { ThreadNav, ThreadFooter, ThreadProductCard, threadColorVars } from "./_
 import s from "./_styles.module.css"
 
 /** Thread product-detail slot — real product + real add-to-cart, thread-styled. */
-export function ThreadPdpLivePage({ config, product, variants, related }: PdpProps) {
-  const img = product.thumbnail ?? "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=900&q=85"
+export function ThreadPdpLivePage({ config, cartCount, product, variants, related }: PdpProps) {
+  const images = product.images.length > 0
+    ? product.images
+    : ["https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=900&q=85"]
+  const [activeImage, setActiveImage] = useState(0)
   const inr = (a: number | null | undefined) => `₹${(a ?? 0).toLocaleString("en-IN")}`
 
   return (
     <div className={s.page} style={threadColorVars(config)}>
-      <ThreadNav config={config} hasDeals={false} categories={[]} />
+      <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "24px 0 0", fontSize: 13, color: "#a09890" }}>
@@ -26,8 +30,21 @@ export function ThreadPdpLivePage({ config, product, variants, related }: PdpPro
 
           <div className={s.productDetail}>
             <div className={s.productDetailImages}>
+              {images.length > 0 && (
+                <div className={s.productDetailThumbs}>
+                  {images.map((url, i) => (
+                    <div
+                      key={i}
+                      className={`${s.productDetailThumb} ${activeImage === i ? s.active : ""}`}
+                      onClick={() => setActiveImage(i)}
+                    >
+                      <img src={url} alt={`${product.title} view ${i + 1}`} />
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className={s.productDetailMain}>
-                <img src={img} alt={product.title} />
+                <img src={images[activeImage]} alt={product.title} />
               </div>
             </div>
 

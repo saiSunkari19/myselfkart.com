@@ -1,7 +1,10 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
 import { listTenantProducts } from "../../lib/medusa/products"
+import { resolveCategories } from "../../lib/views"
+import { getDeals } from "../../lib/merchandising"
+import { getCartItemCount } from "../../lib/cart/item-count"
 import { TemplateConfigProvider } from "../../lib/template-config-context"
 
 // ── Volt sub-page imports ──
@@ -14,7 +17,6 @@ import VoltBrandsPage from "../preview/volt/brands/page"
 import VoltCategoriesPage from "../preview/volt/categories/page"
 import VoltBestSellersPage from "../preview/volt/best-sellers/page"
 import VoltNewLaunchesPage from "../preview/volt/new-launches/page"
-import VoltContactPage from "../preview/volt/contact/page"
 import VoltFaqPage from "../preview/volt/faq/page"
 import VoltPrivacyPage from "../preview/volt/privacy/page"
 import VoltTermsPage from "../preview/volt/terms/page"
@@ -38,10 +40,10 @@ import ThreadCartPage from "../preview/thread/cart/page"
 import ThreadCheckoutPage from "../preview/thread/checkout/page"
 import ThreadAboutPage from "../preview/thread/about/page"
 import ThreadCategoriesPage from "../preview/thread/categories/page"
-import ThreadContactPage from "../preview/thread/contact/page"
 import ThreadFaqPage from "../preview/thread/faq/page"
 import ThreadPrivacyPage from "../preview/thread/privacy/page"
 import ThreadTermsPage from "../preview/thread/terms/page"
+import ThreadReturnsPage from "../preview/thread/returns/page"
 import ThreadConfirmationPage from "../preview/thread/confirmation/page"
 
 // ── Aurum sub-page imports ──
@@ -57,6 +59,11 @@ import AurumContactPage from "../preview/aurum/contact/page"
 import AurumFaqPage from "../preview/aurum/faq/page"
 import AurumPrivacyPage from "../preview/aurum/privacy/page"
 import AurumTermsPage from "../preview/aurum/terms/page"
+import AurumReturnsPage from "../preview/aurum/returns/page"
+import AurumShippingPage from "../preview/aurum/shipping/page"
+import AurumStoreLocatorPage from "../preview/aurum/store-locator/page"
+import AurumCertificationPage from "../preview/aurum/certification/page"
+import AurumCareGuidePage from "../preview/aurum/care-guide/page"
 import AurumConfirmationPage from "../preview/aurum/confirmation/page"
 
 // ── Eventpass sub-page imports ──
@@ -65,10 +72,10 @@ import EventpassCartPage from "../preview/eventpass/cart/page"
 import EventpassCheckoutPage from "../preview/eventpass/checkout/page"
 import EventpassAboutPage from "../preview/eventpass/about/page"
 import EventpassCategoriesPage from "../preview/eventpass/categories/page"
-import EventpassContactPage from "../preview/eventpass/contact/page"
 import EventpassFaqPage from "../preview/eventpass/faq/page"
 import EventpassPrivacyPage from "../preview/eventpass/privacy/page"
 import EventpassTermsPage from "../preview/eventpass/terms/page"
+import EventpassRefundPage from "../preview/eventpass/refund/page"
 import EventpassConfirmationPage from "../preview/eventpass/confirmation/page"
 
 export const dynamic = "force-dynamic"
@@ -87,6 +94,19 @@ export default async function TemplateSubPage({
 
   const slug = (slugParts ?? []).join("/")
 
+  // Shared nav/footer data (real bag count, category list, whether to show a
+  // Deals link) for every template's static info pages — keeps About/Privacy/
+  // Terms/etc. header & footer identical to the live shop/cart/PDP pages,
+  // instead of the separate hardcoded nav each template used to render here.
+  const [cartCount, navProducts] = template !== "glow"
+    ? await Promise.all([
+        tenant ? getCartItemCount(tenant) : 0,
+        tenant ? listTenantProducts(tenant) : [],
+      ])
+    : [0, []]
+  const categories = resolveCategories(navProducts)
+  const hasDeals = getDeals(navProducts).length > 0
+
   // ── VOLT ──
   if (template === "volt") {
     const colorVars = {
@@ -94,7 +114,7 @@ export default async function TemplateSubPage({
       ...(config?.accent_color  ? { "--accent": config.accent_color } : {}),
     }
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         <div style={colorVars as React.CSSProperties}>{node}</div>
       </TemplateConfigProvider>
     )
@@ -108,7 +128,8 @@ export default async function TemplateSubPage({
       case "categories":    return wrap(<VoltCategoriesPage />)
       case "best-sellers":  return wrap(<VoltBestSellersPage />)
       case "new-launches":  return wrap(<VoltNewLaunchesPage />)
-      case "contact":       return wrap(<VoltContactPage />)
+      // Contact was merged into the About page — redirect old links there.
+      case "contact":       return redirect("/about")
       case "faq":           return wrap(<VoltFaqPage />)
       case "privacy":       return wrap(<VoltPrivacyPage />)
       case "terms":         return wrap(<VoltTermsPage />)
@@ -150,7 +171,7 @@ export default async function TemplateSubPage({
   // ── THREAD ──
   if (template === "thread") {
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         {node}
       </TemplateConfigProvider>
     )
@@ -160,10 +181,12 @@ export default async function TemplateSubPage({
       case "checkout":     return wrap(<ThreadCheckoutPage />)
       case "about":        return wrap(<ThreadAboutPage />)
       case "categories":   return wrap(<ThreadCategoriesPage />)
-      case "contact":      return wrap(<ThreadContactPage />)
+      // Contact was merged into the About page — redirect old links there.
+      case "contact":      return redirect("/about")
       case "faq":          return wrap(<ThreadFaqPage />)
       case "privacy":      return wrap(<ThreadPrivacyPage />)
       case "terms":        return wrap(<ThreadTermsPage />)
+      case "returns":      return wrap(<ThreadReturnsPage />)
       case "confirmation": return wrap(<ThreadConfirmationPage />)
     }
   }
@@ -171,7 +194,7 @@ export default async function TemplateSubPage({
   // ── AURUM ──
   if (template === "aurum") {
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         {node}
       </TemplateConfigProvider>
     )
@@ -188,6 +211,11 @@ export default async function TemplateSubPage({
       case "faq":           return wrap(<AurumFaqPage />)
       case "privacy":       return wrap(<AurumPrivacyPage />)
       case "terms":         return wrap(<AurumTermsPage />)
+      case "returns":       return wrap(<AurumReturnsPage />)
+      case "shipping":      return wrap(<AurumShippingPage />)
+      case "store-locator": return wrap(<AurumStoreLocatorPage />)
+      case "certification": return wrap(<AurumCertificationPage />)
+      case "care-guide":    return wrap(<AurumCareGuidePage />)
       case "confirmation":  return wrap(<AurumConfirmationPage />)
     }
   }
@@ -195,7 +223,7 @@ export default async function TemplateSubPage({
   // ── EVENTPASS ──
   if (template === "eventpass") {
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         {node}
       </TemplateConfigProvider>
     )
@@ -205,10 +233,12 @@ export default async function TemplateSubPage({
       case "checkout":     return wrap(<EventpassCheckoutPage />)
       case "about":        return wrap(<EventpassAboutPage />)
       case "categories":   return wrap(<EventpassCategoriesPage />)
-      case "contact":      return wrap(<EventpassContactPage />)
+      // Contact was merged into the About page — redirect old links there.
+      case "contact":      return redirect("/about")
       case "faq":          return wrap(<EventpassFaqPage />)
       case "privacy":      return wrap(<EventpassPrivacyPage />)
       case "terms":        return wrap(<EventpassTermsPage />)
+      case "refund":       return wrap(<EventpassRefundPage />)
       case "confirmation": return wrap(<EventpassConfirmationPage />)
     }
   }

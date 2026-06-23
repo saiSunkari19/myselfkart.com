@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { PageLoader, Footer, Reveal } from "./_components"
 import { LiveProductCard, VoltNav, viewToVolt } from "./_live"
+import { Pagination } from "../../../components/pagination"
 import type { ShopProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
@@ -11,7 +12,7 @@ import s from "./_styles.module.css"
  * filter. Filtering happens in the route (which knows the raw products); this
  * slot just renders the `ShopProps` view models it is handed.
  */
-export function VoltShopLivePage({ config, products: productViews, categories, activeCategory }: ShopProps) {
+export function VoltShopLivePage({ config, cartCount, products: productViews, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
   const storeName = config?.store_name ?? "VOLT"
   const products = productViews.map(viewToVolt)
   const activeName = activeCategory ? categories.find(c => c.id === activeCategory)?.name : null
@@ -25,7 +26,7 @@ export function VoltShopLivePage({ config, products: productViews, categories, a
   return (
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={false} categories={categories} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
       <div className={s.main}>
         {categories.length > 0 && (
           <div className={s.categoryBar}>
@@ -50,7 +51,7 @@ export function VoltShopLivePage({ config, products: productViews, categories, a
               <div className={s.sectionHead}>
                 <div className={s.sectionTitle}>{activeName ?? `All Products · ${storeName}`}</div>
                 <span className={s.viewAll} style={{ cursor: "default" }}>
-                  {products.length} {products.length === 1 ? "item" : "items"}
+                  {totalCount} {totalCount === 1 ? "item" : "items"}
                 </span>
               </div>
             </Reveal>
@@ -59,13 +60,22 @@ export function VoltShopLivePage({ config, products: productViews, categories, a
                 No products are available yet.
               </p>
             ) : (
-              <div className={s.productGrid}>
-                {products.map((p, i) => (
-                  <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                    <LiveProductCard product={p} />
-                  </Reveal>
-                ))}
-              </div>
+              <>
+                <div className={s.productGrid}>
+                  {products.map((p, i) => (
+                    <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
+                      <LiveProductCard product={p} />
+                    </Reveal>
+                  ))}
+                </div>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  buildHref={p => `/shop?${activeCategory ? `category=${activeCategory}&` : ""}page=${p}`}
+                  className={s.pageLink}
+                  activeClassName={`${s.pageLink} ${s.pageLinkActive}`}
+                />
+              </>
             )}
           </section>
         </div>

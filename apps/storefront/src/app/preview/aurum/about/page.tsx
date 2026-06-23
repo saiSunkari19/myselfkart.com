@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { PageShell, Reveal, GoldDivider, NewsletterSection } from "../_components"
+import { PageShell, Reveal, GoldDivider } from "../_components"
 import s from "../_styles.module.css"
 import { useTemplateConfig } from "../../../../lib/template-config-context"
 
@@ -9,8 +9,11 @@ export default function AboutPage() {
   const { basePath } = useTemplateConfig()
   return (
     <PageShell>
-      {/* Hero */}
-      <section className={s.editorial} style={{ minHeight: 500 }}>
+      {/* Hero — marginTop: 0 cancels the page-shell's full-bleed-under-nav trick
+          (`.pageShell > .editorial:first-child { margin-top: -108px }`), since
+          this banner isn't a full-screen image and was rendering its text
+          behind the fixed nav bar. */}
+      <section className={s.editorial} style={{ minHeight: 500, marginTop: 0 }}>
         <img
           src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=1400&q=85"
           alt="Aurum Atelier"
@@ -109,8 +112,6 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
-
-      <NewsletterSection />
     </PageShell>
   )
 }

@@ -10,7 +10,9 @@ import s from "./_styles.module.css"
 
 // ---- Hero ----------------------------------------------------------------
 const Hero = () => (
-  <section className={s.hero} style={{ height: "100vh" }}>
+  // margin: 0 overrides the global `section { margin: 2rem 0 }` rule
+  // (globals.css) — otherwise it leaves an unwanted 2rem gap above TrustStrip.
+  <section className={s.hero} style={{ height: "100vh", margin: 0 }}>
     <img
       src="https://images.unsplash.com/photo-1606800052052-a08af7148866?w=1600&q=90"
       alt="Aurum Bridal Collection"

@@ -1,13 +1,18 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import Link from "next/link"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView, CategoryView } from "../../../lib/views"
-import type { HomeProps, NavProps } from "../../../lib/themes/types"
+import type { HomeProps } from "../../../lib/themes/types"
+import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
 import {
-  PageLoader, TrustStrip, Reveal, Stars, Badge, Footer,
+  PageLoader, TrustStrip, Reveal, Stars, Badge, Footer, VoltNav,
 } from "./_components"
+
+// Re-exported so existing imports of `VoltNav` from "./_live" keep working —
+// the actual component now lives in ./_components alongside Footer.
+export { VoltNav }
 import { type Product } from "./_data"
 import s from "./_styles.module.css"
 
@@ -84,61 +89,8 @@ export function LiveProductCard({ product }: { product: Product }) {
   )
 }
 
-/* ---- Config-aware NavBar (drives store name / logo / announcement) ---- */
-export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = false }: {
-  storeName: string
-  logoUrl: string | null
-  announcementText: string | null
-  hasDeals?: boolean
-}) {
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 10)
-    window.addEventListener("scroll", h, { passive: true })
-    return () => window.removeEventListener("scroll", h)
-  }, [])
-  return (
-    <>
-      {announcementText && (
-        <div className={s.announcementBar}>
-          <span className={s.announcementText}>{announcementText}</span>
-        </div>
-      )}
-      <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
-        <div className={s.navInner}>
-          <Link href="/" className={s.navLogo}>
-            {logoUrl
-              ? <img src={logoUrl} alt={storeName} style={{ height: 28, width: "auto", objectFit: "contain" }} />
-              : <>{storeName}<span className={s.navLogoAccent}>.</span></>}
-          </Link>
-          <div className={s.navSearch}>
-            <input className={s.navSearchInput} placeholder="Search for products..." />
-            <button className={s.navSearchBtn}>🔍</button>
-          </div>
-          <div className={s.navLinks}>
-            <Link href="/shop" className={s.navLink}>Shop</Link>
-            {hasDeals && <Link href="/deals" className={s.navLink}>Deals</Link>}
-            <Link href="/account" className={s.navLink}>Account</Link>
-            <Link href="/cart" className={s.navCart}>🛒 Cart</Link>
-          </div>
-        </div>
-      </nav>
-    </>
-  )
-}
-
-/* ---- Volt nav slot (StoreTheme.Nav) ---- */
-export function VoltNav({ config, hasDeals }: NavProps) {
-  const announcementEnabled = config?.announcement_enabled ?? true
-  return (
-    <LiveNavBar
-      storeName={config?.store_name ?? "VOLT"}
-      logoUrl={config?.logo_url ?? null}
-      announcementText={announcementEnabled ? (config?.announcement_text ?? null) : null}
-      hasDeals={hasDeals}
-    />
-  )
-}
+// LiveNavBar / VoltNav now live in ./_components, alongside Footer, so the
+// static info pages (About/Privacy/...) can render the exact same nav.
 
 /* ---- Hero (config-aware; falls back to a real featured product, never mock) ---- */
 function Hero({ config, featured }: { config: StoreConfig | null; featured: Product | null }) {
@@ -176,33 +128,46 @@ function Hero({ config, featured }: { config: StoreConfig | null; featured: Prod
   )
 }
 
-/* ---- Category bar (derived from tags; hidden when empty) ---- */
+/* ---- Category bar (derived from tags; hidden when empty). Each pill links
+   straight to the filtered shop listing — it's navigation, not a toggle. ---- */
 function CategoryBar({ categories }: { categories: CategoryView[] }) {
-  const [active, setActive] = useState("All")
   if (categories.length === 0) return null
-  const cats = ["All", ...categories.map(c => c.name)]
   return (
     <div className={s.categoryBar}>
       <div className={s.categoryBarInner}>
-        {cats.map(cat => (
-          <button key={cat} className={`${s.categoryBarItem} ${cat === active ? s.categoryBarItemActive : ""}`} onClick={() => setActive(cat)}>
-            {cat}
-          </button>
+        <Link href="/shop" className={s.categoryBarItem}>All</Link>
+        {categories.map(cat => (
+          <Link key={cat.id} href={cat.href} className={s.categoryBarItem}>
+            {cat.name}
+          </Link>
         ))}
       </div>
     </div>
   )
 }
 
-const REVIEWS = [
+const DEFAULT_REVIEWS = [
   { name: "Rahul Sharma", rating: 5, text: "Absolutely love my new purchase! Delivered next day, packaged perfectly. Genuine product, great price.", product: "Featured Product", avatar: "R" },
   { name: "Priya Mehta", rating: 5, text: "Life-changing quality. Ordered at midnight, arrived by noon. Will shop here always.", product: "Featured Product", avatar: "P" },
   { name: "Amit Patel", rating: 4, text: "Great experience, arrived in perfect condition. EMI process was seamless.", product: "Featured Product", avatar: "A" },
   { name: "Sneha Joshi", rating: 5, text: "Best prices I found anywhere online. Plus they have 24/7 support which saved me. 10/10.", product: "Featured Product", avatar: "S" },
 ]
 
+const DEFAULT_WHY_BUY = [
+  { icon: "🏆", title: "Trusted Quality", text: "Genuine products, carefully checked before dispatch." },
+  { icon: "📦", title: "Fast Dispatch", text: "Orders processed quickly so they reach you sooner." },
+  { icon: "🔧", title: "Helpful Support", text: "A team ready to help with any product queries." },
+  { icon: "💯", title: "Fair Pricing", text: "Honest prices with no hidden surprises." },
+]
+
+const DEFAULT_NEWSLETTER = {
+  title: "Get Exclusive Deals First",
+  sub: "Be first to hear about sales, new arrivals, and insider offers.",
+  button_label: "Subscribe",
+}
+
 /* ---- Home slot (StoreTheme.Home) — renders the tenant's real products ---- */
-export function VoltLivePage({ config, products: productViews, categories, deals: dealViews, newArrivals }: HomeProps) {
+export function VoltLivePage({ config, cartCount, products: productViews, categories, deals: dealViews, newArrivals }: HomeProps) {
   const storeName = config?.store_name ?? "VOLT"
 
   const products = productViews.map(viewToVolt)
@@ -210,6 +175,10 @@ export function VoltLivePage({ config, products: productViews, categories, deals
   const newLaunches = newArrivals.slice(0, 4).map(viewToVolt)
   const allProducts = products.slice(0, 8)
   const hasDeals = deals.length > 0
+
+  const reviews = config?.sections?.testimonials?.items ?? DEFAULT_REVIEWS
+  const whyBuy = config?.sections?.why_buy?.items ?? DEFAULT_WHY_BUY
+  const newsletter = { ...DEFAULT_NEWSLETTER, ...(config?.sections?.newsletter ?? {}) }
 
   const colorOverrides = {
     ...(config?.accent_color    ? { "--accent": config.accent_color }       : {}),
@@ -230,7 +199,7 @@ export function VoltLivePage({ config, products: productViews, categories, deals
   return (
     <div className={s.pageShell} style={colorOverrides}>
       <PageLoader />
-      <VoltNav config={config} hasDeals={hasDeals} categories={categories} />
+      <VoltNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <div className={s.main}>
         <Hero config={config} featured={newLaunches[0] ?? allProducts[0] ?? null} />
         <TrustStrip />
@@ -330,12 +299,7 @@ export function VoltLivePage({ config, products: productViews, categories, deals
               </div>
             </Reveal>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
-              {[
-                { icon: "🏆", title: "Trusted Quality", text: "Genuine products, carefully checked before dispatch." },
-                { icon: "📦", title: "Fast Dispatch", text: "Orders processed quickly so they reach you sooner." },
-                { icon: "🔧", title: "Helpful Support", text: "A team ready to help with any product queries." },
-                { icon: "💯", title: "Fair Pricing", text: "Honest prices with no hidden surprises." },
-              ].map((item, i) => (
+              {whyBuy.map((item: typeof DEFAULT_WHY_BUY[number], i: number) => (
                 <Reveal key={item.title} delay={(i % 4) as 0 | 1 | 2 | 3}>
                   <div style={{ textAlign: "center", padding: "28px 20px" }}>
                     <div style={{ fontSize: 36, marginBottom: 12 }}>{item.icon}</div>
@@ -359,23 +323,24 @@ export function VoltLivePage({ config, products: productViews, categories, deals
                 </div>
               </div>
             </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
-              {REVIEWS.map((r, i) => (
-                <Reveal key={r.name} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <div className={s.reviewCard}>
-                    <div className={s.reviewHeader}>
-                      <div className={s.reviewAvatar}>{r.avatar}</div>
-                      <div>
-                        <div className={s.reviewName}>{r.name}</div>
-                        <Stars rating={r.rating} />
-                      </div>
+            <TestimonialSlider
+              items={reviews}
+              gap={16}
+              accentColor="var(--accent, #2563eb)"
+              renderItem={(r: typeof DEFAULT_REVIEWS[number], i: number) => (
+                <div key={i} className={s.reviewCard}>
+                  <div className={s.reviewHeader}>
+                    <div className={s.reviewAvatar}>{r.avatar}</div>
+                    <div>
+                      <div className={s.reviewName}>{r.name}</div>
+                      <Stars rating={r.rating} />
                     </div>
-                    <p className={s.reviewText}>{r.text}</p>
-                    <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 10 }}>Verified purchase · {r.product}</div>
                   </div>
-                </Reveal>
-              ))}
-            </div>
+                  <p className={s.reviewText}>{r.text}</p>
+                  <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 10 }}>Verified purchase · {r.product}</div>
+                </div>
+              )}
+            />
           </div>
         </section>
 
@@ -383,11 +348,11 @@ export function VoltLivePage({ config, products: productViews, categories, deals
         <div className={s.container}>
           <Reveal>
             <div className={s.newsletter}>
-              <div className={s.newsletterTitle}>Get Exclusive Deals First</div>
-              <p className={s.newsletterSub}>Be first to hear about sales, new arrivals, and insider offers.</p>
+              <div className={s.newsletterTitle}>{newsletter.title}</div>
+              <p className={s.newsletterSub}>{newsletter.sub}</p>
               <div className={s.newsletterForm}>
                 <input className={s.newsletterInput} placeholder="Your email address" type="email" />
-                <button className={s.newsletterBtn}>Subscribe</button>
+                <button className={s.newsletterBtn}>{newsletter.button_label}</button>
               </div>
             </div>
           </Reveal>
