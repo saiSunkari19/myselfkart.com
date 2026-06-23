@@ -285,6 +285,48 @@ export async function ensureVariantInventoryLevels(
   return created
 }
 
+/**
+ * Rewrites each tenant inventory item's title to be **product-aware**.
+ *
+ * Medusa's core product import names the inventory item after the *variant*
+ * title (`create-product-variants` → `title: variantInput.title`). For a
+ * single-variant product the variant is "Default", so the Inventory list shows
+ * "Default"; for multi-variant products it shows the bare option value ("M",
+ * "200 ml") — never the product. This backfill makes the item recognisable:
+ *
+ *   - single / unnamed variant → `<Product Title>`
+ *   - real variant title       → `<Product Title> - <Variant Title>`
+ *
+ * Idempotent and tenant-scoped: only touches rows whose title would change, so
+ * re-running an import is a no-op once titles are correct.
+ */
+async function ensureInventoryItemTitles(trx: Knex.Transaction, tenantId: string) {
+  await trx.raw(
+    `update inventory_item ii
+        set title = computed.new_title,
+            updated_at = now()
+       from (
+         select pvii.inventory_item_id as item_id,
+                case
+                  when pv.title is not null and pv.title <> '' and pv.title <> 'Default'
+                  then p.title || ' - ' || pv.title
+                  else p.title
+                end as new_title
+           from product_variant_inventory_item pvii
+           join product_variant pv on pv.id = pvii.variant_id
+           join product p on p.id = pv.product_id
+          where p.tenant_id = ?
+            and pvii.deleted_at is null
+            and pv.deleted_at is null
+            and p.deleted_at is null
+       ) as computed
+      where ii.id = computed.item_id
+        and ii.deleted_at is null
+        and ii.title is distinct from computed.new_title`,
+    [tenantId]
+  )
+}
+
 export async function ensureTenantInventoryResources(
   knex: Knex,
   input: Input
@@ -312,6 +354,7 @@ export async function ensureTenantInventoryResources(
         stockLocationId,
         input.stockedQuantity
       )
+      await ensureInventoryItemTitles(trx, input.tenantId)
     })
   })
 }
