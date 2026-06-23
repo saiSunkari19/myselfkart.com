@@ -131,9 +131,16 @@ export async function googleStartAction(_prev: AuthFormState, formData: FormData
   if (!callbackUrl) return { error: "Google sign-in is not configured for this store." }
 
   const hdrs = await headers()
+  // Normalise exactly like resolveHost() (first value, no port, lowercased) so the
+  // stashed origin host matches the registry host the broker callback redirects to.
+  // An EMPTY origin is the failure that strands a user on the broker host (the
+  // callback can't redirect back), so refuse to start rather than send "".
   const originHost = (hdrs.get("x-forwarded-host") || hdrs.get("host") || "")
     .split(",")[0]
     .trim()
+    .toLowerCase()
+    .split(":")[0]
+  if (!originHost) return { error: "Could not start Google sign-in. Please try again." }
 
   // The origin store + destination ride along server-side: Medusa stashes them
   // keyed by the OAuth state (recovered by the broker callback), so the browser
