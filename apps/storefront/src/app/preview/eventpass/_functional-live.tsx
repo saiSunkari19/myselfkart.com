@@ -14,6 +14,7 @@ import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { EventpassNav, EventpassFooter, T, eventAccent, pageShell } from "./_live"
 import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 
 /**
  * Eventpass functional slots — the Eventpass visual language (inline `T` tokens,
@@ -226,7 +227,7 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
         <div className="ep-checkout-grid" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 32, alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Step 1: Contact details */}
-            <div style={cardStyle}>
+            <div style={cardStyle} id="ep-address-section">
               <div style={{ color: T.text, fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{hasAddress ? "✓ " : "1. "}Contact Details</div>
               {savedAddresses && savedAddresses.length > 0 ? (
                 <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? eventAccent(config)} />
@@ -247,12 +248,17 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
                     {countries.map(c => <option key={c.iso_2} value={c.iso_2}>{c.display_name ?? c.iso_2.toUpperCase()}</option>)}
                   </select>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}><SubmitButton style={{ ...primaryBtn, width: "100%" }} pendingLabel="Saving…">Save &amp; Continue</SubmitButton></div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <SubmitButton style={{ ...primaryBtn, width: "100%" }} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                  <div style={{ textAlign: "center", marginTop: 8 }}>
+                    <SaveAndAdvance nextSectionId="ep-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                  </div>
+                </div>
               </form>
             </div>
 
             {/* Step 2: Delivery */}
-            <div style={cardStyle}>
+            <div style={cardStyle} id="ep-delivery-section">
               <div style={{ color: T.text, fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{hasShipping ? "✓ " : "2. "}Delivery Method</div>
               {!hasAddress ? (
                 <p style={{ color: T.textMuted, fontSize: 14, margin: 0 }}>Enter your contact details to see delivery options.</p>
@@ -267,12 +273,13 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
                     </label>
                   ))}
                   <SubmitButton style={{ ...primaryBtn, background: "#fff", color: T.text, border: `1px solid ${T.border}`, marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                  <SaveAndAdvance nextSectionId="ep-payment-section" label="Delivery method saved" />
                 </form>
               )}
             </div>
 
             {/* Step 3: Payment */}
-            <div style={cardStyle}>
+            <div style={cardStyle} id="ep-payment-section">
               <div style={{ color: T.text, fontWeight: 700, fontSize: 15, marginBottom: 16 }}>3. Payment</div>
               {hasAddress && hasShipping ? (
                 hasRazorpay ? (

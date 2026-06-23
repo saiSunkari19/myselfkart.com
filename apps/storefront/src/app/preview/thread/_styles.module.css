@@ -530,6 +530,7 @@
 .productDetailThumb.active { border-color: #1a1a1a; }
 .productDetailThumb img { width: 100%; height: 100%; object-fit: cover; }
 .productDetailMain {
+  grid-column: 2;
   border-radius: 16px;
   overflow: hidden;
   aspect-ratio: 3/4;

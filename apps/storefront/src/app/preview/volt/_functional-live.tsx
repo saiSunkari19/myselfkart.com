@@ -15,6 +15,7 @@ import {
 import { formatMoney } from "../../../lib/format"
 import { OrderSummary } from "../../../components/storefront/order-summary"
 import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
@@ -186,7 +187,7 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
           <div className={s.checkoutLayout}>
             <div className={s.checkoutForm}>
               {/* Step 1: Shipping address */}
-              <div className={s.formCard}>
+              <div className={s.formCard} id="volt-address-section">
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>{hasAddress ? "✓" : "1"}</div>
                   <div className={s.formCardHeadTitle}>Shipping Information</div>
@@ -213,13 +214,16 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
                     </div>
                     <div className={s.formGroupFull}>
                       <SubmitButton className={`${s.btn} ${s.btnPrimary}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                      <div style={{ textAlign: "center", marginTop: 8 }}>
+                        <SaveAndAdvance nextSectionId="volt-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                      </div>
                     </div>
                   </form>
                 </div>
               </div>
 
               {/* Step 2: Shipping method */}
-              <div className={s.formCard}>
+              <div className={s.formCard} id="volt-delivery-section">
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>{hasShipping ? "✓" : "2"}</div>
                   <div className={s.formCardHeadTitle}>Delivery Method</div>
@@ -238,13 +242,14 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
                         </label>
                       ))}
                       <SubmitButton className={`${s.btn} ${s.btnSecondary}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                      <SaveAndAdvance nextSectionId="volt-payment-section" label="Delivery method saved" />
                     </form>
                   )}
                 </div>
               </div>
 
               {/* Step 3: Payment */}
-              <div className={s.formCard}>
+              <div className={s.formCard} id="volt-payment-section">
                 <div className={s.formCardHead}>
                   <div className={s.formCardHeadNum}>3</div>
                   <div className={s.formCardHeadTitle}>Payment</div>

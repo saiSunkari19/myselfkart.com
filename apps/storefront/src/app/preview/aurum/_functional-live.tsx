@@ -14,6 +14,7 @@ import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { AurumNav, AurumFooter, aurumColorVars } from "./_live"
 import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 import s from "./_styles.module.css"
 
 /**
@@ -213,7 +214,7 @@ export function AurumCheckoutLivePage({ config, cart, cartCount, shippingOptions
           <div className={s.checkoutLayout}>
             <div className={s.checkoutForm}>
               {/* Step 1: Shipping address */}
-              <div className={s.formBlock}>
+              <div className={s.formBlock} id="aurum-address-section">
                 <div className={s.formBlockTitle}>{hasAddress ? "✓ " : ""}Contact &amp; Shipping Information</div>
                 {savedAddresses && savedAddresses.length > 0 ? (
                   <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? undefined} />
@@ -236,12 +237,15 @@ export function AurumCheckoutLivePage({ config, cart, cartCount, shippingOptions
                   </div>
                   <div className={s.formGroupFull}>
                     <SubmitButton className={`${s.btn} ${s.btnGold} ${s.btnFull} ${s.btnLg}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                    <div style={{ textAlign: "center", marginTop: 8 }}>
+                      <SaveAndAdvance nextSectionId="aurum-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                    </div>
                   </div>
                 </form>
               </div>
 
               {/* Step 2: Delivery method */}
-              <div className={s.formBlock}>
+              <div className={s.formBlock} id="aurum-delivery-section">
                 <div className={s.formBlockTitle}>{hasShipping ? "✓ " : ""}Delivery Method</div>
                 {!hasAddress ? (
                   <p className={s.cartItemMeta}>Enter your shipping details to see delivery options.</p>
@@ -256,12 +260,13 @@ export function AurumCheckoutLivePage({ config, cart, cartCount, shippingOptions
                       </label>
                     ))}
                     <SubmitButton className={`${s.btn} ${s.btnOutlineGold}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                    <SaveAndAdvance nextSectionId="aurum-payment-section" label="Delivery method saved" />
                   </form>
                 )}
               </div>
 
               {/* Step 3: Payment */}
-              <div className={s.formBlock}>
+              <div className={s.formBlock} id="aurum-payment-section">
                 <div className={s.formBlockTitle}>Payment</div>
                 {hasAddress && hasShipping ? (
                   hasRazorpay ? (
