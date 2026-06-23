@@ -2,6 +2,9 @@ import { notFound, redirect } from "next/navigation"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
 import { listTenantProducts } from "../../lib/medusa/products"
+import { resolveCategories } from "../../lib/views"
+import { getDeals } from "../../lib/merchandising"
+import { getCartItemCount } from "../../lib/cart/item-count"
 import { TemplateConfigProvider } from "../../lib/template-config-context"
 
 // ── Volt sub-page imports ──
@@ -58,6 +61,9 @@ import AurumPrivacyPage from "../preview/aurum/privacy/page"
 import AurumTermsPage from "../preview/aurum/terms/page"
 import AurumReturnsPage from "../preview/aurum/returns/page"
 import AurumShippingPage from "../preview/aurum/shipping/page"
+import AurumStoreLocatorPage from "../preview/aurum/store-locator/page"
+import AurumCertificationPage from "../preview/aurum/certification/page"
+import AurumCareGuidePage from "../preview/aurum/care-guide/page"
 import AurumConfirmationPage from "../preview/aurum/confirmation/page"
 
 // ── Eventpass sub-page imports ──
@@ -88,6 +94,19 @@ export default async function TemplateSubPage({
 
   const slug = (slugParts ?? []).join("/")
 
+  // Shared nav/footer data (real bag count, category list, whether to show a
+  // Deals link) for every template's static info pages — keeps About/Privacy/
+  // Terms/etc. header & footer identical to the live shop/cart/PDP pages,
+  // instead of the separate hardcoded nav each template used to render here.
+  const [cartCount, navProducts] = template !== "glow"
+    ? await Promise.all([
+        tenant ? getCartItemCount(tenant) : 0,
+        tenant ? listTenantProducts(tenant) : [],
+      ])
+    : [0, []]
+  const categories = resolveCategories(navProducts)
+  const hasDeals = getDeals(navProducts).length > 0
+
   // ── VOLT ──
   if (template === "volt") {
     const colorVars = {
@@ -95,7 +114,7 @@ export default async function TemplateSubPage({
       ...(config?.accent_color  ? { "--accent": config.accent_color } : {}),
     }
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         <div style={colorVars as React.CSSProperties}>{node}</div>
       </TemplateConfigProvider>
     )
@@ -152,7 +171,7 @@ export default async function TemplateSubPage({
   // ── THREAD ──
   if (template === "thread") {
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         {node}
       </TemplateConfigProvider>
     )
@@ -175,7 +194,7 @@ export default async function TemplateSubPage({
   // ── AURUM ──
   if (template === "aurum") {
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         {node}
       </TemplateConfigProvider>
     )
@@ -194,6 +213,9 @@ export default async function TemplateSubPage({
       case "terms":         return wrap(<AurumTermsPage />)
       case "returns":       return wrap(<AurumReturnsPage />)
       case "shipping":      return wrap(<AurumShippingPage />)
+      case "store-locator": return wrap(<AurumStoreLocatorPage />)
+      case "certification": return wrap(<AurumCertificationPage />)
+      case "care-guide":    return wrap(<AurumCareGuidePage />)
       case "confirmation":  return wrap(<AurumConfirmationPage />)
     }
   }
@@ -201,7 +223,7 @@ export default async function TemplateSubPage({
   // ── EVENTPASS ──
   if (template === "eventpass") {
     const wrap = (node: React.ReactNode) => (
-      <TemplateConfigProvider config={config} basePath="">
+      <TemplateConfigProvider config={config} basePath="" cartCount={cartCount} hasDeals={hasDeals} categories={categories}>
         {node}
       </TemplateConfigProvider>
     )

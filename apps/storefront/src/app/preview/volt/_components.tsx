@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { type Product } from "./_data"
 import { useTemplateConfig } from "../../../lib/template-config-context"
+import type { NavProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
 // ---- Scroll Reveal ----
@@ -109,8 +110,18 @@ export function ProductCard({ product, compact = false }: { product: Product; co
 }
 
 // ---- Nav ----
-export function NavBar() {
-  const { basePath, config } = useTemplateConfig()
+// Single canonical nav, used by every page (live shop/cart/PDP AND the static
+// About/Privacy/Terms/etc. info pages) so the header never drifts out of sync.
+// basePath is read from context internally (empty on live, "/preview/volt" in
+// the template-picker demo) — callers only ever supply real data.
+export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = false, cartCount = 0 }: {
+  storeName: string
+  logoUrl: string | null
+  announcementText: string | null
+  hasDeals?: boolean
+  cartCount?: number
+}) {
+  const { basePath } = useTemplateConfig()
   const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [search, setSearch] = useState("")
@@ -119,35 +130,28 @@ export function NavBar() {
     window.addEventListener("scroll", h, { passive: true })
     return () => window.removeEventListener("scroll", h)
   }, [])
-  const storeName = config?.store_name ?? "VOLT"
-  const announcementText = config?.announcement_enabled && config.announcement_text
-    ? config.announcement_text
-    : "🎉 VOLT SALE — Up to 40% off on top brands"
   const runSearch = () => {
     const q = search.trim()
     router.push(q ? `${basePath}/shop?q=${encodeURIComponent(q)}` : `${basePath}/shop`)
   }
   return (
     <>
-      <div className={s.announcementBar}>
-        <span className={s.announcementText}>{announcementText}</span>
-        <span className={s.announcementText}>|</span>
-        <span className={s.announcementText}>Free delivery on orders above ₹999</span>
-        <span className={s.announcementText}>|</span>
-        <Link href={`${basePath}/deals`} className={s.announcementLink}>Shop Deals →</Link>
-      </div>
+      {announcementText && (
+        <div className={s.announcementBar}>
+          <span className={s.announcementText}>{announcementText}</span>
+        </div>
+      )}
       <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
         <div className={s.navInner}>
           <Link href={basePath || "/"} className={s.navLogo}>
-            {config?.logo_url
-              ? <img src={config.logo_url} alt={storeName} style={{ height: 32, objectFit: "contain" }} />
-              : <>{storeName}<span className={s.navLogoAccent}>.</span></>
-            }
+            {logoUrl
+              ? <img src={logoUrl} alt={storeName} style={{ height: 28, width: "auto", objectFit: "contain" }} />
+              : <>{storeName}<span className={s.navLogoAccent}>.</span></>}
           </Link>
           <div className={s.navSearch}>
             <input
               className={s.navSearchInput}
-              placeholder="Search for phones, laptops, TVs & more..."
+              placeholder="Search for products..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               onKeyDown={e => e.key === "Enter" && runSearch()}
@@ -155,18 +159,37 @@ export function NavBar() {
             <button className={s.navSearchBtn} onClick={runSearch}>🔍</button>
           </div>
           <div className={s.navLinks}>
-            <Link href={`${basePath}/deals`} className={s.navLink}>Deals</Link>
-            <Link href={`${basePath}/new-launches`} className={s.navLink}>New</Link>
-            <Link href={`${basePath}/brands`} className={s.navLink}>Brands</Link>
+            <Link href={`${basePath}/shop`} className={s.navLink}>Shop</Link>
+            {hasDeals && <Link href={`${basePath}/deals`} className={s.navLink}>Deals</Link>}
+            <Link href={`${basePath}/account`} className={s.navLink}>Account</Link>
             <Link href={`${basePath}/cart`} className={s.navCart}>
-              🛒 Cart
-              <span className={s.cartCount}>2</span>
+              🛒 Cart{cartCount > 0 && <span className={s.cartCount}>{cartCount}</span>}
             </Link>
           </div>
         </div>
       </nav>
     </>
   )
+}
+
+/* ---- Volt nav slot (StoreTheme.Nav) — used directly by live routes ---- */
+export function VoltNav({ config, hasDeals, cartCount }: NavProps) {
+  const announcementEnabled = config?.announcement_enabled ?? true
+  return (
+    <LiveNavBar
+      storeName={config?.store_name ?? "VOLT"}
+      logoUrl={config?.logo_url ?? null}
+      announcementText={announcementEnabled ? (config?.announcement_text ?? null) : null}
+      hasDeals={hasDeals}
+      cartCount={cartCount}
+    />
+  )
+}
+
+/* ---- Static info pages (About/Privacy/Terms/...) pull real data from context ---- */
+export function NavBar() {
+  const { config, hasDeals, cartCount } = useTemplateConfig()
+  return <VoltNav config={config} hasDeals={hasDeals} cartCount={cartCount} categories={[]} />
 }
 
 // ---- Footer ----

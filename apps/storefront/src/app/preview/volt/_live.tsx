@@ -1,15 +1,18 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView, CategoryView } from "../../../lib/views"
-import type { HomeProps, NavProps } from "../../../lib/themes/types"
+import type { HomeProps } from "../../../lib/themes/types"
 import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
 import {
-  PageLoader, TrustStrip, Reveal, Stars, Badge, Footer,
+  PageLoader, TrustStrip, Reveal, Stars, Badge, Footer, VoltNav,
 } from "./_components"
+
+// Re-exported so existing imports of `VoltNav` from "./_live" keep working —
+// the actual component now lives in ./_components alongside Footer.
+export { VoltNav }
 import { type Product } from "./_data"
 import s from "./_styles.module.css"
 
@@ -86,77 +89,8 @@ export function LiveProductCard({ product }: { product: Product }) {
   )
 }
 
-/* ---- Config-aware NavBar (drives store name / logo / announcement) ---- */
-export function LiveNavBar({ storeName, logoUrl, announcementText, hasDeals = false, cartCount = 0 }: {
-  storeName: string
-  logoUrl: string | null
-  announcementText: string | null
-  hasDeals?: boolean
-  cartCount?: number
-}) {
-  const [scrolled, setScrolled] = useState(false)
-  const [search, setSearch] = useState("")
-  const router = useRouter()
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 10)
-    window.addEventListener("scroll", h, { passive: true })
-    return () => window.removeEventListener("scroll", h)
-  }, [])
-  const runSearch = () => {
-    const q = search.trim()
-    router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop")
-  }
-  return (
-    <>
-      {announcementText && (
-        <div className={s.announcementBar}>
-          <span className={s.announcementText}>{announcementText}</span>
-        </div>
-      )}
-      <nav className={`${s.nav} ${scrolled ? s.navScrolled : ""}`}>
-        <div className={s.navInner}>
-          <Link href="/" className={s.navLogo}>
-            {logoUrl
-              ? <img src={logoUrl} alt={storeName} style={{ height: 28, width: "auto", objectFit: "contain" }} />
-              : <>{storeName}<span className={s.navLogoAccent}>.</span></>}
-          </Link>
-          <div className={s.navSearch}>
-            <input
-              className={s.navSearchInput}
-              placeholder="Search for products..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && runSearch()}
-            />
-            <button className={s.navSearchBtn} onClick={runSearch}>🔍</button>
-          </div>
-          <div className={s.navLinks}>
-            <Link href="/shop" className={s.navLink}>Shop</Link>
-            {hasDeals && <Link href="/deals" className={s.navLink}>Deals</Link>}
-            <Link href="/account" className={s.navLink}>Account</Link>
-            <Link href="/cart" className={s.navCart}>
-              🛒 Cart{cartCount > 0 && <span className={s.cartCount}>{cartCount}</span>}
-            </Link>
-          </div>
-        </div>
-      </nav>
-    </>
-  )
-}
-
-/* ---- Volt nav slot (StoreTheme.Nav) ---- */
-export function VoltNav({ config, hasDeals, cartCount }: NavProps) {
-  const announcementEnabled = config?.announcement_enabled ?? true
-  return (
-    <LiveNavBar
-      storeName={config?.store_name ?? "VOLT"}
-      logoUrl={config?.logo_url ?? null}
-      announcementText={announcementEnabled ? (config?.announcement_text ?? null) : null}
-      hasDeals={hasDeals}
-      cartCount={cartCount}
-    />
-  )
-}
+// LiveNavBar / VoltNav now live in ./_components, alongside Footer, so the
+// static info pages (About/Privacy/...) can render the exact same nav.
 
 /* ---- Hero (config-aware; falls back to a real featured product, never mock) ---- */
 function Hero({ config, featured }: { config: StoreConfig | null; featured: Product | null }) {
