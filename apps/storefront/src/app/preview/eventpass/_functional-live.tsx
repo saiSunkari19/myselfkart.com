@@ -130,7 +130,7 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                   </div>
                   {maxQty !== undefined && (
                     <div style={{ fontSize: 12, marginTop: 6, color: atMax ? T.danger : T.textLight }}>
-                      {atMax ? "Max available quantity reached" : maxQty <= 5 ? `Only ${maxQty} available` : null}
+                      {atMax ? "Max available quantity reached" : `${maxQty} available`}
                     </div>
                   )}
                 </div>

@@ -30,7 +30,7 @@ export function ThreadPdpLivePage({ config, cartCount, product, variants, relate
 
           <div className={s.productDetail}>
             <div className={s.productDetailImages}>
-              {images.length > 1 && (
+              {images.length > 0 && (
                 <div className={s.productDetailThumbs}>
                   {images.map((url, i) => (
                     <div

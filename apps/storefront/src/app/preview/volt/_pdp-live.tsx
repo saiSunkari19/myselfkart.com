@@ -42,7 +42,7 @@ export function VoltPdpLivePage({ config, cartCount, product, variants, related 
                     ? <img src={images[activeImage]} alt={product.title} style={{ width: "100%", objectFit: "cover" }} />
                     : <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", fontSize: 48 }}>🛍️</div>}
                 </div>
-                {images.length > 1 && (
+                {images.length > 0 && (
                   <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                     {images.map((url, i) => (
                       <button
