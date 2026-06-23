@@ -14,6 +14,7 @@ import { formatMoney } from "../../../lib/format"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
 import { ThreadNav, ThreadFooter, threadColorVars } from "./_live"
 import { SubmitButton } from "../../../components/submit-button"
+import { SaveAndAdvance } from "../../../components/save-and-advance"
 import s from "./_styles.module.css"
 
 /**
@@ -216,7 +217,7 @@ export function ThreadCheckoutLivePage({ config, cart, cartCount, shippingOption
               </div>
 
               {/* Step 1: Shipping address */}
-              <div className={s.formSection}>
+              <div className={s.formSection} id="thread-address-section">
                 <div className={s.formSectionTitle}>{hasAddress ? "✓ " : "1. "}Shipping Information</div>
                 {savedAddresses && savedAddresses.length > 0 ? (
                   <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? undefined} />
@@ -239,12 +240,15 @@ export function ThreadCheckoutLivePage({ config, cart, cartCount, shippingOption
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <SubmitButton className={`${s.btn} ${s.btnFull}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+                    <div style={{ textAlign: "center", marginTop: 8 }}>
+                      <SaveAndAdvance nextSectionId="thread-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
+                    </div>
                   </div>
                 </form>
               </div>
 
               {/* Step 2: Delivery method */}
-              <div className={s.formSection}>
+              <div className={s.formSection} id="thread-delivery-section">
                 <div className={s.formSectionTitle}>{hasShipping ? "✓ " : "2. "}Delivery Method</div>
                 {!hasAddress ? (
                   <p className={s.cartItemMeta}>Enter your shipping details to see delivery options.</p>
@@ -259,12 +263,13 @@ export function ThreadCheckoutLivePage({ config, cart, cartCount, shippingOption
                       </label>
                     ))}
                     <SubmitButton className={`${s.btn} ${s.btnOutline}`} style={{ marginTop: 12 }} pendingLabel="Saving…">Use this method</SubmitButton>
+                    <SaveAndAdvance nextSectionId="thread-payment-section" label="Delivery method saved" />
                   </form>
                 )}
               </div>
 
               {/* Step 3: Payment */}
-              <div className={s.formSection}>
+              <div className={s.formSection} id="thread-payment-section">
                 <div className={s.formSectionTitle}>3. Payment</div>
                 {hasAddress && hasShipping ? (
                   hasRazorpay ? (
