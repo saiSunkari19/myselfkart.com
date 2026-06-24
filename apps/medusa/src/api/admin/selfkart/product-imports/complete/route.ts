@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { Knex } from "knex"
 
 import {
+  applySellerImportProductMeta,
   extractSellerImportSeeds,
   linkSellerImportProducts,
   parseCsv,
@@ -40,11 +41,13 @@ export async function POST(req: MedusaRequest<CompleteBody>, res: MedusaResponse
   const rows = parseCsv(readCsv(req.body))
   const seeds = extractSellerImportSeeds(rows, tenantId)
   let linkedProducts = 0
+  let productMetaUpdated = 0
 
   await knex.transaction(async (trx) => {
     await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
     await upsertSellerImportTaxonomy(trx, tenantId, seeds)
     linkedProducts = await linkSellerImportProducts(trx, seeds.associations)
+    productMetaUpdated = await applySellerImportProductMeta(trx, seeds.productMeta)
   })
 
   // Full post-import heal so an imported catalog is immediately sellable —
@@ -79,6 +82,7 @@ export async function POST(req: MedusaRequest<CompleteBody>, res: MedusaResponse
       stocked_quantity: stockedQuantity,
       linked_shipping_profiles: linkedShippingProfiles,
       priced_variants: pricedVariants,
+      product_meta_updated: productMetaUpdated,
     },
   })
 }

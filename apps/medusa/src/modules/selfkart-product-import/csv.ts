@@ -17,6 +17,13 @@ const ASSOCIATION_ONLY_COLUMNS = [
   "Category Id",
   "Category Name",
   "Category Handle",
+  // Per-product merchandising metadata — captured by extractSellerImportSeeds
+  // and written to product.metadata after import; Medusa's native import has no
+  // column for these, so they must be stripped before the CSV is handed off.
+  "Product Rating",
+  "Product Review Count",
+  "Product Warranty",
+  "Product Returns Policy",
 ]
 
 function isRawReferenceColumn(header: string): boolean {

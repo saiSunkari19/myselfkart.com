@@ -31,6 +31,16 @@ export type ProductView = {
   createdAt: string | null
   /** Tag labels (e.g. Kids / Men / Women) — used for derived category nav. */
   tags: string[]
+  // Seller-supplied merchandising metadata (via CSV import → product.metadata).
+  // All null when the seller never set them; themes hide the related UI then.
+  /** Average rating 0–5, or null. */
+  rating: number | null
+  /** Number of reviews backing `rating`, or null. */
+  reviewCount: number | null
+  /** Warranty blurb, e.g. "1 Year Brand Warranty", or null. */
+  warranty: string | null
+  /** Per-product returns policy override; falls back to store config in themes. */
+  returnsPolicy: string | null
 }
 
 function lowestPricedVariant(p: StoreProduct) {
@@ -43,6 +53,7 @@ export function mapProduct(p: StoreProduct): ProductView {
   const cp = variant?.calculated_price ?? null
   const discount = discountPercent(p)
   const onSale = isOnSale(p)
+  const meta = p.metadata ?? {}
   return {
     id: p.id,
     handle: p.handle,
@@ -58,7 +69,25 @@ export function mapProduct(p: StoreProduct): ProductView {
     isOnSale: onSale,
     createdAt: p.created_at,
     tags: (p.tags ?? []).map(t => t.value),
+    rating: numericMeta(meta.rating),
+    reviewCount: numericMeta(meta.review_count),
+    warranty: stringMeta(meta.warranty),
+    returnsPolicy: stringMeta(meta.returns_policy),
   }
+}
+
+/** Coerce a metadata value to a finite number, or null. */
+function numericMeta(value: unknown): number | null {
+  if (value == null || value === "") return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Coerce a metadata value to a non-empty trimmed string, or null. */
+function stringMeta(value: unknown): string | null {
+  if (typeof value !== "string") return value == null ? null : String(value)
+  const trimmed = value.trim()
+  return trimmed || null
 }
 
 export function mapProducts(products: StoreProduct[]): ProductView[] {

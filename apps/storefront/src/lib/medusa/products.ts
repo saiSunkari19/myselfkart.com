@@ -56,13 +56,16 @@ export type StoreProduct = {
   // surfaced alongside categories in the browse nav.
   collection: StoreCollection | null
   variants: StoreVariant[]
+  // Per-product merchandising metadata written by the seller CSV import
+  // (rating, review_count, warranty, returns_policy). null when never set.
+  metadata: Record<string, unknown> | null
 }
 
 // calculated_price requires a region_id on the query so Medusa can resolve the
 // price for that region's currency. The price is in major units (e.g. 49.99) —
 // render it directly, never divide by 100.
 const PRODUCT_FIELDS =
-  "id,title,handle,thumbnail,images.url,description,created_at,*tags,categories.id,categories.name,categories.handle,collection.id,collection.title,collection.handle,*variants,variants.calculated_price"
+  "id,title,handle,thumbnail,images.url,description,created_at,metadata,*tags,categories.id,categories.name,categories.handle,collection.id,collection.title,collection.handle,*variants,variants.calculated_price"
 
 /**
  * Lists products for the resolved tenant. The per-tenant SDK attaches the
