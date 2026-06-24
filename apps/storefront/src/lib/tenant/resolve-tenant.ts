@@ -73,3 +73,23 @@ export const resolveTenant = cache(async (): Promise<TenantResolution | null> =>
     headerList.get("x-forwarded-host") || headerList.get("host")
   )
 })
+
+/**
+ * True when the current request host is a configured platform demo host
+ * (`SELFKART_STOREFRONT_DEMO_HOST`, comma-separated). These are tenant-less
+ * platform hosts — notably the OAuth broker host — so instead of "store not
+ * found" their home route serves the public demo store. Never matches a real
+ * tenant domain (a demo host must not be a tenant_domains row).
+ */
+export async function isStorefrontDemoHost(): Promise<boolean> {
+  const demoHosts = (process.env.SELFKART_STOREFRONT_DEMO_HOST ?? "")
+    .split(",")
+    .map((h) => resolveHost(h))
+    .filter(Boolean)
+  if (demoHosts.length === 0) {
+    return false
+  }
+  const headerList = await headers()
+  const host = resolveHost(headerList.get("x-forwarded-host") || headerList.get("host"))
+  return Boolean(host) && demoHosts.includes(host)
+}
