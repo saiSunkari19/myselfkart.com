@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { cache } from "react"
 
 import { baseMedusa } from "../medusa/client"
+import { matchesDemoHost, normalizeHost } from "./demo-host"
 import { signStorefrontValue } from "./signing"
 import type { TenantResolution, TenantStatus } from "./types"
 
@@ -20,10 +21,7 @@ type ResolveResponse = {
  * `x-forwarded-host` so it works behind a reverse proxy / load balancer.
  */
 function resolveHost(headerHost: string | null): string {
-  if (!headerHost) {
-    return ""
-  }
-  return headerHost.split(",")[0].trim().toLowerCase().split(":")[0]
+  return normalizeHost(headerHost)
 }
 
 /**
@@ -82,14 +80,9 @@ export const resolveTenant = cache(async (): Promise<TenantResolution | null> =>
  * tenant domain (a demo host must not be a tenant_domains row).
  */
 export async function isStorefrontDemoHost(): Promise<boolean> {
-  const demoHosts = (process.env.SELFKART_STOREFRONT_DEMO_HOST ?? "")
-    .split(",")
-    .map((h) => resolveHost(h))
-    .filter(Boolean)
-  if (demoHosts.length === 0) {
-    return false
-  }
   const headerList = await headers()
-  const host = resolveHost(headerList.get("x-forwarded-host") || headerList.get("host"))
-  return Boolean(host) && demoHosts.includes(host)
+  return matchesDemoHost(
+    headerList.get("x-forwarded-host") || headerList.get("host"),
+    process.env.SELFKART_STOREFRONT_DEMO_HOST
+  )
 }
