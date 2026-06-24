@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useFormStatus } from "react-dom"
 
 import { addToCartAction } from "../lib/cart/actions"
 import { formatMoney } from "../lib/format"
@@ -21,6 +22,46 @@ export type AddToCartClasses = {
   actions?: string
   primary?: string
   secondary?: string
+}
+
+/**
+ * Submit button wired to the form's pending state. While the server action runs
+ * (and through the subsequent redirect, until the new page loads) every submit
+ * is disabled; the one that was actually clicked (`active`) swaps to its
+ * `loadingLabel` so the shopper gets immediate feedback instead of a frozen
+ * page — addresses "I click Buy Now and nothing happens, then checkout opens".
+ */
+function CtaButton({
+  className,
+  children,
+  loadingLabel,
+  active,
+  onPick,
+  name,
+  value,
+}: {
+  className?: string
+  children: React.ReactNode
+  loadingLabel: string
+  active: boolean
+  onPick: () => void
+  name?: string
+  value?: string
+}) {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      name={name}
+      value={value}
+      className={className}
+      disabled={pending}
+      aria-busy={pending && active}
+      onClick={onPick}
+    >
+      {pending && active ? loadingLabel : children}
+    </button>
+  )
 }
 
 /**
@@ -47,6 +88,8 @@ export function AddToCart({
   const sellable = variants.filter((v) => v.calculated_price?.calculated_amount != null)
   const [variantId, setVariantId] = useState(sellable[0]?.id ?? "")
   const [quantity, setQuantity] = useState(1)
+  // Which submit the shopper clicked, so only that button shows its spinner.
+  const [picked, setPicked] = useState<"add" | "buy" | null>(null)
 
   if (sellable.length === 0) {
     return <p className="state">Not available for purchase.</p>
@@ -102,14 +145,26 @@ export function AddToCart({
       </div>
 
       <div className={classes.actions}>
-        <button type="submit" className={classes.primary}>
+        <CtaButton
+          className={classes.primary}
+          loadingLabel="Adding…"
+          active={picked === "add"}
+          onPick={() => setPicked("add")}
+        >
           Add to cart
-        </button>
+        </CtaButton>
         {buyNow && (
           // `buy_now` flips addToCartAction's redirect from /cart to /checkout.
-          <button type="submit" name="buy_now" value="1" className={classes.secondary}>
+          <CtaButton
+            className={classes.secondary}
+            name="buy_now"
+            value="1"
+            loadingLabel="Processing…"
+            active={picked === "buy"}
+            onPick={() => setPicked("buy")}
+          >
             Buy Now
-          </button>
+          </CtaButton>
         )}
       </div>
 
