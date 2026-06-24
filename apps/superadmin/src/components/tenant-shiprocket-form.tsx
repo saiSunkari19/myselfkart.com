@@ -102,10 +102,23 @@ export function TenantShiprocketForm({
           <span className="text-xs text-ink-subtle">Pickup location</span>
           <input
             name="pickup_location"
+            list="shiprocket-pickups"
             defaultValue={current?.pickup_location ?? ""}
             placeholder="Leave blank to use the account's primary"
             className="rounded-[var(--radius-md)] border border-line bg-surface px-4 py-2.5 text-sm text-ink outline-none focus:border-line-strong"
           />
+          {testState.pickupLocations?.length ? (
+            <>
+              <datalist id="shiprocket-pickups">
+                {testState.pickupLocations.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+              <span className="text-xs text-ink-subtle">
+                From this account: {testState.pickupLocations.join(", ")}
+              </span>
+            </>
+          ) : null}
         </label>
 
         <label className="flex items-center gap-2 text-sm text-ink-muted lg:col-span-2">
