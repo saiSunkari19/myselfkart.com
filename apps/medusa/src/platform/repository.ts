@@ -605,6 +605,135 @@ export async function deleteTenantPaymentCredentials(
     .del()
 }
 
+// --- tenant_shiprocket_credentials (SH-1) ----------------------------------
+// Per-tenant Shiprocket API user (email+password) + optional per-tenant webhook
+// secret, encrypted with the same helpers as payment credentials. Platform-managed.
+
+export type TenantShiprocketCredentialRow = {
+  tenant_id: string
+  enabled: boolean
+  api_email: string
+  api_password_encrypted: string
+  api_password_hint: string
+  webhook_secret_encrypted: string | null
+  webhook_secret_hint: string | null
+  pickup_location: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type TenantShiprocketCredentialSummary = {
+  enabled: boolean
+  api_email: string
+  api_password_hint: string
+  webhook_secret_hint: string | null
+  pickup_location: string | null
+  ready: boolean
+  updated_at: string
+}
+
+function toShiprocketCredentialSummary(
+  row: TenantShiprocketCredentialRow
+): TenantShiprocketCredentialSummary {
+  return {
+    enabled: row.enabled,
+    api_email: row.api_email,
+    api_password_hint: row.api_password_hint,
+    webhook_secret_hint: row.webhook_secret_hint,
+    pickup_location: row.pickup_location,
+    ready: Boolean(row.enabled && row.api_email && row.api_password_encrypted),
+    updated_at: row.updated_at,
+  }
+}
+
+export async function getTenantShiprocketCredentialSummary(
+  knex: Knex,
+  tenantId: string
+): Promise<TenantShiprocketCredentialSummary | null> {
+  const row = await knex<TenantShiprocketCredentialRow>("tenant_shiprocket_credentials")
+    .where({ tenant_id: tenantId })
+    .first()
+  return row ? toShiprocketCredentialSummary(row) : null
+}
+
+export async function getTenantShiprocketSecret(
+  knex: Knex,
+  tenantId: string,
+  which: "api_password" | "webhook_secret"
+): Promise<string | null> {
+  const row = await knex<TenantShiprocketCredentialRow>("tenant_shiprocket_credentials")
+    .where({ tenant_id: tenantId })
+    .first()
+  if (!row) return null
+  const enc = which === "api_password" ? row.api_password_encrypted : row.webhook_secret_encrypted
+  return enc ? decryptCredential(enc) : null
+}
+
+export async function upsertTenantShiprocketCredentials(
+  knex: Knex,
+  tenantId: string,
+  input: {
+    enabled: boolean
+    apiEmail: string
+    apiPassword?: string
+    webhookSecret?: string
+    pickupLocation?: string
+  }
+): Promise<TenantShiprocketCredentialSummary> {
+  const existing = await knex<TenantShiprocketCredentialRow>("tenant_shiprocket_credentials")
+    .where({ tenant_id: tenantId })
+    .first()
+
+  const apiEmail = input.apiEmail.trim()
+  const apiPassword = input.apiPassword?.trim()
+  const webhookSecret = input.webhookSecret?.trim()
+
+  if (!apiEmail) {
+    throw new Error("Shiprocket API email is required")
+  }
+  if (!existing && !apiPassword) {
+    throw new Error("Shiprocket API password is required for first-time setup")
+  }
+
+  const row = {
+    tenant_id: tenantId,
+    enabled: input.enabled,
+    api_email: apiEmail,
+    api_password_encrypted: apiPassword
+      ? encryptCredential(apiPassword)
+      : existing!.api_password_encrypted,
+    api_password_hint: apiPassword ? secretHint(apiPassword) : existing!.api_password_hint,
+    webhook_secret_encrypted: webhookSecret
+      ? encryptCredential(webhookSecret)
+      : existing?.webhook_secret_encrypted ?? null,
+    webhook_secret_hint: webhookSecret
+      ? secretHint(webhookSecret)
+      : existing?.webhook_secret_hint ?? null,
+    pickup_location: input.pickupLocation?.trim() || existing?.pickup_location || null,
+    updated_at: knex.fn.now(),
+  }
+
+  await knex("tenant_shiprocket_credentials")
+    .insert(row)
+    .onConflict("tenant_id")
+    .merge({
+      enabled: row.enabled,
+      api_email: row.api_email,
+      api_password_encrypted: row.api_password_encrypted,
+      api_password_hint: row.api_password_hint,
+      webhook_secret_encrypted: row.webhook_secret_encrypted,
+      webhook_secret_hint: row.webhook_secret_hint,
+      pickup_location: row.pickup_location,
+      updated_at: knex.fn.now(),
+    })
+
+  const summary = await getTenantShiprocketCredentialSummary(knex, tenantId)
+  if (!summary) {
+    throw new Error("Could not read saved Shiprocket credentials")
+  }
+  return summary
+}
+
 /** The seller application a tenant was provisioned from (owner contact, etc.). */
 export async function findApplicationByTenantId(
   knex: Knex,

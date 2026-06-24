@@ -16,6 +16,7 @@
     "seed:tenants": "medusa exec ./src/scripts/seed-tenants.ts",
     "provision:storefront": "medusa exec ./src/scripts/provision-tenant-storefront.ts",
     "provision:commerce": "medusa exec ./src/scripts/provision-tenant-commerce.ts",
+    "set:shiprocket": "medusa exec ./src/scripts/set-shiprocket-credentials.ts",
     "create:platform-admin": "medusa exec ./src/scripts/create-platform-admin.ts",
     "assert:platform-admin": "node --test --test-concurrency=1 tests/integration/platform/*.test.js",
     "assert:api-key-isolation": "medusa exec ./src/scripts/assert-api-key-isolation.ts",

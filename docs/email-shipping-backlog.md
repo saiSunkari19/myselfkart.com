@@ -318,4 +318,11 @@ Critical path: **S-A/S-B → F-1..F-4 → (P-1, C-1) → C-2/C-3 → SH-1→SH-2
 - **P-1** ✅ seller onboarding email (credentials + portal URL) in `provision-seller.ts` after provisioning — closes the lost-credential gap. Platform identity, non-fatal.
 - **P-3** ✅ `/apply` enquiry notification to ops (`applications/route.ts`) — platform identity, reply_to = applicant, non-fatal.
 - New helper `sendPlatformEmail()` (src/lib/store-email.ts) for Selfkart→seller/ops mail (noreply@ + connect@). tsc green.
-- **Remaining:** P-2 self-serve seller admin reset (needs `auth.password_reset` actor_type "user" handling) ; Shiprocket SH-1/SH-2/SH-3 (per-tenant creds + token + order push).
+
+## Execution Log — Sprint 3 shipping (2026-06-25)
+- **SH-1** ✅ `tenant_shiprocket_credentials` table (encrypted api_email/password + optional per-tenant webhook secret + pickup_location) + repo accessors (reuse aes-256-gcm helpers). Operator surface: superadmin API `GET/POST /selfkart/platform/tenants/[id]/shiprocket-credentials` **and** CLI `pnpm set:shiprocket` (env-driven). Migration `20260625000200`. **Tables applied LIVE to Neon.**
+- **SH-2** ✅ per-tenant token cache `src/lib/shiprocket/token.ts` (240h TTL, refresh <24h) + `client.ts` (fetch-based: login, createAdhocOrder, getPickupLocations) + `credentials.ts` (resolve/enabled/webhook-secret).
+- **SH-3** ✅ push subscriber `src/subscribers/order-placed-shiprocket.ts` on `order.placed` → only enabled tenants → idempotent via `order_shiprocket` → creates Shiprocket adhoc order with `order_id = Medusa order.id` (echoed back as webhook `channel_order_id`); pickup = configured or account primary; addresses/items from the order; defaults for dims/weight.
+- **SH-6 hardening** ✅ webhook handler now prefers the **per-tenant** webhook secret, env `SHIPROCKET_WEBHOOK_SECRET` as fallback.
+- tsc green. **Deferred:** superadmin UI form for Shiprocket creds (API + CLI exist); full v2 fulfillment provider (push-on-order subscriber chosen for v1); multi-package/COD handling; forward-only status ledger (SH-5 dedupes via notification key today).
+- **Remaining elsewhere:** P-2 self-serve seller admin reset (`auth.password_reset` actor_type "user").

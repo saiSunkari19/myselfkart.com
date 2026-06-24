@@ -6,6 +6,7 @@ import { runWithTenantContext } from "../../../../modules/tenant-context"
 import { getStoreConfig } from "../../../../platform/repository"
 import { renderStoreEmail } from "../../../../lib/email-template"
 import { sendStoreEmail } from "../../../../lib/store-email"
+import { resolveShiprocketWebhookSecret } from "../../../../lib/shiprocket/credentials"
 
 /**
  * Shiprocket shipment-status webhook (SH-6). Public POST (no auth middleware over
@@ -55,10 +56,17 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
   const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
   const tenantId = req.params.tenant_id
 
-  // --- auth: x-api-key must match the configured secret ---
-  const secret = process.env.SHIPROCKET_WEBHOOK_SECRET
+  // --- auth: x-api-key must match the per-tenant secret (SH-1) or the env fallback ---
+  const knex = req.scope.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
+  let perTenantSecret: string | null = null
+  try {
+    perTenantSecret = await resolveShiprocketWebhookSecret(knex, tenantId)
+  } catch {
+    perTenantSecret = null
+  }
+  const secret = perTenantSecret || process.env.SHIPROCKET_WEBHOOK_SECRET
   if (!secret) {
-    logger.error("[ship-webhook] SHIPROCKET_WEBHOOK_SECRET is not set; rejecting")
+    logger.error(`[ship-webhook] no webhook secret (per-tenant or env) for tenant ${tenantId}; rejecting`)
     res.status(503).json({ ok: false })
     return
   }
@@ -110,7 +118,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
         return
       }
 
-      const knex = req.scope.resolve<Knex>(ContainerRegistrationKeys.PG_CONNECTION)
       const config = await getStoreConfig(knex, tenantId)
       const domainRow = await knex("tenant_domains")
         .where({ tenant_id: tenantId, is_primary: true })
