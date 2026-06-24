@@ -64,14 +64,18 @@ export async function addToCartAction(formData: FormData): Promise<void> {
   const tenant = await requireActiveTenant()
   const variantId = String(formData.get("variant_id") ?? "")
   const quantity = Math.max(1, Number(formData.get("quantity") ?? 1))
+  // "Buy Now" adds the item then jumps straight to checkout; the plain
+  // "Add to cart" submit (no buy_now field) lands on the cart as before.
+  const buyNow = String(formData.get("buy_now") ?? "") === "1"
   if (!variantId) {
     return
   }
 
   const cartId = await ensureCartId(tenant)
   await addLineItem(tenant, cartId, variantId, quantity)
-  revalidatePath("/cart")
-  redirect("/cart")
+  const destination = buyNow ? "/checkout" : "/cart"
+  revalidatePath(destination)
+  redirect(destination)
 }
 
 export async function updateLineItemAction(formData: FormData): Promise<void> {

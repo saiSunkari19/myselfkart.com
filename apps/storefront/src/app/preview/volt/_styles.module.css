@@ -1220,6 +1220,25 @@
 }
 .deliveryRow strong { color: var(--text); }
 .deliveryIcon { font-size: 16px; flex-shrink: 0; }
+.detailVariantSelect {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.detailQtyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 .detailActions {
   display: flex;
   flex-direction: column;

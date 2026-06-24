@@ -126,7 +126,35 @@ export function VoltPdpLivePage({ config, cartCount, product, variants, related 
                   ))}
               </div>
 
-              <AddToCart variants={variants} />
+              <AddToCart
+                variants={variants}
+                buyNow
+                classes={{
+                  select: s.detailVariantSelect,
+                  qtyRow: s.detailQtyRow,
+                  qty: s.qtyControl,
+                  qtyBtn: s.qtyBtn,
+                  qtyVal: s.qtyVal,
+                  actions: s.detailActions,
+                  primary: `${s.btn} ${s.btnPrimary} ${s.btnFull} ${s.btnLg}`,
+                  secondary: `${s.btn} ${s.btnDark} ${s.btnFull} ${s.btnLg}`,
+                }}
+                stockLabel={
+                  <span style={{ fontSize: 13, color: "var(--success)", fontWeight: 600 }}>✓ In Stock</span>
+                }
+                footer={
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {["✅ Genuine Product", "🔒 Secure Payment", "📦 Premium Packaging"].map(t => (
+                      <span
+                        key={t}
+                        style={{ fontSize: 11.5, color: "var(--text3)", background: "var(--bg3)", padding: "4px 10px", borderRadius: 4 }}
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                }
+              />
             </div>
           </div>
 
