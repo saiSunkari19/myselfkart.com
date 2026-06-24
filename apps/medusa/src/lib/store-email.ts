@@ -111,3 +111,62 @@ export async function sendStoreEmail(
 
   logger.info(`[store-email] sent "${template}" to ${input.to} as ${sender.from}`)
 }
+
+export type SendPlatformEmailInput = {
+  to: string
+  subject: string
+  html?: string
+  text?: string
+  template?: string
+  data?: Record<string, unknown>
+  idempotencyKey?: string
+}
+
+/**
+ * Send PLATFORM mail (Selfkart -> seller/ops): onboarding credentials, admin
+ * reset, enquiry notifications. From the platform identity (RESEND_FROM, e.g.
+ * noreply@myselfkart.com) with Reply-To = RESEND_REPLY_TO (connect@). No tenant
+ * identity — this is Selfkart talking, not a store.
+ */
+export async function sendPlatformEmail(
+  container: MedusaContainer,
+  input: SendPlatformEmailInput
+): Promise<void> {
+  const logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
+  if (!input.to) {
+    logger.warn("[platform-email] missing recipient; skipping send")
+    return
+  }
+
+  let notificationService: any
+  try {
+    notificationService = container.resolve(Modules.NOTIFICATION)
+  } catch {
+    logger.warn(`[platform-email] no notification provider configured; skipping send to ${input.to}`)
+    return
+  }
+
+  const from = process.env.RESEND_FROM
+  const replyTo = process.env.RESEND_REPLY_TO
+  const template = input.template ?? "platform-email"
+
+  await notificationService.createNotifications({
+    to: input.to,
+    channel: "email",
+    template,
+    ...(from ? { from } : {}),
+    content: {
+      subject: input.subject,
+      ...(input.html ? { html: input.html } : {}),
+      ...(input.text ? { text: input.text } : {}),
+    },
+    data: {
+      ...(input.data ?? {}),
+      ...(from ? { from } : {}),
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    },
+    ...(input.idempotencyKey ? { idempotency_key: input.idempotencyKey } : {}),
+  })
+
+  logger.info(`[platform-email] sent "${template}" to ${input.to}`)
+}

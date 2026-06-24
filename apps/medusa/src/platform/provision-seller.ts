@@ -10,6 +10,8 @@ import { provisionTenantStorefrontWith } from "../scripts/provision-tenant-store
 import { ensureTenantInventoryResources } from "../scripts/seed-tenant-inventory-resources"
 import { hostForSubdomain, updateApplication } from "./repository"
 import type { SellerApplication } from "./repository"
+import { renderStoreEmail } from "../lib/email-template"
+import { sendPlatformEmail } from "../lib/store-email"
 
 export type ProvisionResult = {
   tenantId: string
@@ -131,6 +133,40 @@ export async function provisionSellerFromApplication(
     logger.info(
       `Seller onboarded from application ${application.id}: tenant_id=${tenantId} host=${host}`
     )
+
+    // P-1: email the seller their admin login + portal URL (platform identity).
+    // Non-fatal — a mail failure must not fail an otherwise-successful onboarding;
+    // the operator still gets the one-time credential in the API response.
+    try {
+      const adminUrl = `${process.env.MEDUSA_BACKEND_URL ?? ""}/app`
+      const storeUrl = `${host.includes("localhost") ? "http" : "https"}://${host}`
+      const { html, text } = renderStoreEmail({
+        storeName: "Selfkart",
+        heading: `Your store "${sellerName}" is ready`,
+        intro:
+          "Welcome to Selfkart! Your store has been created. Use the credentials below to sign in to your admin dashboard, then change your password.",
+        rows: [
+          { label: "Admin login", value: application.owner_email },
+          { label: "Temporary password", value: tempPassword },
+          { label: "Your storefront", value: storeUrl },
+        ],
+        button: { label: "Open your admin dashboard", url: adminUrl },
+        outroHtml: `<p style="margin:16px 0 0;color:#6b7280;font-size:13px;">For your security, change this temporary password after your first sign-in.</p>`,
+        footerNote: "Sent by Selfkart.",
+      })
+      await sendPlatformEmail(container, {
+        to: application.owner_email,
+        subject: `Your Selfkart store "${sellerName}" is ready`,
+        html,
+        text,
+        template: "seller-onboarding",
+        idempotencyKey: `seller-onboarding:${tenantId}`,
+      })
+    } catch (mailError) {
+      logger.error(
+        `[seller-onboarding] failed to email credentials for tenant ${tenantId}: ${serializeError(mailError)}`
+      )
+    }
 
     return { tenantId, host, adminEmail: application.owner_email, tempPassword }
   } catch (error) {

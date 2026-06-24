@@ -310,3 +310,12 @@ Critical path: **S-A/S-B → F-1..F-4 → (P-1, C-1) → C-2/C-3 → SH-1→SH-2
 - **F-4** ✅ `src/lib/email-template.ts` `renderStoreEmail()` — branded, escaped, html+text.
 - **C-1** ✅ code: `src/subscribers/order-placed-email.ts` (`order.placed` → resolve tenant via bridge → `runWithTenantContext` → render → `sendStoreEmail`); bridge `src/migration-scripts/20260625000100-order-tenant-map.ts` (non-RLS `order_tenant_map` + exception-safe AFTER INSERT trigger; reused by SH-4). **Bridge applied LIVE to Neon + 18 orders backfilled.** Live email of real order #28 ("Electric", Samsung S24 Ultra ₹131,999) delivered via Resend from `store+<tenantId>@myselfkart.com`. tsc green.
 - **Caveats:** Resend free tier = **2 emails/day** (hit today) — needs paid plan for volume. Subscriber fires on the next real order once the running backend reloads the new files (not yet restarted). Full in-app checkout→subscriber path not yet exercised by a live order; F-3+F-4+Resend proven with real data.
+- **SH webhook receiver** ✅ `POST /webhooks/delivery/[tenant_id]` (x-api-key via SHIPROCKET_WEBHOOK_SECRET; shipped/out-for-delivery/delivered; ack-200 always). Deployed. URL/token entered in Shiprocket panel. render.yaml + .env.example updated. **Pushed + deployed.**
+
+## Execution Log — Sprint 2 (2026-06-25)
+- **C-3** ✅ `customer-password-reset.ts` subscriber refactored off SendGrid template → `renderStoreEmail` + `sendStoreEmail` (Resend, per-tenant From/Reply-To, branded, tenant-correct reset URL unchanged).
+- **C-2** ✅ welcome email on new emailpass account (`register/route.ts`, fire-and-forget, best-effort). No built-in verify event → welcome, not verify.
+- **P-1** ✅ seller onboarding email (credentials + portal URL) in `provision-seller.ts` after provisioning — closes the lost-credential gap. Platform identity, non-fatal.
+- **P-3** ✅ `/apply` enquiry notification to ops (`applications/route.ts`) — platform identity, reply_to = applicant, non-fatal.
+- New helper `sendPlatformEmail()` (src/lib/store-email.ts) for Selfkart→seller/ops mail (noreply@ + connect@). tsc green.
+- **Remaining:** P-2 self-serve seller admin reset (needs `auth.password_reset` actor_type "user" handling) ; Shiprocket SH-1/SH-2/SH-3 (per-tenant creds + token + order push).
