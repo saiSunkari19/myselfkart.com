@@ -34,8 +34,15 @@ export function CartContents({ cart }: { cart: CartView | null }) {
         {cart.items.map((item) => (
           <li key={item.id} className="cart-line">
             {item.thumbnail ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.thumbnail} alt={item.title} width={64} height={64} />
+              item.handle ? (
+                <Link href={`/products/${item.handle}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.thumbnail} alt={item.title} width={64} height={64} />
+                </Link>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.thumbnail} alt={item.title} width={64} height={64} />
+              )
             ) : null}
             <div className="cart-line-info">
               <strong>{item.product_title ?? item.title}</strong>

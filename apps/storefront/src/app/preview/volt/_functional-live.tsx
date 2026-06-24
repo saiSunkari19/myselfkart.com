@@ -76,7 +76,11 @@ export function VoltCartLivePage({ config, cart, cartCount }: CartProps) {
                 const atMax = maxQty !== undefined && item.quantity >= maxQty
                 return (
                 <div key={item.id} className={s.cartItem}>
-                  {item.thumbnail ? (
+                  {item.handle ? (
+                    <Link href={`/products/${item.handle}`} className={s.cartItemImg}>
+                      {item.thumbnail ? <img src={item.thumbnail} alt={item.title} /> : null}
+                    </Link>
+                  ) : item.thumbnail ? (
                     <div className={s.cartItemImg}><img src={item.thumbnail} alt={item.title} /></div>
                   ) : <div className={s.cartItemImg} />}
                   <div>

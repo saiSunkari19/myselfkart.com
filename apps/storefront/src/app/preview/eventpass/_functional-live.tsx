@@ -84,9 +84,12 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
               const atMax = maxQty !== undefined && item.quantity >= maxQty
               return (
               <div key={item.id} style={{ ...cardStyle, display: "flex", gap: 16, alignItems: "center", padding: 16 }}>
-                <div style={{ width: 72, height: 72, borderRadius: T.radiusSm, overflow: "hidden", background: T.bgSubtle, flexShrink: 0 }}>
+                <Link
+                  href={item.handle ? `/products/${item.handle}` : "#"}
+                  style={{ width: 72, height: 72, borderRadius: T.radiusSm, overflow: "hidden", background: T.bgSubtle, flexShrink: 0, display: "block" }}
+                >
                   {item.thumbnail && <img src={item.thumbnail} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                </div>
+                </Link>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ color: T.text, fontWeight: 700, fontSize: 15 }}>{item.product_title ?? item.title}</div>
                   {item.variant_title && <div style={{ color: T.textMuted, fontSize: 13 }}>{item.variant_title}</div>}
