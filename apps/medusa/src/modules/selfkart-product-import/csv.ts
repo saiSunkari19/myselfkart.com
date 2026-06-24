@@ -50,7 +50,30 @@ function escapeCsvCell(value: string): string {
   return value
 }
 
+/**
+ * Sellers export "CSV" from many tools — some use a pipe, tab, or semicolon
+ * delimiter instead of a comma (e.g. a pipe-delimited "Product Handle | Title").
+ * Detect the delimiter from the header line (the most frequent of the common
+ * candidates) so those files import instead of collapsing into one column.
+ */
+export function detectDelimiter(csv: string): string {
+  const newline = csv.indexOf("\n")
+  const headerLine = newline >= 0 ? csv.slice(0, newline) : csv
+  const candidates = [",", "\t", "|", ";"]
+  let best = ","
+  let bestCount = 0
+  for (const candidate of candidates) {
+    const count = headerLine.split(candidate).length - 1
+    if (count > bestCount) {
+      bestCount = count
+      best = candidate
+    }
+  }
+  return best
+}
+
 export function parseCsv(csv: string): CsvRow[] {
+  const delimiter = detectDelimiter(csv)
   const rows: string[][] = []
   let row: string[] = []
   let value = ""
@@ -74,7 +97,7 @@ export function parseCsv(csv: string): CsvRow[] {
 
     if (char === "\"") {
       quoted = true
-    } else if (char === ",") {
+    } else if (char === delimiter) {
       row.push(value)
       value = ""
     } else if (char === "\n") {
