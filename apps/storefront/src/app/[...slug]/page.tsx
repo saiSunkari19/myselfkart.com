@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
 import { listTenantProducts } from "../../lib/medusa/products"
-import { resolveCategories } from "../../lib/views"
+import { resolveCategories, resolveCollections } from "../../lib/views"
 import { getDeals } from "../../lib/merchandising"
 import { getCartItemCount } from "../../lib/cart/item-count"
 import { TemplateConfigProvider } from "../../lib/template-config-context"
@@ -51,7 +51,7 @@ import AurumShopPage from "../preview/aurum/shop/page"
 import AurumCartPage from "../preview/aurum/cart/page"
 import AurumCheckoutPage from "../preview/aurum/checkout/page"
 import AurumAboutPage from "../preview/aurum/about/page"
-import AurumCollectionsPage from "../preview/aurum/collections/page"
+import { AurumCollectionsLivePage } from "../preview/aurum/_collections-live"
 import AurumNewArrivalsPage from "../preview/aurum/new-arrivals/page"
 import AurumBridalPage from "../preview/aurum/bridal/page"
 import AurumGiftsPage from "../preview/aurum/gifts/page"
@@ -203,7 +203,7 @@ export default async function TemplateSubPage({
       case "cart":          return wrap(<AurumCartPage />)
       case "checkout":      return wrap(<AurumCheckoutPage />)
       case "about":         return wrap(<AurumAboutPage />)
-      case "collections":   return wrap(<AurumCollectionsPage />)
+      case "collections":   return wrap(<AurumCollectionsLivePage collections={resolveCollections(navProducts)} />)
       case "new-arrivals":  return wrap(<AurumNewArrivalsPage />)
       case "bridal":        return wrap(<AurumBridalPage />)
       case "gifts":         return wrap(<AurumGiftsPage />)
