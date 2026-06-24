@@ -327,7 +327,7 @@ export function VoltLivePage({ config, cartCount, products: productViews, catego
                 <div className={s.sectionTitle} style={{ color: "#fff" }}>Built for Trust</div>
               </div>
             </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+            <div className={s.featureGrid}>
               {whyBuy.map((item: typeof DEFAULT_WHY_BUY[number], i: number) => (
                 <Reveal key={item.title} delay={(i % 4) as 0 | 1 | 2 | 3}>
                   <div style={{ textAlign: "center", padding: "28px 20px" }}>

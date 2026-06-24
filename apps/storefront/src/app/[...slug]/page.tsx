@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
 import { listTenantProducts } from "../../lib/medusa/products"
-import { resolveCategories, resolveCollections } from "../../lib/views"
-import { getDeals } from "../../lib/merchandising"
+import { resolveCategories, resolveCollections, mapProducts } from "../../lib/views"
+import { getDeals, getNewArrivals } from "../../lib/merchandising"
 import { getCartItemCount } from "../../lib/cart/item-count"
 import { TemplateConfigProvider } from "../../lib/template-config-context"
 
@@ -13,10 +13,7 @@ import VoltShopPage from "../preview/volt/shop/page"
 import VoltCartPage from "../preview/volt/cart/page"
 import VoltCheckoutPage from "../preview/volt/checkout/page"
 import VoltAboutPage from "../preview/volt/about/page"
-import VoltBrandsPage from "../preview/volt/brands/page"
-import VoltCategoriesPage from "../preview/volt/categories/page"
-import VoltBestSellersPage from "../preview/volt/best-sellers/page"
-import VoltNewLaunchesPage from "../preview/volt/new-launches/page"
+import { VoltCategoriesLivePage, VoltNewLaunchesLivePage } from "../preview/volt/_listing-live"
 import VoltFaqPage from "../preview/volt/faq/page"
 import VoltPrivacyPage from "../preview/volt/privacy/page"
 import VoltTermsPage from "../preview/volt/terms/page"
@@ -35,11 +32,10 @@ import type { Product as GlowProduct } from "../preview/glow/_data"
 import type { StoreProduct } from "../../lib/medusa/products"
 
 // ── Thread sub-page imports ──
-import ThreadProductsPage from "../preview/thread/products/page"
 import ThreadCartPage from "../preview/thread/cart/page"
 import ThreadCheckoutPage from "../preview/thread/checkout/page"
 import ThreadAboutPage from "../preview/thread/about/page"
-import ThreadCategoriesPage from "../preview/thread/categories/page"
+import { ThreadCategoriesLivePage } from "../preview/thread/_listing-live"
 import ThreadFaqPage from "../preview/thread/faq/page"
 import ThreadPrivacyPage from "../preview/thread/privacy/page"
 import ThreadTermsPage from "../preview/thread/terms/page"
@@ -52,9 +48,7 @@ import AurumCartPage from "../preview/aurum/cart/page"
 import AurumCheckoutPage from "../preview/aurum/checkout/page"
 import AurumAboutPage from "../preview/aurum/about/page"
 import { AurumCollectionsLivePage } from "../preview/aurum/_collections-live"
-import AurumNewArrivalsPage from "../preview/aurum/new-arrivals/page"
-import AurumBridalPage from "../preview/aurum/bridal/page"
-import AurumGiftsPage from "../preview/aurum/gifts/page"
+import { AurumNewArrivalsLivePage } from "../preview/aurum/_newarrivals-live"
 import AurumContactPage from "../preview/aurum/contact/page"
 import AurumFaqPage from "../preview/aurum/faq/page"
 import AurumPrivacyPage from "../preview/aurum/privacy/page"
@@ -67,11 +61,10 @@ import AurumCareGuidePage from "../preview/aurum/care-guide/page"
 import AurumConfirmationPage from "../preview/aurum/confirmation/page"
 
 // ── Eventpass sub-page imports ──
-import EventpassEventsPage from "../preview/eventpass/events/page"
 import EventpassCartPage from "../preview/eventpass/cart/page"
 import EventpassCheckoutPage from "../preview/eventpass/checkout/page"
 import EventpassAboutPage from "../preview/eventpass/about/page"
-import EventpassCategoriesPage from "../preview/eventpass/categories/page"
+import { EventpassCategoriesLivePage } from "../preview/eventpass/_listing-live"
 import EventpassFaqPage from "../preview/eventpass/faq/page"
 import EventpassPrivacyPage from "../preview/eventpass/privacy/page"
 import EventpassTermsPage from "../preview/eventpass/terms/page"
@@ -124,10 +117,11 @@ export default async function TemplateSubPage({
       case "cart":          return wrap(<VoltCartPage />)
       case "checkout":      return wrap(<VoltCheckoutPage />)
       case "about":         return wrap(<VoltAboutPage />)
-      case "brands":        return wrap(<VoltBrandsPage />)
-      case "categories":    return wrap(<VoltCategoriesPage />)
-      case "best-sellers":  return wrap(<VoltBestSellersPage />)
-      case "new-launches":  return wrap(<VoltNewLaunchesPage />)
+      // brands / best-sellers have no real data backing → send to the catalogue.
+      case "brands":        return redirect("/shop")
+      case "best-sellers":  return redirect("/shop")
+      case "categories":    return wrap(<VoltCategoriesLivePage categories={categories} />)
+      case "new-launches":  return wrap(<VoltNewLaunchesLivePage products={mapProducts(getNewArrivals(navProducts))} />)
       // Contact was merged into the About page — redirect old links there.
       case "contact":       return redirect("/about")
       case "faq":           return wrap(<VoltFaqPage />)
@@ -176,11 +170,12 @@ export default async function TemplateSubPage({
       </TemplateConfigProvider>
     )
     switch (slug) {
-      case "products":     return wrap(<ThreadProductsPage />)
+      // /products is Thread's catalogue — the real themed listing lives at /shop.
+      case "products":     return redirect("/shop")
       case "cart":         return wrap(<ThreadCartPage />)
       case "checkout":     return wrap(<ThreadCheckoutPage />)
       case "about":        return wrap(<ThreadAboutPage />)
-      case "categories":   return wrap(<ThreadCategoriesPage />)
+      case "categories":   return wrap(<ThreadCategoriesLivePage categories={categories} />)
       // Contact was merged into the About page — redirect old links there.
       case "contact":      return redirect("/about")
       case "faq":          return wrap(<ThreadFaqPage />)
@@ -204,9 +199,10 @@ export default async function TemplateSubPage({
       case "checkout":      return wrap(<AurumCheckoutPage />)
       case "about":         return wrap(<AurumAboutPage />)
       case "collections":   return wrap(<AurumCollectionsLivePage collections={resolveCollections(navProducts)} />)
-      case "new-arrivals":  return wrap(<AurumNewArrivalsPage />)
-      case "bridal":        return wrap(<AurumBridalPage />)
-      case "gifts":         return wrap(<AurumGiftsPage />)
+      case "new-arrivals":  return wrap(<AurumNewArrivalsLivePage products={mapProducts(getNewArrivals(navProducts))} />)
+      // bridal / gifts are curated edits with no real backing → catalogue.
+      case "bridal":        return redirect("/shop")
+      case "gifts":         return redirect("/shop")
       case "contact":       return wrap(<AurumContactPage />)
       case "faq":           return wrap(<AurumFaqPage />)
       case "privacy":       return wrap(<AurumPrivacyPage />)
@@ -228,11 +224,12 @@ export default async function TemplateSubPage({
       </TemplateConfigProvider>
     )
     switch (slug) {
-      case "events":       return wrap(<EventpassEventsPage />)
+      // /events is the eventpass catalogue — the real themed listing is /shop.
+      case "events":       return redirect("/shop")
       case "cart":         return wrap(<EventpassCartPage />)
       case "checkout":     return wrap(<EventpassCheckoutPage />)
       case "about":        return wrap(<EventpassAboutPage />)
-      case "categories":   return wrap(<EventpassCategoriesPage />)
+      case "categories":   return wrap(<EventpassCategoriesLivePage categories={categories} />)
       // Contact was merged into the About page — redirect old links there.
       case "contact":      return redirect("/about")
       case "faq":          return wrap(<EventpassFaqPage />)
