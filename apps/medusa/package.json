@@ -43,6 +43,7 @@
     "@medusajs/medusa": "2.15.5",
     "@medusajs/utils": "2.15.5",
     "knex": "3.2.8",
+    "resend": "^6.14.0",
     "ulid": "2.4.0"
   },
   "devDependencies": {

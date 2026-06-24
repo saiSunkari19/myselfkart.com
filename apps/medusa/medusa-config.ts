@@ -71,6 +71,18 @@ const sendgrid = {
 const hasSendgrid = Boolean(sendgrid.apiKey && sendgrid.from)
 const hasPartialSendgrid = (sendgrid.apiKey || sendgrid.from) && !hasSendgrid
 
+// Resend notification provider (multi-tenant). Our preferred "email" provider:
+// the per-notification From/Reply-To let one provider send every store's mail
+// under its own store identity (see src/modules/resend). RESEND_FROM is only a
+// fallback for mail that carries no own `from` (e.g. platform mail).
+const resend = {
+  apiKey: process.env.RESEND_API_KEY,
+  from: process.env.RESEND_FROM,
+  replyTo: process.env.RESEND_REPLY_TO,
+}
+const hasResend = Boolean(resend.apiKey && resend.from)
+const hasPartialResend = (resend.apiKey || resend.from) && !hasResend
+
 // Storefront tenants live on subdomains of SELFKART_STOREFRONT_BASE_DOMAIN (plus
 // optional custom domains). The storefront server makes the /store* + /store/auth
 // SDK calls, so its origins must be allowed by CORS. A regex covers every
@@ -118,6 +130,10 @@ if (hasPartialGoogleAuth) {
 
 if (hasPartialSendgrid) {
   throw new Error("SendGrid is incomplete. Set both SENDGRID_API_KEY and SENDGRID_FROM (or neither).")
+}
+
+if (hasPartialResend) {
+  throw new Error("Resend is incomplete. Set both RESEND_API_KEY and RESEND_FROM (or neither).")
 }
 
 const modules: any[] = [
@@ -184,19 +200,33 @@ modules.push({
 // With no provider for "feed" that step throws "Could not find a notification
 // provider for channel: feed", which fails the import transaction and triggers
 // compensation (rolling back the just-imported catalog). The local logger-based
-// provider satisfies "feed" (and "email" as a dev fallback when SendGrid is
-// absent); SendGrid still owns "email" whenever it is configured.
+// provider satisfies "feed" (and "email" as a dev fallback when no email provider
+// is configured). For "email" the precedence is Resend → SendGrid → local: Resend
+// is our multi-tenant provider (per-notification From/Reply-To), SendGrid is the
+// legacy fallback, and exactly one provider may own a given channel.
+const hasEmailProvider = hasResend || hasSendgrid
 const notificationProviders: any[] = [
   {
     resolve: "@medusajs/medusa/notification-local",
     id: "local",
     options: {
       name: "Local Notification Provider",
-      channels: hasSendgrid ? ["feed"] : ["feed", "email"],
+      channels: hasEmailProvider ? ["feed"] : ["feed", "email"],
     },
   },
 ]
-if (hasSendgrid) {
+if (hasResend) {
+  notificationProviders.push({
+    resolve: "./src/modules/resend",
+    id: "resend",
+    options: {
+      channels: ["email"],
+      api_key: resend.apiKey,
+      from: resend.from,
+      reply_to: resend.replyTo,
+    },
+  })
+} else if (hasSendgrid) {
   notificationProviders.push({
     resolve: "@medusajs/medusa/notification-sendgrid",
     id: "sendgrid",
