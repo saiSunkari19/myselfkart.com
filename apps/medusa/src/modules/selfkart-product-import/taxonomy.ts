@@ -44,6 +44,14 @@ export type ProductMetaSeed = {
   returnsPolicy: string | null
 }
 
+/** Per-variant stock, keyed by SKU (the stable variant identifier in the CSV).
+ * Applied as an inventory-level override after import; variants without a value
+ * keep the import's global default quantity. */
+export type VariantStockSeed = {
+  sku: string
+  quantity: number
+}
+
 export type SellerImportSeeds = {
   collections: CollectionSeed[]
   types: TypeSeed[]
@@ -51,6 +59,7 @@ export type SellerImportSeeds = {
   categories: CategorySeed[]
   associations: AssociationSeed[]
   productMeta: ProductMetaSeed[]
+  variantStock: VariantStockSeed[]
 }
 
 export function scopedImportId(tenantId: string, id: string): string {
@@ -91,6 +100,7 @@ export function extractSellerImportSeeds(
   const categories = new Map<string, CategorySeed>()
   const associations = new Map<string, AssociationSeed>()
   const productMeta = new Map<string, ProductMetaSeed>()
+  const variantStock = new Map<string, VariantStockSeed>()
 
   for (const row of rows) {
     const collectionId = row["Product Collection Id"] ?? ""
@@ -182,6 +192,15 @@ export function extractSellerImportSeeds(
         })
       }
     }
+
+    // Per-variant stock is keyed by SKU (one variant per row). A blank quantity
+    // means "use the import's global default"; a present, non-negative integer
+    // overrides it for that variant only.
+    const sku = (row["Variant SKU"] ?? "").trim()
+    const quantity = parseNumeric(row["Variant Inventory Quantity"])
+    if (sku && quantity != null && quantity >= 0) {
+      variantStock.set(sku, { sku, quantity: Math.trunc(quantity) })
+    }
   }
 
   return {
@@ -191,6 +210,7 @@ export function extractSellerImportSeeds(
     categories: [...categories.values()],
     associations: [...associations.values()],
     productMeta: [...productMeta.values()],
+    variantStock: [...variantStock.values()],
   }
 }
 

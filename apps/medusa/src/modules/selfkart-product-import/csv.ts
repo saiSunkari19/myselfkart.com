@@ -24,6 +24,10 @@ const ASSOCIATION_ONLY_COLUMNS = [
   "Product Review Count",
   "Product Warranty",
   "Product Returns Policy",
+  // Per-variant stock — captured by extractSellerImportSeeds (keyed by SKU) and
+  // applied as an inventory-level override after import. Medusa's native import
+  // has no quantity column, so strip it before handing the CSV off.
+  "Variant Inventory Quantity",
 ]
 
 function isRawReferenceColumn(header: string): boolean {

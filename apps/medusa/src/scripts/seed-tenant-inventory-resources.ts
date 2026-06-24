@@ -286,6 +286,95 @@ export async function ensureVariantInventoryLevels(
 }
 
 /**
+ * Applies per-variant stock from the import CSV ("Variant Inventory Quantity"),
+ * matched by SKU. Runs AFTER {@link ensureTenantInventoryResources} (which sets
+ * the import's global default on every variant), so this only overrides the
+ * variants the seller gave an explicit quantity for; everything else keeps the
+ * default. Updates an existing level or creates one if missing. Tenant-scoped.
+ * Returns the number of variant levels set.
+ */
+export async function applyVariantStockLevels(
+  knex: Knex,
+  input: { tenantId: string; variantStock: { sku: string; quantity: number }[] }
+): Promise<number> {
+  const { tenantId } = input
+  const bySku = new Map(
+    input.variantStock
+      .filter(
+        (v) => v.sku && Number.isFinite(v.quantity) && v.quantity >= 0
+      )
+      .map((v) => [v.sku, Math.trunc(v.quantity)] as const)
+  )
+  if (bySku.size === 0) {
+    return 0
+  }
+
+  let applied = 0
+  await runWithTenantContext({ tenantId, source: "session" }, async () => {
+    await knex.transaction(async (trx) => {
+      await trx.raw("select set_config('app.current_tenant', ?, true)", [tenantId])
+
+      const stockLocationId = stableId("sloc_selfkart", tenantId)
+      const location = await trx("stock_location")
+        .where({ id: stockLocationId })
+        .whereNull("deleted_at")
+        .first("id")
+      if (!location) {
+        return
+      }
+
+      // SKU -> inventory item, scoped to this tenant's own products.
+      const itemRows = await trx("product_variant_inventory_item as pvii")
+        .join("product_variant as pv", "pv.id", "pvii.variant_id")
+        .join("product as p", "p.id", "pv.product_id")
+        .whereIn("pv.sku", [...bySku.keys()])
+        .where("p.tenant_id", tenantId)
+        .whereNull("pvii.deleted_at")
+        .whereNull("pv.deleted_at")
+        .whereNull("p.deleted_at")
+        .select("pv.sku as sku", "pvii.inventory_item_id as inventory_item_id")
+
+      for (const { sku, inventory_item_id } of itemRows) {
+        const quantity = bySku.get(sku)
+        if (quantity == null) {
+          continue
+        }
+
+        const existing = await trx("inventory_level")
+          .where({ inventory_item_id, location_id: stockLocationId })
+          .first("id")
+
+        if (existing) {
+          await trx("inventory_level")
+            .where({ id: existing.id })
+            .update({
+              stocked_quantity: quantity,
+              raw_stocked_quantity: rawQuantity(quantity),
+              updated_at: trx.fn.now(),
+            })
+        } else {
+          await trx("inventory_level").insert({
+            id: stableId("ilev_selfkart", inventory_item_id, stockLocationId),
+            inventory_item_id,
+            location_id: stockLocationId,
+            stocked_quantity: quantity,
+            reserved_quantity: 0,
+            incoming_quantity: 0,
+            raw_stocked_quantity: rawQuantity(quantity),
+            raw_reserved_quantity: rawQuantity(0),
+            raw_incoming_quantity: rawQuantity(0),
+            metadata: seededMetadata("inventory_level", tenantId),
+          })
+        }
+        applied += 1
+      }
+    })
+  })
+
+  return applied
+}
+
+/**
  * Rewrites each tenant inventory item's title to be **product-aware**.
  *
  * Medusa's core product import names the inventory item after the *variant*

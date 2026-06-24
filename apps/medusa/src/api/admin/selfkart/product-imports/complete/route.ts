@@ -15,7 +15,10 @@ import {
   ensureShippingProfileId,
   linkProductsToShippingProfile,
 } from "../../../../../scripts/provision-tenant-commerce"
-import { ensureTenantInventoryResources } from "../../../../../scripts/seed-tenant-inventory-resources"
+import {
+  applyVariantStockLevels,
+  ensureTenantInventoryResources,
+} from "../../../../../scripts/seed-tenant-inventory-resources"
 
 type CompleteBody = {
   csv?: string
@@ -63,6 +66,14 @@ export async function POST(req: MedusaRequest<CompleteBody>, res: MedusaResponse
     stockedQuantity,
   })
 
+  // Per-variant stock overrides (CSV "Variant Inventory Quantity", by SKU).
+  // Runs after the global default above, so only variants with an explicit
+  // quantity are changed; the rest keep `stockedQuantity`.
+  const variantStockApplied = await applyVariantStockLevels(knex, {
+    tenantId,
+    variantStock: seeds.variantStock,
+  })
+
   const shippingProfileId = await ensureShippingProfileId(req.scope)
   const linkedShippingProfiles = await linkProductsToShippingProfile(
     knex,
@@ -80,6 +91,7 @@ export async function POST(req: MedusaRequest<CompleteBody>, res: MedusaResponse
       tags: seeds.tags.length,
       categories: seeds.categories.length,
       stocked_quantity: stockedQuantity,
+      variant_stock_applied: variantStockApplied,
       linked_shipping_profiles: linkedShippingProfiles,
       priced_variants: pricedVariants,
       product_meta_updated: productMetaUpdated,
