@@ -177,24 +177,40 @@ modules.push({
   options: { providers: authProviders },
 })
 
-if (hasSendgrid) {
-  modules.push({
-    resolve: "@medusajs/medusa/notification",
+// Notification module — always registered so Medusa core workflows that emit
+// notifications can resolve a provider for every channel they use. The product
+// import workflow sends an admin "feed" notification on both success and failure
+// (@medusajs/core-flows import-products -> send-notifications, channel: "feed").
+// With no provider for "feed" that step throws "Could not find a notification
+// provider for channel: feed", which fails the import transaction and triggers
+// compensation (rolling back the just-imported catalog). The local logger-based
+// provider satisfies "feed" (and "email" as a dev fallback when SendGrid is
+// absent); SendGrid still owns "email" whenever it is configured.
+const notificationProviders: any[] = [
+  {
+    resolve: "@medusajs/medusa/notification-local",
+    id: "local",
     options: {
-      providers: [
-        {
-          resolve: "@medusajs/medusa/notification-sendgrid",
-          id: "sendgrid",
-          options: {
-            channels: ["email"],
-            api_key: sendgrid.apiKey,
-            from: sendgrid.from,
-          },
-        },
-      ],
+      name: "Local Notification Provider",
+      channels: hasSendgrid ? ["feed"] : ["feed", "email"],
+    },
+  },
+]
+if (hasSendgrid) {
+  notificationProviders.push({
+    resolve: "@medusajs/medusa/notification-sendgrid",
+    id: "sendgrid",
+    options: {
+      channels: ["email"],
+      api_key: sendgrid.apiKey,
+      from: sendgrid.from,
     },
   })
 }
+modules.push({
+  resolve: "@medusajs/medusa/notification",
+  options: { providers: notificationProviders },
+})
 
 if (hasR2Config) {
   modules.push({
