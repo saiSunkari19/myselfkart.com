@@ -313,6 +313,11 @@
 .btnFull { width: 100%; }
 .btnLg { padding: 18px 48px; font-size: 12px; letter-spacing: 2.5px; }
 
+/* Live AddToCart wrapper — own class so the global `.add-to-cart` flex-row +
+   dark-button rules don't override Aurum's stacked CTA + qty stepper. */
+.buyForm { display: block; margin-top: 8px; }
+.buyActions { display: flex; gap: 12px; margin: 16px 0 24px; }
+
 /* ---- Gold ornamental line ---- */
 .goldLine {
   display: flex;

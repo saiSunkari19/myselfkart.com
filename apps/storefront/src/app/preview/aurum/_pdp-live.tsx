@@ -74,10 +74,20 @@ export function AurumPdpLivePage({ config, cartCount, product, variants, related
 
               {product.description && <p className={s.productDetailDesc}>{product.description}</p>}
 
-              {/* Real variant selector + add-to-cart server action */}
-              <div style={{ marginBottom: 24 }}>
-                <AddToCart variants={variants} />
-              </div>
+              {/* Real variant selector + add-to-cart server action, Aurum-skinned */}
+              <AddToCart
+                variants={variants}
+                buyNow
+                classes={{
+                  form: s.buyForm,
+                  qty: s.qtyRow,
+                  qtyBtn: s.qtyBtn,
+                  qtyVal: s.qtyVal,
+                  actions: s.buyActions,
+                  primary: `${s.btn} ${s.btnDark} ${s.btnFull} ${s.btnLg}`,
+                  secondary: `${s.btn} ${s.btnOutlineGold}`,
+                }}
+              />
 
               <div style={{ display: "flex", gap: 16, marginBottom: 4 }}>
                 {["🚚 Free Insured Shipping", "↩️ 30-Day Returns", "🛡️ Lifetime Exchange"].map(t => (

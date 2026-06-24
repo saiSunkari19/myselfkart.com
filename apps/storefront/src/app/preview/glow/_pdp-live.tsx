@@ -34,7 +34,18 @@ export function GlowPdpLivePage({ config, product, variants, related }: PdpProps
                 )}
               </div>
               {product.description && <p className={s.sectionSub} style={{ textAlign: "left", marginBottom: 24 }}>{product.description}</p>}
-              <AddToCart variants={variants} />
+              <AddToCart
+                variants={variants}
+                buyNow
+                classes={{
+                  form: s.buyForm,
+                  qty: s.qtyBox,
+                  qtyVal: s.qtyVal,
+                  actions: s.buyActions,
+                  primary: `${s.btn} ${s.btnDark}`,
+                  secondary: `${s.btn} ${s.btnOutlineDark}`,
+                }}
+              />
             </div>
           </div>
         </div>

@@ -437,6 +437,33 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(42, 42, 42, 0.2);
 }
+.btnOutlineDark {
+  background: transparent;
+  color: var(--charcoal);
+  border-color: var(--charcoal);
+}
+.btnOutlineDark:hover { background: var(--charcoal); color: var(--white); }
+
+/* Live AddToCart skin — own classes so the global `.add-to-cart` flex-row +
+   dark-button rules don't override Glow's stacked CTAs + pill qty stepper. */
+.buyForm { display: block; margin-top: 8px; }
+.buyActions { display: flex; flex-direction: column; gap: 12px; }
+.qtyBox {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--beige);
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+.qtyBox button {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--charcoal);
+}
+.qtyVal { min-width: 24px; text-align: center; font-size: 14px; font-weight: 600; }
 .btnOutlineLight {
   background: transparent;
   color: var(--white);

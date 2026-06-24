@@ -61,10 +61,20 @@ export function ThreadPdpLivePage({ config, cartCount, product, variants, relate
 
               <hr className={s.productDetailDivider} />
 
-              {/* Real variant selector + add-to-cart server action */}
-              <div style={{ marginBottom: 32 }}>
-                <AddToCart variants={variants} />
-              </div>
+              {/* Real variant selector + add-to-cart server action, Thread-skinned */}
+              <AddToCart
+                variants={variants}
+                buyNow
+                classes={{
+                  form: s.buyForm,
+                  qty: s.qtyRow,
+                  qtyBtn: s.qtyBtn,
+                  qtyVal: s.qtyVal,
+                  actions: s.buyActions,
+                  primary: `${s.btn} ${s.btnFull}`,
+                  secondary: `${s.btn} ${s.btnOutline}`,
+                }}
+              />
 
               <hr className={s.productDetailDivider} />
 
