@@ -1503,7 +1503,12 @@
   .contactLayout { grid-template-columns: 1fr; gap: 28px; }
   .categoryLarge { grid-template-columns: 1fr; }
 
-  .productDetailImages { grid-template-columns: 64px 1fr; gap: 10px; }
+  /* Gallery: stack with the main image on top and thumbnails in a row below */
+  .productDetailImages { display: flex; flex-direction: column-reverse; gap: 12px; }
+  .productDetailMain { grid-column: auto; }
+  .productDetailThumbs { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .productDetailThumbs::-webkit-scrollbar { display: none; }
+  .productDetailThumb { width: 64px; flex-shrink: 0; }
 
   .formGrid { grid-template-columns: 1fr; }
 
@@ -1519,6 +1524,7 @@
   .shopHeader { flex-direction: column; align-items: flex-start; gap: 12px; }
 
   .cartItem { grid-template-columns: 72px 1fr auto; gap: 14px; }
+  .cartItemImg { width: 100%; }
   .emptyState { padding: 60px 20px; }
 }
 

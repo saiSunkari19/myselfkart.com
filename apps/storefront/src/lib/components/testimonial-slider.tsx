@@ -24,9 +24,28 @@ export function TestimonialSlider<T>({
   intervalMs?: number
   accentColor?: string
 }) {
-  const maxIndex = Math.max(0, items.length - visibleCount)
+  // Responsive: show fewer cards on smaller screens so short lists (e.g. the
+  // default 3 testimonials) become a real one-card slider on mobile instead of
+  // a cramped 3-column grid. Starts at the desktop count for SSR, then adjusts.
+  const [vis, setVis] = useState(visibleCount)
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      setVis(w < 640 ? 1 : w < 1024 ? Math.min(2, visibleCount) : visibleCount)
+    }
+    update()
+    window.addEventListener("resize", update, { passive: true })
+    return () => window.removeEventListener("resize", update)
+  }, [visibleCount])
+
+  const maxIndex = Math.max(0, items.length - vis)
   const [index, setIndex] = useState(0)
-  const sliding = items.length > visibleCount
+  const sliding = items.length > vis
+
+  // Keep the active index in range when the visible count changes (resize).
+  useEffect(() => {
+    setIndex((i) => Math.min(i, maxIndex))
+  }, [maxIndex])
 
   useEffect(() => {
     if (!sliding) return
@@ -38,7 +57,7 @@ export function TestimonialSlider<T>({
 
   if (!sliding) {
     return (
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${visibleCount}, 1fr)`, gap }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${vis}, minmax(0, 1fr))`, gap }}>
         {items.map((item, i) => renderItem(item, i))}
       </div>
     )
@@ -55,14 +74,14 @@ export function TestimonialSlider<T>({
             style={{
               display: "flex",
               gap,
-              transform: `translateX(calc(-${index} * (100% + ${gap}px) / ${visibleCount}))`,
+              transform: `translateX(calc(-${index} * (100% + ${gap}px) / ${vis}))`,
               transition: "transform 0.5s ease",
             }}
           >
             {items.map((item, i) => (
               <div
                 key={i}
-                style={{ flex: `0 0 calc((100% - ${gap * (visibleCount - 1)}px) / ${visibleCount})`, minWidth: 0 }}
+                style={{ flex: `0 0 calc((100% - ${gap * (vis - 1)}px) / ${vis})`, minWidth: 0 }}
               >
                 {renderItem(item, i)}
               </div>

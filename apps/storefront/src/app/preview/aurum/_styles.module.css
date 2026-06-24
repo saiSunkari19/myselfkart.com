@@ -2029,8 +2029,12 @@
   .newsletterInput { border: 1px solid rgba(255,255,255,0.15); }
   .newsletterBtn { border: 1px solid #b8962e; }
 
-  .productGallery { grid-template-columns: 56px 1fr; gap: 8px; }
-  .productThumb { width: 56px; }
+  /* Gallery: main image on top, thumbnails in a row below */
+  .productGallery { display: flex; flex-direction: column-reverse; gap: 10px; position: static; top: auto; }
+  .productMainImg { grid-column: auto; }
+  .productThumbs { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .productThumbs::-webkit-scrollbar { display: none; }
+  .productThumb { width: 56px; flex-shrink: 0; }
 
   .formBlock { padding: 24px 20px; }
   .orderSummary { padding: 28px 20px; }
