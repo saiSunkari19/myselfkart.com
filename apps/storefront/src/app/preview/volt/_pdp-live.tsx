@@ -130,6 +130,7 @@ export function VoltPdpLivePage({ config, cartCount, product, variants, related 
                 variants={variants}
                 buyNow
                 classes={{
+                  form: s.detailBuy,
                   select: s.detailVariantSelect,
                   qtyRow: s.detailQtyRow,
                   qty: s.qtyControl,

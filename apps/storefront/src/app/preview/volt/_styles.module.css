@@ -1233,6 +1233,13 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
+/* Wrapper for the live AddToCart form. Its own class (not the global
+   `.add-to-cart`) so the global flex-row + `button { background: var(--fg) }`
+   rules don't override Volt's stacked full-width buttons or the accent CTA. */
+.detailBuy {
+  display: block;
+  margin-top: 8px;
+}
 .detailQtyRow {
   display: flex;
   align-items: center;
