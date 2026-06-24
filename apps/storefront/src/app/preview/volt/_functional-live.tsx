@@ -13,7 +13,6 @@ import {
   placeOrderAction,
 } from "../../../lib/cart/actions"
 import { formatMoney } from "../../../lib/format"
-import { OrderSummary } from "../../../components/storefront/order-summary"
 import { SubmitButton } from "../../../components/submit-button"
 import { SaveAndAdvance } from "../../../components/save-and-advance"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
@@ -310,7 +309,50 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
       <div className={s.main}>
         <div className={s.container}>
           <section className={s.section}>
-            <OrderSummary order={order} />
+            <div style={{ textAlign: "center", maxWidth: 600, margin: "0 auto" }}>
+              <div style={{ fontSize: 64, marginBottom: 20 }} aria-hidden>✅</div>
+              <h1 style={{ fontSize: 32, fontWeight: 900, color: "var(--text)", marginBottom: 8 }}>Order Confirmed!</h1>
+              <p style={{ fontSize: 15, color: "var(--text2)", marginBottom: 28 }}>
+                Thank you for your order
+                {order.email ? <> — a receipt is on its way to {order.email}</> : null}.
+              </p>
+
+              <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 28px", marginBottom: 20, borderTop: "3px solid var(--accent)" }}>
+                <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "var(--text3)", marginBottom: 6 }}>Order ID</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--accent)", letterSpacing: 1 }}>#{order.display_id}</div>
+              </div>
+
+              <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "8px 24px", marginBottom: 36, textAlign: "left" }}>
+                {order.items.map(item => (
+                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "12px 0", borderBottom: "1px solid var(--border)", fontSize: 14, color: "var(--text2)" }}>
+                    <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>{item.quantity} ×</strong> {item.title}</span>
+                    <strong style={{ color: "var(--text)", whiteSpace: "nowrap" }}>{formatMoney(item.total, order.currency_code)}</strong>
+                  </div>
+                ))}
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", fontSize: 16, fontWeight: 800, color: "var(--text)" }}>
+                  <span>Total</span><span>{formatMoney(order.total, order.currency_code)}</span>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 36 }}>
+                {[
+                  { icon: "📦", title: "Packed Same Day", text: "Your order is being picked and packed" },
+                  { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },
+                  { icon: "📱", title: "Track via SMS", text: "You'll receive tracking updates on your phone" },
+                ].map(step => (
+                  <div key={step.title} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 16px", textAlign: "center" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }} aria-hidden>{step.icon}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{step.title}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--text3)" }}>{step.text}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                <Link href="/shop" className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Continue Shopping</Link>
+                <Link href="/" className={`${s.btn} ${s.btnSecondary} ${s.btnLg}`}>Back to Home</Link>
+              </div>
+            </div>
           </section>
         </div>
       </div>
