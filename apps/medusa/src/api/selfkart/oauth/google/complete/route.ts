@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto"
 
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import {
   requireTenantContext,
@@ -60,11 +60,31 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
   }
 
   // The broker has no ambient tenant context, so establish it from the stashed
-  // tenant before resolving/creating the tenant-scoped customer.
-  const token = await runWithTenantContext({ tenantId: origin.tenantId, source: "domain" }, () => {
-    requireTenantContext()
-    return resolveTenantCustomerToken(req.scope, result.authIdentity, "google")
-  })
+  // tenant before resolving/creating the tenant-scoped customer. Any failure here
+  // (e.g. customer resolution) must still return 200 with origin_host so the
+  // storefront callback surfaces the error on the ORIGIN store's /login — a thrown
+  // 500 carries no body, dropping origin_host and stranding the buyer on the
+  // broker host instead.
+  let token: string
+  try {
+    token = await runWithTenantContext({ tenantId: origin.tenantId, source: "domain" }, () => {
+      requireTenantContext()
+      return resolveTenantCustomerToken(req.scope, result.authIdentity, "google")
+    })
+  } catch (error) {
+    const logger: any = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
+    logger.error(
+      `[selfkart] Google sign-in customer resolution failed (tenant=${origin.tenantId}): ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+    res.status(200).json({
+      ok: false,
+      origin_host: origin.originHost,
+      error: "We couldn't finish signing you in. Please try again.",
+    })
+    return
+  }
 
   const ott = randomBytes(32).toString("hex")
   await cache.set(`oauth_ott:${ott}`, { token, tenantId: origin.tenantId, next: origin.next }, 120)
