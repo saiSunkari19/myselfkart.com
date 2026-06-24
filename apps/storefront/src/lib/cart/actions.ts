@@ -41,7 +41,15 @@ async function requireActiveTenant(): Promise<TenantResolution> {
 async function ensureCartId(tenant: TenantResolution): Promise<string> {
   const existing = await getCartId()
   if (existing) {
-    return existing
+    // Don't trust the cookie blindly: a completed, deleted, expired, or
+    // reseeded cart id lingers in the 30-day cookie and would otherwise make
+    // every add-to-cart 404 against /store/carts/<gone>/line-items with no way
+    // to recover. Verify it still resolves for this tenant; drop it if not.
+    const cart = await getCart(tenant, existing)
+    if (cart) {
+      return existing
+    }
+    await clearCartId()
   }
   const region = await getRegion(tenant)
   if (!region) {
