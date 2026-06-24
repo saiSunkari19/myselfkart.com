@@ -24,9 +24,11 @@ export type StoreOrder = {
   items: StoreOrderItem[]
 }
 
+// `*items` is required for the line-item computed fields (total/quantity/etc.)
+// to resolve — narrowing to explicit `items.total` returns 0. The nested
+// product handle is added on top so each line can link back to its PDP.
 const ORDER_FIELDS =
-  "id,display_id,email,currency_code,total," +
-  "items.id,items.title,items.quantity,items.total,items.thumbnail,items.product_id,items.product.handle"
+  "id,display_id,email,currency_code,total,*items,items.product.handle"
 
 type RawOrderItem = {
   id: string

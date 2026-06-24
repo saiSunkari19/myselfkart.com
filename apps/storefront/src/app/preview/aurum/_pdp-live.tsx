@@ -29,14 +29,11 @@ export function AurumPdpLivePage({ config, cartCount, product, variants, related
           </div>
 
           <div className={s.productDetail}>
-            {/* Gallery */}
+            {/* Gallery — thumbs must precede the main image so CSS grid
+                auto-placement keeps the 72px thumb column on the left (the
+                main image is pinned to column 2; rendering it first pushes the
+                auto-placed thumbs down to row 2). Mirrors the preview layout. */}
             <div className={s.productGallery}>
-              <div className={s.productMainImg}>
-                <img src={images[activeImg]} alt={product.title} />
-                {product.isOnSale && (
-                  <span style={{ position: "absolute", top: 16, left: 16 }} className={`${s.productBadge} ${s.badgeLimited}`}>Sale</span>
-                )}
-              </div>
               {images.length > 0 && (
                 <div className={s.productThumbs}>
                   {images.map((url, i) => (
@@ -50,6 +47,12 @@ export function AurumPdpLivePage({ config, cartCount, product, variants, related
                   ))}
                 </div>
               )}
+              <div className={s.productMainImg}>
+                <img src={images[activeImg]} alt={product.title} />
+                {product.isOnSale && (
+                  <span style={{ position: "absolute", top: 16, left: 16 }} className={`${s.productBadge} ${s.badgeLimited}`}>Sale</span>
+                )}
+              </div>
             </div>
 
             {/* Info */}

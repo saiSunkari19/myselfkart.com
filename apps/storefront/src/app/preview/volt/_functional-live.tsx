@@ -111,11 +111,7 @@ export function VoltCartLivePage({ config, cart, cartCount }: CartProps) {
                         <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
-                    {maxQty !== undefined && (
-                      <div className={s.cartItemMeta} style={{ color: atMax ? "#dc2626" : undefined }}>
-                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
-                      </div>
-                    )}
+                    {/* Stock count intentionally hidden; the disabled + button enforces the max. */}
                   </div>
                   <div className={s.cartItemPrice}>
                     <div className={s.priceMain}>{formatMoney(item.total, cur)}</div>
@@ -326,7 +322,7 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
                 {order.items.map(item => (
                   <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border)", fontSize: 14, color: "var(--text2)" }}>
                     {item.thumbnail ? (
-                      <img src={item.thumbnail} alt="" width={44} height={44} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--bg3,#f1f5f9)" }} />
+                      <img src={item.thumbnail} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--bg3,#f1f5f9)" }} />
                     ) : null}
                     <span style={{ flex: 1, minWidth: 0 }}>
                       {item.handle ? (

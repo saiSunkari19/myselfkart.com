@@ -131,11 +131,7 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                       >+</button>
                     </form>
                   </div>
-                  {maxQty !== undefined && (
-                    <div style={{ fontSize: 12, marginTop: 6, color: atMax ? T.danger : T.textLight }}>
-                      {atMax ? "Max available quantity reached" : `${maxQty} available`}
-                    </div>
-                  )}
+                  {/* Stock count intentionally hidden; the disabled + button enforces the max. */}
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ color: T.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{formatMoney(item.total, cur)}</div>

@@ -100,11 +100,7 @@ export function AurumCartLivePage({ config, cart, cartCount }: CartProps) {
                         <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
-                    {maxQty !== undefined && (
-                      <div className={s.cartItemMeta} style={{ color: atMax ? "#b8463a" : undefined }}>
-                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
-                      </div>
-                    )}
+                    {/* Stock count intentionally hidden; the disabled + button enforces the max. */}
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 17, fontWeight: 500, color: "#1a1410", marginBottom: 8 }}>

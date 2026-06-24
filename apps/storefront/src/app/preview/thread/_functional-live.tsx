@@ -101,11 +101,7 @@ export function ThreadCartLivePage({ config, cart, cartCount }: CartProps) {
                         <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
-                    {maxQty !== undefined && (
-                      <div className={s.cartItemMeta} style={{ color: atMax ? "#c0392b" : undefined }}>
-                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
-                      </div>
-                    )}
+                    {/* Stock count intentionally hidden; the disabled + button enforces the max. */}
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 8 }}>
