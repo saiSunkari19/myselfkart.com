@@ -325,4 +325,6 @@ Critical path: **S-A/S-B → F-1..F-4 → (P-1, C-1) → C-2/C-3 → SH-1→SH-2
 - **SH-3** ✅ push subscriber `src/subscribers/order-placed-shiprocket.ts` on `order.placed` → only enabled tenants → idempotent via `order_shiprocket` → creates Shiprocket adhoc order with `order_id = Medusa order.id` (echoed back as webhook `channel_order_id`); pickup = configured or account primary; addresses/items from the order; defaults for dims/weight.
 - **SH-6 hardening** ✅ webhook handler now prefers the **per-tenant** webhook secret, env `SHIPROCKET_WEBHOOK_SECRET` as fallback.
 - tsc green. **Deferred:** superadmin UI form for Shiprocket creds (API + CLI exist); full v2 fulfillment provider (push-on-order subscriber chosen for v1); multi-package/COD handling; forward-only status ledger (SH-5 dedupes via notification key today).
-- **Remaining elsewhere:** P-2 self-serve seller admin reset (`auth.password_reset` actor_type "user").
+- **P-2** ✅ self-serve seller admin reset — `src/subscribers/admin-password-reset.ts` on `auth.password_reset` (actor_type "user", emitted by Medusa's stock `/auth/user/emailpass/reset-password`); emails the `/app/reset-password` link via platform identity. Separate from the customer subscriber (no double-send).
+- **Superadmin Shiprocket UI** ✅ "Shipping" panel on tenant detail (mirrors Razorpay) + copy-webhook-URL + Test-connection (validates creds live, lists pickups) + pickup datalist.
+- **Remaining:** full v2 Shiprocket fulfillment provider (deferred; subscriber-push loop works today).
