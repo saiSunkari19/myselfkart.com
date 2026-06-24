@@ -12,7 +12,7 @@ export default function ShippingPage() {
         </div>
       </div>
       <div className={s.container}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, padding: "40px 0" }}>
+        <div className={s.grid3} style={{ padding: "40px 0" }}>
           {[{ icon: "🚀", title: "Same-Day Dispatch", text: "Orders placed before 3 PM are dispatched the same day, Monday to Saturday." }, { icon: "🔒", title: "Insured Shipping", text: "All orders are insured for their full value during transit." }, { icon: "📦", title: "Premium Packaging", text: "Products are packed in tamper-evident, cushioned packaging." }].map(item => (
             <div key={item.title} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "24px", borderTop: "3px solid var(--accent)" }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>

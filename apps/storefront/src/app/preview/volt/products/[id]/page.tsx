@@ -167,7 +167,7 @@ export default function ProductDetailPage() {
           )}
 
           {activeTab === "reviews" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            <div className={s.grid3}>
               {REVIEWS.map(r => (
                 <div key={r.name} className={s.reviewCard}>
                   <div className={s.reviewHeader}>

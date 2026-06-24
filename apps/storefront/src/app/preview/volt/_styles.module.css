@@ -1938,13 +1938,15 @@
   .heroSub { font-size: 14px; }
   .heroActions { flex-wrap: wrap; }
 
-  .productGrid, .productGrid3, .productGrid5 { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .categoryGrid { grid-template-columns: repeat(3, 1fr); }
-  .brandGrid { grid-template-columns: repeat(3, 1fr); }
+  .productGrid, .productGrid3, .productGrid5 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .categoryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .brandGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .footerGrid { grid-template-columns: 1fr 1fr; gap: 28px; }
 
   .formGrid { grid-template-columns: 1fr; }
   .paymentMethods { grid-template-columns: repeat(2, 1fr); }
+  .grid3, .grid4, .grid5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2 { grid-template-columns: 1fr; }
 
   .cartItem { grid-template-columns: 64px 1fr auto; gap: 12px; padding: 12px; }
   .cartItemImg { align-self: start; }

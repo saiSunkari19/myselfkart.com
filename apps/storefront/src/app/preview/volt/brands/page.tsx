@@ -25,7 +25,7 @@ export default function BrandsPage() {
               <div className={s.sectionTitle}>All Brands</div>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12 }}>
+          <div className={s.grid5}>
             {BRANDS.map((brand, i) => (
               <Reveal key={brand.id} delay={(i % 4) as 0|1|2|3}>
                 <div id={brand.id} className={s.brandCard} style={{ flexDirection: "column", padding: "28px 20px", gap: 10, textAlign: "center" }}>

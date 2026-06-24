@@ -228,7 +228,7 @@ export default function VoltHome() {
               <div className={s.sectionTitle} style={{ color: "#fff" }}>Built for Trust</div>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+          <div className={s.grid4}>
             {[
               { icon: "🏆", title: "10+ Years of Trust", text: "Serving 50 lakh+ customers since 2014 with consistent quality." },
               { icon: "📦", title: "Same-Day Dispatch", text: "Order before 3 PM and get your product dispatched same day." },
@@ -258,7 +258,7 @@ export default function VoltHome() {
               </div>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+          <div className={s.grid4}>
             {REVIEWS.map((r, i) => (
               <Reveal key={r.name} delay={(i % 4) as 0|1|2|3}>
                 <div className={s.reviewCard}>

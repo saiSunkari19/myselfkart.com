@@ -340,7 +340,7 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 36 }}>
+              <div className={s.grid3} style={{ marginBottom: 36 }}>
                 {[
                   { icon: "📦", title: "Packed Same Day", text: "Your order is being picked and packed" },
                   { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },

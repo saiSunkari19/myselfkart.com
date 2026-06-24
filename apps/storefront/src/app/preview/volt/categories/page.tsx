@@ -18,7 +18,7 @@ export default function CategoriesPage() {
         </div>
       </div>
       <div className={s.container}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, padding: "40px 0 64px" }}>
+        <div className={s.grid4} style={{ padding: "40px 0 64px" }}>
           {CATEGORIES.map((cat, i) => (
             <Reveal key={cat.id} delay={(i % 4) as 0|1|2|3}>
               <Link href={`${basePath}/shop?category=${cat.id}`} className={s.categoryCard} style={{ padding: "28px 20px", alignItems: "flex-start", textAlign: "left" }}>

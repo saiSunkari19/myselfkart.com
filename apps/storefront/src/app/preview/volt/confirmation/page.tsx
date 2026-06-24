@@ -19,7 +19,7 @@ export default function ConfirmationPage() {
             <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "var(--text3)", marginBottom: 6 }}>Order ID</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "var(--accent)", letterSpacing: 1 }}>{orderId}</div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 36 }}>
+          <div className={s.grid3} style={{ marginBottom: 36 }}>
             {[{ icon: "📦", title: "Packed Same Day", text: "Your order is being picked and packed" }, { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" }, { icon: "📱", title: "Track via SMS", text: "You'll receive tracking updates on your phone" }].map(item => (
               <div key={item.title} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 16px", textAlign: "center" }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>{item.icon}</div>
