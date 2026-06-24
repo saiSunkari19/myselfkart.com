@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
-import type { ReactNode } from "react"
+import { Suspense, type ReactNode } from "react"
 
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
 import { fetchStoreConfig, buildCssVars, getFontLinks } from "../lib/store-config"
+import { RouteProgress } from "../components/route-progress"
 import "./globals.css"
 
 export const dynamic = "force-dynamic"
@@ -63,6 +64,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         )}
       </head>
       <body style={{ fontFamily: "var(--store-font-body)" }}>
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         {/* Templates with their own nav/announcement handle this themselves */}
         {!SELF_CHROME_TEMPLATES.has(config?.template_id ?? "") && (
           <>
