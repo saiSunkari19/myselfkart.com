@@ -86,7 +86,7 @@ export async function updateLineItemAction(formData: FormData): Promise<void> {
   if (requestedQuantity <= 0) {
     await deleteLineItem(tenant, cartId, lineItemId)
     revalidatePath("/cart")
-    return
+    redirect("/cart")
   }
 
   // Clamp to remaining stock so an over-eager +/- click (or a stale quantity
@@ -98,7 +98,12 @@ export async function updateLineItemAction(formData: FormData): Promise<void> {
   const quantity = Math.min(requestedQuantity, max)
 
   await updateLineItem(tenant, cartId, lineItemId, quantity)
+  // Redirect (not just revalidate) so the cart re-renders fresh — mirrors
+  // addToCartAction. A bare revalidatePath leaves the themed cart's uncontrolled
+  // quantity <input> showing the typed/clicked value while the totals look
+  // unchanged, which reads as "the +/- buttons do nothing".
   revalidatePath("/cart")
+  redirect("/cart")
 }
 
 export async function removeLineItemAction(formData: FormData): Promise<void> {
@@ -110,6 +115,7 @@ export async function removeLineItemAction(formData: FormData): Promise<void> {
   }
   await deleteLineItem(tenant, cartId, lineItemId)
   revalidatePath("/cart")
+  redirect("/cart")
 }
 
 export async function setAddressAction(formData: FormData): Promise<void> {
