@@ -15,6 +15,7 @@ export type { CategoryView } from "./category"
 export {
   deriveCategoriesFromTags,
   resolveCategories,
+  resolveCollections,
   filterByCategory,
 } from "./category"
 

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { StorefrontStatePage } from "../components/storefront-state"
 import { formatMoney } from "../lib/format"
 import { THEMES, getTheme } from "../lib/themes"
-import { mapProducts, resolveCategories } from "../lib/views"
+import { mapProducts, resolveCategories, resolveCollections } from "../lib/views"
 import { getDeals, getNewArrivals } from "../lib/merchandising"
 import { listTenantProducts } from "../lib/medusa/products"
 import { resolveTenant } from "../lib/tenant/resolve-tenant"
@@ -45,6 +45,7 @@ export default async function HomePage() {
         cartCount={cartCount}
         products={mapProducts(products)}
         categories={resolveCategories(products)}
+        collections={resolveCollections(products)}
         deals={mapProducts(getDeals(products))}
         newArrivals={mapProducts(getNewArrivals(products))}
       />

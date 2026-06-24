@@ -1,6 +1,6 @@
 import { StorefrontStatePage } from "../../components/storefront-state"
 import { getTheme } from "../../lib/themes"
-import { mapProducts, resolveCategories, filterByCategory } from "../../lib/views"
+import { mapProducts, resolveCategories, resolveCollections, filterByCategory } from "../../lib/views"
 import { listTenantProducts } from "../../lib/medusa/products"
 import { resolveTenant } from "../../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../../lib/store-config"
@@ -27,7 +27,12 @@ export default async function ShopPage({
   ])
 
   const categories = resolveCategories(products)
-  const activeCategory = category && categories.some(c => c.id === category) ? category : null
+  const collections = resolveCollections(products)
+  // A browse id may be a category, a collection, or a tag — accept any of them so
+  // ?category=<collectionId> still filters now that collections are their own list.
+  const isBrowsable = (id: string) =>
+    categories.some(c => c.id === id) || collections.some(c => c.id === id)
+  const activeCategory = category && isBrowsable(category) ? category : null
   let filtered = activeCategory ? filterByCategory(products, activeCategory) : products
 
   if (q?.trim()) {
@@ -51,6 +56,7 @@ export default async function ShopPage({
       cartCount={cartCount}
       products={mapProducts(pageItems)}
       categories={categories}
+      collections={collections}
       activeCategory={activeCategory}
       page={page}
       totalPages={totalPages}

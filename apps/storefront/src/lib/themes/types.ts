@@ -33,8 +33,14 @@ export type ThemeContext = {
 
 export type HomeProps = ThemeContext & {
   products: ProductView[]
-  /** Derived category nav (empty → themes hide the category section). */
+  /** Derived category taxonomy nav (empty → themes hide the category section). */
   categories: CategoryView[]
+  /**
+   * Seller-curated Medusa collections, a DISTINCT group from `categories`
+   * (empty → themes hide the collection section). Same shape so themes render
+   * them in their own "Shop by Collection" slot; `?category=<id>` filters either.
+   */
+  collections: CategoryView[]
   /** Products on an active sale (empty → themes hide the deals section). */
   deals: ProductView[]
   /** Newest-first products for "new arrivals". */
@@ -45,6 +51,8 @@ export type ShopProps = ThemeContext & {
   /** Products for the current page only. */
   products: ProductView[]
   categories: CategoryView[]
+  /** Seller-curated collections, distinct from `categories` (see HomeProps). */
+  collections: CategoryView[]
   /** Currently selected category id, or null for "All". */
   activeCategory: string | null
   /** Current page number, 1-indexed. */
