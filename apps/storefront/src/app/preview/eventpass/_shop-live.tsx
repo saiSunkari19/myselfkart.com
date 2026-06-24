@@ -13,8 +13,9 @@ import {
 import { Pagination } from "../../../components/pagination"
 
 /** Eventpass shop slot — "browse events" listing: real products + category filter. */
-export function EventpassShopLivePage({ config, cartCount, products, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
+export function EventpassShopLivePage({ config, cartCount, products, categories, collections, activeCategory, page, totalPages, totalCount }: ShopProps) {
   const accent = eventAccent(config)
+  const hasFilters = categories.length > 0 || collections.length > 0
 
   return (
     <div style={pageShell()}>
@@ -32,41 +33,71 @@ export function EventpassShopLivePage({ config, cartCount, products, categories,
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: categories.length > 0 ? "220px 1fr" : "1fr", gap: 32, alignItems: "start" }}>
-          {categories.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: hasFilters ? "220px 1fr" : "1fr", gap: 32, alignItems: "start" }}>
+          {hasFilters && (
             <aside className="ep-shop-filters" style={{
               background: T.bgCard, border: `1px solid ${T.border}`,
               borderRadius: T.radiusLg, padding: 20, boxShadow: T.shadow,
             }}>
-              <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Categories</div>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                <li>
-                  <Link href="/shop" style={{
-                    display: "flex", justifyContent: "space-between", textDecoration: "none",
-                    padding: "8px 12px", borderRadius: T.radiusSm, fontSize: 14,
-                    fontWeight: activeCategory ? 500 : 700,
-                    background: activeCategory ? "transparent" : T.accentLight,
-                    color: activeCategory ? T.textMuted : accent,
-                  }}>All</Link>
-                </li>
-                {categories.map(cat => {
-                  const active = activeCategory === cat.id
-                  return (
-                    <li key={cat.id}>
-                      <Link href={cat.href} style={{
+              {/* Collections — seller-curated, kept distinct from the category taxonomy */}
+              {collections.length > 0 && (
+                <>
+                  <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Collections</div>
+                  <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {collections.map(col => {
+                      const active = activeCategory === col.id
+                      return (
+                        <li key={col.id}>
+                          <Link href={col.href} style={{
+                            display: "flex", justifyContent: "space-between", textDecoration: "none",
+                            padding: "8px 12px", borderRadius: T.radiusSm, fontSize: 14,
+                            fontWeight: active ? 700 : 500,
+                            background: active ? T.accentLight : "transparent",
+                            color: active ? accent : T.textMuted,
+                          }}>
+                            <span>{col.name}</span>
+                            <span style={{ color: T.textLight }}>{col.count}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </>
+              )}
+
+              {categories.length > 0 && (
+                <>
+                  <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 14, marginTop: collections.length > 0 ? 24 : 0 }}>Categories</div>
+                  <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <li>
+                      <Link href="/shop" style={{
                         display: "flex", justifyContent: "space-between", textDecoration: "none",
                         padding: "8px 12px", borderRadius: T.radiusSm, fontSize: 14,
-                        fontWeight: active ? 700 : 500,
-                        background: active ? T.accentLight : "transparent",
-                        color: active ? accent : T.textMuted,
-                      }}>
-                        <span>{cat.name}</span>
-                        <span style={{ color: T.textLight }}>{cat.count}</span>
-                      </Link>
+                        fontWeight: activeCategory ? 500 : 700,
+                        background: activeCategory ? "transparent" : T.accentLight,
+                        color: activeCategory ? T.textMuted : accent,
+                      }}>All</Link>
                     </li>
-                  )
-                })}
-              </ul>
+                    {categories.map(cat => {
+                      const active = activeCategory === cat.id
+                      return (
+                        <li key={cat.id}>
+                          <Link href={cat.href} style={{
+                            display: "flex", justifyContent: "space-between", textDecoration: "none",
+                            padding: "8px 12px", borderRadius: T.radiusSm, fontSize: 14,
+                            fontWeight: active ? 700 : 500,
+                            background: active ? T.accentLight : "transparent",
+                            color: active ? accent : T.textMuted,
+                          }}>
+                            <span>{cat.name}</span>
+                            <span style={{ color: T.textLight }}>{cat.count}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </>
+              )}
             </aside>
           )}
 

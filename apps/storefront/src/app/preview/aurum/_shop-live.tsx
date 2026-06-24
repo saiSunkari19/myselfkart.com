@@ -7,7 +7,10 @@ import { Pagination } from "../../../components/pagination"
 import s from "./_styles.module.css"
 
 /** Aurum shop/listing slot — real products + real category filter (live routes). */
-export function AurumShopLivePage({ config, cartCount, products, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
+export function AurumShopLivePage({ config, cartCount, products, categories, collections, activeCategory, page, totalPages, totalCount }: ShopProps) {
+  const activeName = activeCategory
+    ? [...collections, ...categories].find(c => c.id === activeCategory)?.name
+    : null
   return (
     <div className={s.page} style={aurumColorVars(config)}>
       <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
@@ -15,32 +18,49 @@ export function AurumShopLivePage({ config, cartCount, products, categories, act
         <div className={s.container}>
           <div className={s.pageHeader}>
             <div className={s.pageHeaderLabel}>The Collection</div>
-            <h1 className={s.pageHeaderTitle}>Shop All Jewellery</h1>
+            <h1 className={s.pageHeaderTitle}>{activeName ?? "Shop All Jewellery"}</h1>
             <p className={s.pageHeaderSub}>
               {totalCount} certified piece{totalCount !== 1 ? "s" : ""} — hallmarked, verified, and ready to ship.
             </p>
           </div>
 
           <div className={s.shopLayout}>
-            {categories.length > 0 && (
+            {(categories.length > 0 || collections.length > 0) && (
               <aside className={s.shopFilters}>
                 <div className={s.filterHeading}>Filters</div>
-                <div className={s.filterGroup}>
-                  <div className={s.filterGroupTitle}>Category</div>
-                  <ul className={s.filterList}>
-                    <li className={`${s.filterItem} ${activeCategory ? "" : s.filterItemActive}`}>
-                      <Link href="/shop" style={{ color: "inherit", textDecoration: "none", flex: 1 }}>All</Link>
-                    </li>
-                    {categories.map(cat => (
-                      <li key={cat.id} className={`${s.filterItem} ${activeCategory === cat.id ? s.filterItemActive : ""}`}>
-                        <Link href={cat.href} style={{ color: "inherit", textDecoration: "none", flex: 1, display: "flex", justifyContent: "space-between" }}>
-                          <span>{cat.name}</span>
-                          <span className={s.filterCount}>{cat.count}</span>
-                        </Link>
+                {collections.length > 0 && (
+                  <div className={s.filterGroup}>
+                    <div className={s.filterGroupTitle}>Collections</div>
+                    <ul className={s.filterList}>
+                      {collections.map(col => (
+                        <li key={col.id} className={`${s.filterItem} ${activeCategory === col.id ? s.filterItemActive : ""}`}>
+                          <Link href={col.href} style={{ color: "inherit", textDecoration: "none", flex: 1, display: "flex", justifyContent: "space-between" }}>
+                            <span>{col.name}</span>
+                            <span className={s.filterCount}>{col.count}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {categories.length > 0 && (
+                  <div className={s.filterGroup}>
+                    <div className={s.filterGroupTitle}>Category</div>
+                    <ul className={s.filterList}>
+                      <li className={`${s.filterItem} ${activeCategory ? "" : s.filterItemActive}`}>
+                        <Link href="/shop" style={{ color: "inherit", textDecoration: "none", flex: 1 }}>All</Link>
                       </li>
-                    ))}
-                  </ul>
-                </div>
+                      {categories.map(cat => (
+                        <li key={cat.id} className={`${s.filterItem} ${activeCategory === cat.id ? s.filterItemActive : ""}`}>
+                          <Link href={cat.href} style={{ color: "inherit", textDecoration: "none", flex: 1, display: "flex", justifyContent: "space-between" }}>
+                            <span>{cat.name}</span>
+                            <span className={s.filterCount}>{cat.count}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </aside>
             )}
 

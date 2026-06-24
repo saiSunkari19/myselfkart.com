@@ -7,7 +7,7 @@ import { Pagination } from "../../../components/pagination"
 import s from "./_styles.module.css"
 
 /** Thread shop/listing slot — real products + real category filter (live routes). */
-export function ThreadShopLivePage({ config, cartCount, products, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
+export function ThreadShopLivePage({ config, cartCount, products, categories, collections, activeCategory, page, totalPages, totalCount }: ShopProps) {
   return (
     <div className={s.page} style={threadColorVars(config)}>
       <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
@@ -20,8 +20,24 @@ export function ThreadShopLivePage({ config, cartCount, products, categories, ac
           </div>
 
           <div className={s.shopLayout}>
-            {categories.length > 0 && (
+            {(collections.length > 0 || categories.length > 0) && (
               <aside className={s.shopFilters}>
+                {collections.length > 0 && (
+                  <div className={s.filterGroup}>
+                    <div className={s.filterTitle}>Collections</div>
+                    <ul className={s.filterList}>
+                      {collections.map(col => (
+                        <li key={col.id} className={`${s.filterItem} ${activeCategory === col.id ? s.active : ""}`}>
+                          <Link href={col.href} style={{ color: "inherit", textDecoration: "none", flex: 1, display: "flex", justifyContent: "space-between" }}>
+                            <span>{col.name}</span>
+                            <span className={s.filterCount}>{col.count}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {categories.length > 0 && (
                 <div className={s.filterGroup}>
                   <div className={s.filterTitle}>Category</div>
                   <ul className={s.filterList}>
@@ -38,6 +54,7 @@ export function ThreadShopLivePage({ config, cartCount, products, categories, ac
                     ))}
                   </ul>
                 </div>
+                )}
               </aside>
             )}
 

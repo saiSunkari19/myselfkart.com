@@ -7,9 +7,11 @@ import type { ShopProps } from "../../../lib/themes/types"
 import s from "./_styles.module.css"
 
 /** Glow "Shop All" slot — catalogue + optional tag-category filter. */
-export function GlowShopLivePage({ config, products, categories, activeCategory }: ShopProps) {
+export function GlowShopLivePage({ config, products, categories, collections, activeCategory }: ShopProps) {
   const storeName = config?.store_name ?? "glow."
-  const activeName = activeCategory ? categories.find(c => c.id === activeCategory)?.name : null
+  const activeName = activeCategory
+    ? [...collections, ...categories].find(c => c.id === activeCategory)?.name
+    : null
 
   return (
     <div className={s.page}>
@@ -25,6 +27,17 @@ export function GlowShopLivePage({ config, products, categories, activeCategory 
               <GoldDivider />
             </div>
           </Reveal>
+
+          {collections.length > 0 && (
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
+              <span className={s.navLink} style={{ fontWeight: 700, opacity: 0.55 }}>Collections</span>
+              {collections.map(col => (
+                <Link key={col.id} href={col.href} className={s.navLink} style={{ fontWeight: activeCategory === col.id ? 700 : 400 }}>
+                  {col.name} ({col.count})
+                </Link>
+              ))}
+            </div>
+          )}
 
           {categories.length > 0 && (
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>

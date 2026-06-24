@@ -114,14 +114,22 @@ Legend: `[ ]` todo · `[x]` done · `[~]` partial/interim
   Verified against live data: cloth tenant has 0 categories → falls back to tags;
   wiring activates automatically once a seller assigns categories.
 - [x] Product fetch carries `created_at`, `tags`, `categories`, `collection`, `original_amount` — `lib/medusa/products.ts`
-- [x] **Real collections** surfaced in the browse nav. Product fetch carries the
+- [x] **Real collections** surfaced as a **distinct browse group**, separate from the
+  category taxonomy (collections ≠ categories in Medusa). Product fetch carries the
   Medusa `collection` relation; `getProductCollections()` derives seller-curated
-  collections ("New Arrival", "Best seller") and `resolveCategories()` prepends them
-  to the category/tag list so they show as filter chips on **Home + Shop** through the
-  existing `categories` prop — **no new theme slot**. `/shop?category=<collection_id>`
-  filters by collection membership (`productsInCategoryOrTag` matches category **or**
-  collection **or** tag id). Verified against live data (tenant `1ff9f60…`: New Arrival
-  = 5 products, Best seller = 2).
+  collections ("Summer Collection") and `resolveCollections()` returns them as their
+  own `CategoryView[]`, passed via a dedicated `collections` prop on `HomeProps`/
+  `ShopProps`. `resolveCategories()` returns ONLY the category taxonomy (real
+  categories, else tags) and never mixes collections in. Each theme renders a separate
+  "Shop by Collection" section / filter group alongside (not merged into) categories.
+  `/shop?category=<collection_id>` still filters by collection membership
+  (`productsInCategoryOrTag` matches category **or** collection **or** tag id; the shop
+  route's active-id check accepts a category or collection id).
+  - **History:** collections were first merged into the `categories` prop (one nav,
+    no new slot). That conflated the two concepts — a collection rendered identically
+    to a category — so they were split into their own prop + per-theme section. All
+    five themes (volt, glow, thread, aurum, eventpass) implement the collection group;
+    glow's Home intentionally has no browse section, so only its Shop surfaces it.
 - [n/a] ~~`getPromotions(tenant)` → time-limited deals~~ — **Medusa promotions are
   cart-level**, not a browseable store endpoint. Browseable "deals" = sale prices
   (price lists), already detected. A merchant "Sale" can be modelled as a category.
