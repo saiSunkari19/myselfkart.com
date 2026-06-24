@@ -125,8 +125,14 @@ export function ApplyForm({ baseDomain }: { baseDomain: string }) {
             name="owner_email"
             type="email"
             required
+            placeholder="you@yourbusiness.com"
             className={inputClass}
           />
+          <span className="text-xs text-ink-subtle">
+            <span className="text-ink-muted">Use a valid inbox you check.</span> This
+            becomes your store&apos;s contact address — your customers&apos; order &amp;
+            shipping emails reply here, and we send your login and store notices to it.
+          </span>
         </Field>
       </div>
 

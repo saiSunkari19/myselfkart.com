@@ -125,6 +125,18 @@ export async function provisionSellerFromApplication(
       country: application.country,
     })
 
+    // Seed the store's contact email from the seller's onboarding email so buyer
+    // order/shipping emails get a Reply-To by default. Non-destructive: if the
+    // seller later sets their own contact_email in admin, we keep theirs.
+    await knex.raw(
+      `insert into "store_config" ("tenant_id", "store_name", "contact_email", "updated_at")
+       values (?, ?, ?, now())
+       on conflict ("tenant_id") do update
+         set "contact_email" = coalesce("store_config"."contact_email", excluded."contact_email"),
+             "updated_at" = now()`,
+      [tenantId, sellerName, application.owner_email]
+    )
+
     await updateApplication(knex, application.id, {
       status: "active",
       provisioning_error: null,
