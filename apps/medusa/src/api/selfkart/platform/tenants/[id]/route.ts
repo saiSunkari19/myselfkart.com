@@ -7,6 +7,7 @@ import {
   findTenantById,
   getTenantOperationalSummary,
   getTenantPaymentCredentialSummary,
+  getTenantShiprocketCredentialSummary,
   listTenantDomains,
   teardownTenant,
   TenantHasOrdersError,
@@ -27,12 +28,14 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
     return
   }
 
-  const [domains, summary, application, paymentCredentials] = await Promise.all([
-    listTenantDomains(knex, id),
-    getTenantOperationalSummary(knex, id),
-    findApplicationByTenantId(knex, id),
-    getTenantPaymentCredentialSummary(knex, id, "razorpay"),
-  ])
+  const [domains, summary, application, paymentCredentials, shiprocketCredentials] =
+    await Promise.all([
+      listTenantDomains(knex, id),
+      getTenantOperationalSummary(knex, id),
+      findApplicationByTenantId(knex, id),
+      getTenantPaymentCredentialSummary(knex, id, "razorpay"),
+      getTenantShiprocketCredentialSummary(knex, id),
+    ])
 
   res.json({
     tenant,
@@ -44,6 +47,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse): Promise<void
     payment_credentials: {
       razorpay: paymentCredentials,
     },
+    shiprocket_credentials: shiprocketCredentials,
     owner: application
       ? {
           name: application.owner_name,

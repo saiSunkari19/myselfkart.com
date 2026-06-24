@@ -70,6 +70,66 @@ export async function resetTenantPasswordAction(
   }
 }
 
+export type ShiprocketState = {
+  ok: boolean
+  error: string | null
+  credentials?: {
+    enabled: boolean
+    api_email: string
+    api_password_hint: string
+    webhook_secret_hint: string | null
+    pickup_location: string | null
+    ready: boolean
+    updated_at: string
+  } | null
+}
+
+/**
+ * Saves or rotates a seller's Shiprocket credentials. Blank password/webhook
+ * fields are preserved by the backend once credentials already exist.
+ */
+export async function updateTenantShiprocketAction(
+  _prev: ShiprocketState,
+  formData: FormData
+): Promise<ShiprocketState> {
+  const id = String(formData.get("id") ?? "")
+  const apiEmail = String(formData.get("api_email") ?? "").trim()
+  const apiPassword = String(formData.get("api_password") ?? "")
+  const webhookSecret = String(formData.get("webhook_secret") ?? "")
+  const pickupLocation = String(formData.get("pickup_location") ?? "").trim()
+  const enabled = String(formData.get("enabled") ?? "") === "on"
+
+  if (!id) {
+    return { ok: false, error: "Missing tenant id." }
+  }
+  if (!apiEmail) {
+    return { ok: false, error: "Enter the Shiprocket API user email." }
+  }
+
+  try {
+    const result = await platformFetch<{
+      credentials: NonNullable<ShiprocketState["credentials"]>
+    }>(`/selfkart/platform/tenants/${id}/shiprocket-credentials`, {
+      method: "POST",
+      body: {
+        enabled,
+        api_email: apiEmail,
+        api_password: apiPassword,
+        webhook_secret: webhookSecret,
+        pickup_location: pickupLocation,
+      },
+    })
+    revalidatePath(`/tenants/${id}`)
+    return { ok: true, error: null, credentials: result.credentials }
+  } catch (error) {
+    const message =
+      error instanceof PlatformApiError
+        ? error.message
+        : "Could not update Shiprocket credentials."
+    return { ok: false, error: message }
+  }
+}
+
 /**
  * Saves or rotates Razorpay credentials for one tenant. Blank secret fields are
  * preserved by the backend once credentials already exist.
