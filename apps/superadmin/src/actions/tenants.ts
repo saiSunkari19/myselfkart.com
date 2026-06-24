@@ -84,6 +84,52 @@ export type ShiprocketState = {
   } | null
 }
 
+export type ShiprocketTestState = {
+  ok: boolean
+  tested: boolean
+  error: string | null
+  pickupLocations?: string[]
+}
+
+/**
+ * Validates the entered Shiprocket credentials against the live API (mints a
+ * token + lists pickup locations) without saving. Lets the operator catch a wrong
+ * password before committing.
+ */
+export async function testTenantShiprocketAction(
+  _prev: ShiprocketTestState,
+  formData: FormData
+): Promise<ShiprocketTestState> {
+  const id = String(formData.get("id") ?? "")
+  if (!id) {
+    return { ok: false, tested: true, error: "Missing tenant id." }
+  }
+
+  try {
+    const result = await platformFetch<{
+      ok: boolean
+      message?: string
+      pickup_locations?: string[]
+    }>(`/selfkart/platform/tenants/${id}/shiprocket-credentials/test`, {
+      method: "POST",
+      body: {
+        api_email: String(formData.get("api_email") ?? "").trim(),
+        api_password: String(formData.get("api_password") ?? ""),
+      },
+    })
+    return {
+      ok: result.ok,
+      tested: true,
+      error: result.ok ? null : result.message ?? "Authentication failed.",
+      pickupLocations: result.pickup_locations,
+    }
+  } catch (error) {
+    const message =
+      error instanceof PlatformApiError ? error.message : "Could not reach Shiprocket."
+    return { ok: false, tested: true, error: message }
+  }
+}
+
 /**
  * Saves or rotates a seller's Shiprocket credentials. Blank password/webhook
  * fields are preserved by the backend once credentials already exist.

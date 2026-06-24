@@ -1,15 +1,18 @@
 "use client"
 
-import { Check, ShieldCheck, Truck } from "lucide-react"
-import { useActionState } from "react"
+import { Check, CircleCheck, CircleX, Copy, ShieldCheck, Truck } from "lucide-react"
+import { useActionState, useState } from "react"
 
 import {
+  testTenantShiprocketAction,
   updateTenantShiprocketAction,
   type ShiprocketState,
+  type ShiprocketTestState,
 } from "@/actions/tenants"
 import type { TenantShiprocketCredential } from "@/lib/types"
 
 const initial: ShiprocketState = { ok: false, error: null }
+const testInitial: ShiprocketTestState = { ok: false, tested: false, error: null }
 
 export function TenantShiprocketForm({
   tenantId,
@@ -19,8 +22,23 @@ export function TenantShiprocketForm({
   credentials: TenantShiprocketCredential | null
 }) {
   const [state, action, pending] = useActionState(updateTenantShiprocketAction, initial)
+  const [testState, testAction, testPending] = useActionState(
+    testTenantShiprocketAction,
+    testInitial
+  )
+  const [copied, setCopied] = useState(false)
   const current = state.credentials ?? credentials
   const webhookUrl = `https://api.myselfkart.com/webhooks/delivery/${tenantId}`
+
+  const copyWebhook = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setCopied(false)
+    }
+  }
 
   return (
     <form action={action} className="flex flex-col gap-5 px-6 py-5">
@@ -108,9 +126,19 @@ export function TenantShiprocketForm({
           In the seller&apos;s Shiprocket panel (Settings → API → Webhook), set Auth
           Token Type <span className="text-ink-muted">x-api-key</span> and paste this URL:
         </p>
-        <code className="block overflow-x-auto rounded-[var(--radius-sm)] border border-line bg-surface px-3 py-2 font-mono text-xs text-ink">
-          {webhookUrl}
-        </code>
+        <div className="flex items-stretch gap-2">
+          <code className="flex-1 overflow-x-auto rounded-[var(--radius-sm)] border border-line bg-surface px-3 py-2 font-mono text-xs text-ink">
+            {webhookUrl}
+          </code>
+          <button
+            type="button"
+            onClick={copyWebhook}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] border border-line px-3 text-xs text-ink-muted transition-colors hover:bg-surface hover:text-ink cursor-pointer"
+          >
+            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
         <label className="mt-1 flex flex-col gap-1.5">
           <span className="text-xs text-ink-subtle">
             Webhook token{" "}
@@ -137,19 +165,42 @@ export function TenantShiprocketForm({
           {state.error}
         </p>
       ) : null}
+      {testState.tested && testState.ok ? (
+        <p className="inline-flex items-center gap-1.5 text-xs text-emerald-ink">
+          <CircleCheck className="size-3.5" /> Connected
+          {testState.pickupLocations?.length
+            ? ` · pickups: ${testState.pickupLocations.join(", ")}`
+            : ""}
+        </p>
+      ) : null}
+      {testState.tested && !testState.ok ? (
+        <p role="alert" className="inline-flex items-center gap-1.5 text-xs text-red-ink">
+          <CircleX className="size-3.5" /> {testState.error}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="inline-flex items-center gap-1.5 text-xs text-ink-subtle">
           <ShieldCheck className="size-3.5" /> Secrets are encrypted and never shown
           again.
         </p>
-        <button
-          type="submit"
-          disabled={pending}
-          className="cursor-pointer rounded-[var(--radius-md)] bg-ink px-5 py-2.5 text-sm font-medium text-canvas transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {pending ? "Saving…" : "Save Shiprocket"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            formAction={testAction}
+            disabled={testPending}
+            className="cursor-pointer rounded-[var(--radius-md)] border border-line px-4 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {testPending ? "Testing…" : "Test connection"}
+          </button>
+          <button
+            type="submit"
+            disabled={pending}
+            className="cursor-pointer rounded-[var(--radius-md)] bg-ink px-5 py-2.5 text-sm font-medium text-canvas transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {pending ? "Saving…" : "Save Shiprocket"}
+          </button>
+        </div>
       </div>
     </form>
   )
