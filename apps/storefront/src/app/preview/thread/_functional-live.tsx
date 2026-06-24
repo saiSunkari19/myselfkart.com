@@ -344,7 +344,12 @@ export function ThreadOrderLivePage({ config, cartCount, order }: OrderProps) {
               <div className={s.orderCardTitle}>Items Ordered</div>
               {order.items.map(item => (
                 <div key={item.id} className={s.orderCardRow}>
-                  <span>{item.title} × {item.quantity}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {item.thumbnail && <img src={item.thumbnail} alt="" width={40} height={40} style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />}
+                    <span>
+                      {item.handle ? <Link href={`/products/${item.handle}`} style={{ color: "inherit" }}>{item.title}</Link> : item.title} × {item.quantity}
+                    </span>
+                  </span>
                   <strong>{formatMoney(item.total, cur)}</strong>
                 </div>
               ))}

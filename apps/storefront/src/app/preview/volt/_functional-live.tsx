@@ -324,8 +324,18 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
 
               <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "8px 24px", marginBottom: 36, textAlign: "left" }}>
                 {order.items.map(item => (
-                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "12px 0", borderBottom: "1px solid var(--border)", fontSize: 14, color: "var(--text2)" }}>
-                    <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>{item.quantity} ×</strong> {item.title}</span>
+                  <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border)", fontSize: 14, color: "var(--text2)" }}>
+                    {item.thumbnail ? (
+                      <img src={item.thumbnail} alt="" width={44} height={44} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--bg3,#f1f5f9)" }} />
+                    ) : null}
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      {item.handle ? (
+                        <Link href={`/products/${item.handle}`} style={{ color: "var(--text)" }}>{item.title}</Link>
+                      ) : (
+                        <span style={{ color: "var(--text)" }}>{item.title}</span>
+                      )}
+                      <span style={{ color: "var(--text3)" }}> × {item.quantity}</span>
+                    </span>
                     <strong style={{ color: "var(--text)", whiteSpace: "nowrap" }}>{formatMoney(item.total, order.currency_code)}</strong>
                   </div>
                 ))}

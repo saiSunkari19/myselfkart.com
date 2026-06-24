@@ -359,7 +359,12 @@ export function EventpassOrderLivePage({ config, cartCount, order }: OrderProps)
           <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Your Tickets</div>
           {order.items.map(item => (
             <div key={item.id} style={rowStyle}>
-              <span>{item.title} × {item.quantity}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {item.thumbnail && <img src={item.thumbnail} alt="" width={40} height={40} style={{ borderRadius: T.radiusSm, objectFit: "cover", flexShrink: 0 }} />}
+                <span>
+                  {item.handle ? <Link href={`/products/${item.handle}`} style={{ color: "inherit" }}>{item.title}</Link> : item.title} × {item.quantity}
+                </span>
+              </span>
               <strong style={{ color: T.text }}>{formatMoney(item.total, cur)}</strong>
             </div>
           ))}

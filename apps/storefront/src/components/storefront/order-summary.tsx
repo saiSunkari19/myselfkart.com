@@ -48,20 +48,36 @@ export function OrderSummary({ order }: { order: OrderView }) {
             key={item.id}
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              gap: 16,
+              alignItems: "center",
+              gap: 12,
               padding: "12px 0",
               borderBottom: "1px solid #f0f0f0",
               fontSize: 14,
               color: "#374151",
             }}
           >
-            <span>
-              <strong style={{ fontWeight: 600 }}>{item.quantity} ×</strong> {item.title}
+            {item.thumbnail ? (
+              <img
+                src={item.thumbnail}
+                alt=""
+                width={44}
+                height={44}
+                style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#f1f1f1" }}
+              />
+            ) : null}
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {item.handle ? (
+                <Link href={`/products/${item.handle}`} style={{ color: "inherit", textDecoration: "none" }}>
+                  {item.title}
+                </Link>
+              ) : (
+                item.title
+              )}
+              <span style={{ color: "#9ca3af" }}> × {item.quantity}</span>
             </span>
-            <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+            <strong style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
               {formatMoney(item.total, order.currency_code)}
-            </span>
+            </strong>
           </div>
         ))}
         <div
