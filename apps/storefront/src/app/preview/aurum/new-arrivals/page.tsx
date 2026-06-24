@@ -18,7 +18,7 @@ export default function NewArrivalsPage() {
           className={s.editorialBg}
         />
         <div className={s.editorialOverlay} />
-        <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1320, margin: "0 auto", padding: "100px 48px" }}>
+        <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1320, margin: "0 auto", padding: "100px var(--container-pad, 48px)" }}>
           <Reveal>
             <span className={s.sectionLabel}>Monsoon 2026</span>
             <h1 className={s.sectionTitle} style={{ color: "#fff", fontSize: "clamp(36px,5vw,72px)" }}>

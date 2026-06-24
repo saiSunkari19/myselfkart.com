@@ -1254,8 +1254,24 @@
   font-weight: 500;
 }
 
+/* ---- PDP (product detail) ---- */
+/* Was an inline `.container` + inline 2-col grid that didn't collapse.
+   These classes add mobile gutters and collapse the gallery/info to 1 col. */
+.pdpWrap {
+  padding: 32px 0 80px;
+}
+.pdpLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: start;
+  margin-bottom: 80px;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 1024px) {
+  .pdpWrap { padding-left: 20px; padding-right: 20px; }
+  .pdpLayout { grid-template-columns: 1fr; gap: 32px; margin-bottom: 56px; }
   .productsGrid { grid-template-columns: repeat(2, 1fr); }
   .collectionsGrid { grid-template-columns: repeat(2, 1fr); }
   .ingredientsGrid { grid-template-columns: repeat(2, 1fr); }
@@ -1266,18 +1282,36 @@
 }
 @media (max-width: 768px) {
   .section { padding: 60px 20px; }
+  .sectionNarrow { padding: 48px 20px; }
   .heroContent { padding: 0 28px; padding-top: 72px; }
   .heroTitle { font-size: 36px; }
+  .heroSub { font-size: 15px; }
+  .heroDots { left: 28px; }
+  .heroControls { right: 24px; bottom: 28px; }
   .navbar { padding: 0 20px; }
   .navLinks { display: none; }
+  .navActions { gap: 16px; }
   .productsGrid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .testimonialsGrid { grid-template-columns: 1fr; }
   .concernProducts { grid-template-columns: 1fr; }
+  .concernTabs { gap: 8px; margin-bottom: 36px; }
   .trustStrip { flex-direction: column; gap: 16px; padding: 24px 20px; }
   .trustItem { border-right: none; padding: 0; }
   .footerTop { grid-template-columns: 1fr; gap: 32px; }
+  .footerBottom { flex-direction: column; gap: 16px; align-items: flex-start; }
   .collectionsGrid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .ingredientsGrid { grid-template-columns: 1fr; }
   .newsletterForm { flex-direction: column; }
+  .newsletterSection { padding: 60px 20px; }
   .storyContent { padding: 48px 28px; }
+  .storyStats { gap: 24px; }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .heroContent { padding: 0 20px; padding-top: 64px; }
+  .heroTitle { font-size: 30px; }
+  .productsGrid { grid-template-columns: 1fr; }
+  .collectionsGrid { grid-template-columns: 1fr; gap: 12px; }
+  .storyStats { grid-template-columns: 1fr 1fr; }
 }

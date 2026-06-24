@@ -35,7 +35,7 @@ export function ProductDetailClient({
       <NavBar storeName={config?.store_name} logoUrl={config?.logo_url} announcementText={config?.announcement_enabled ? config?.announcement_text : null} />
       <div className={s.headerSpacer} />
 
-      <div className={s.container} style={{ padding: "32px 0 80px" }}>
+      <div className={`${s.container} ${s.pdpWrap}`}>
         {/* Breadcrumb */}
         <div style={{ display: "flex", gap: 8, fontSize: 12, color: "var(--charcoal-light)", marginBottom: 28, textTransform: "uppercase", letterSpacing: "0.08em" }}>
           <a href={basePath || "/"} style={{ color: "var(--charcoal-light)", textDecoration: "none" }}>Home</a>
@@ -46,7 +46,7 @@ export function ProductDetailClient({
         </div>
 
         {/* Detail layout */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "start", marginBottom: 80 }}>
+        <div className={s.pdpLayout}>
           {/* Images */}
           <div style={{ position: "relative", aspectRatio: "3/4", borderRadius: "var(--radius)", overflow: "hidden", background: "var(--beige)" }}>
             <img src={product.image} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />

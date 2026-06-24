@@ -3,6 +3,17 @@
   min-height: 80vh;
   padding: 48px 0 80px;
 }
+/* Edge gutters once the viewport drops below the 1240px container width.
+   The bare `.container` inside has no padding of its own. */
+@media (max-width: 1024px) {
+  .pageWrap { padding-left: 20px; padding-right: 20px; }
+}
+@media (max-width: 768px) {
+  .pageWrap { padding-top: 32px; }
+  .layout { gap: 28px; }
+  .cartItem { gap: 14px; padding: 16px; }
+  .itemImage { width: 84px; height: 92px; }
+}
 
 .breadcrumb {
   display: flex;

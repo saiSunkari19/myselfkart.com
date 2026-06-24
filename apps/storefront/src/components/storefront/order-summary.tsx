@@ -96,7 +96,7 @@ export function OrderSummary({ order }: { order: OrderView }) {
       </div>
 
       {/* What happens next */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "28px 0 32px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "28px 0 32px" }}>
         {[
           { icon: "📦", title: "Packed Same Day", text: "We're picking and packing your order" },
           { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },

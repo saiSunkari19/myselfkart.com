@@ -304,3 +304,26 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+
+/* ── Responsive ──
+   These sections wrap content in a bare `.container` (no horizontal padding
+   of its own), so add edge gutters on mobile. Desktop (≥769px) unaffected. */
+@media (max-width: 768px) {
+  .hero { height: auto; min-height: 70vh; padding: 96px 0 56px; }
+  .heroContent { padding: 0 20px; }
+  .heroSub { max-width: 100%; }
+  .statsBar { padding: 28px 20px; }
+  .stats { gap: 20px 32px; }
+  .ctaSection { padding: 60px 20px; }
+  .storyImages { flex-direction: row; }
+  .storyImg { height: 220px; }
+  .timeline::before { left: 56px; }
+}
+@media (max-width: 480px) {
+  .stats { justify-content: flex-start; }
+  .storyImages { flex-direction: column; }
+  .sustainImg { height: 320px; }
+  .timelineItem { grid-template-columns: 48px 24px 1fr; gap: 0 10px; }
+  .timeline::before { left: 48px; }
+  .ctaBtns { flex-direction: column; }
+}

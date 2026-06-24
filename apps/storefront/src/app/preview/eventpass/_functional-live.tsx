@@ -231,7 +231,7 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
               {savedAddresses && savedAddresses.length > 0 ? (
                 <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? eventAccent(config)} />
               ) : null}
-              <form action={setAddressAction} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <form action={setAddressAction} className="ep-checkout-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div><label style={labelStyle}>First Name</label><input name="first_name" style={inputStyle} defaultValue={addr?.first_name ?? ""} required /></div>
                 <div><label style={labelStyle}>Last Name</label><input name="last_name" style={inputStyle} defaultValue={addr?.last_name ?? ""} required /></div>
                 <div><label style={labelStyle}>Email (e-tickets sent here)</label><input name="email" type="email" style={inputStyle} defaultValue={cart.email ?? ""} required /></div>
@@ -318,7 +318,8 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
         </div>
       </main>
       <EventpassFooter config={config} />
-      <style>{`@media (max-width: 768px) { .ep-checkout-grid { grid-template-columns: 1fr !important; } }`}</style>
+      <style>{`@media (max-width: 768px) { .ep-checkout-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 480px) { .ep-checkout-form { grid-template-columns: 1fr !important; } }`}</style>
     </div>
   )
 }

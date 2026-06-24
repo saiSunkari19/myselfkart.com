@@ -20,7 +20,7 @@ export default function AboutPage() {
           className={s.editorialBg}
         />
         <div className={s.editorialOverlay} />
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "100px 48px", width: "100%" }}>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "100px var(--container-pad, 48px)", width: "100%" }}>
           <Reveal>
             <span className={s.sectionLabel}>Since 1987</span>
             <h1 className={s.sectionTitle} style={{ color: "#fff", fontSize: "clamp(36px,5vw,72px)" }}>
@@ -87,14 +87,14 @@ export default function AboutPage() {
         </section>
 
         {/* Numbers */}
-        <section className={`${s.sectionMd} ${s.sectionCream}`} style={{ margin: "0 -48px", padding: "80px 48px" }}>
+        <section className={`${s.sectionMd} ${s.sectionCream}`} style={{ margin: "0 calc(var(--container-pad, 48px) * -1)", padding: "80px var(--container-pad, 48px)" }}>
           <Reveal>
             <div className={s.sectionCenter} style={{ marginBottom: 56 }}>
               <span className={s.sectionLabel}>By the Numbers</span>
               <h2 className={s.sectionTitle}>Aurum in 2026</h2>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2 }}>
+          <div className={s.grid4} style={{ gap: 2 }}>
             {[
               { value: "37", label: "Years", sub: "of craftsmanship" },
               { value: "220+", label: "Artisans", sub: "across two ateliers" },

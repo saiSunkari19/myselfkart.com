@@ -49,7 +49,7 @@ export default function StoreLocatorPage() {
               <span className={s.sectionLabel}>In-Store Services</span>
               <h2 className={s.sectionTitle} style={{ fontSize: 36 }}>What we offer at every store</h2>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 32 }}>
+            <div className={s.grid3} style={{ gap: 32 }}>
               {[
                 { icon: "💍", title: "Private Consultations", desc: "One-on-one time with our jewellery specialists. No rush, no pressure." },
                 { icon: "🔧", title: "Repairs & Cleaning", desc: "Professional cleaning, polishing, and repairs. Complimentary for Aurum pieces." },

@@ -278,6 +278,26 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
   placeholder, instead of hardcoded Unsplash apparel photos. `tsc` + `next build` +
   tests green.
 
+- 2026-06-24 — **Responsive pass across all five themes.** Every theme's stylesheet
+  got a desktop-first responsive layer (breakpoints 1024 / 768 / 640 / 400). volt was the
+  reference; aurum/thread/glow/eventpass followed the same strategy (the latter four built
+  by parallel agents, then reviewed). What changed per theme: 2-column **page** layouts
+  (product detail, cart, checkout, shop filter sidebar) collapse to 1 col ≤1024px with
+  sticky sidebars/summaries made static; product/category/brand grids step 4→3→2 at
+  768/640; the fixed header becomes `position: static` + wraps (search on its own row) on
+  mobile so the nav no longer overflows; forms → 1 col; footers collapse; heroes shrink.
+  Two structural helpers introduced: a `--container-pad` var (24px → 16px mobile) so inline
+  full-bleed `margin: 0 -Npx` sections stay in sync, and responsive grid utilities
+  (`.grid2/3/4/5` with `minmax(0,1fr)`) that replaced inline `repeat(N,1fr)` grids on the
+  static preview pages (those bypassed the module and overflowed on mobile). Shared
+  account/order components: `account-shell` 2-col → stacked via a global `.account-grid`;
+  order-summary steps use `auto-fit minmax`. Verified at 390/768/1440 with a puppeteer
+  + system-Chrome harness that measures `documentElement.scrollWidth` (zero horizontal
+  overflow on all themes' core pages). `tsc`, all 21 tests, and `next build` green.
+  Note: this was tested against the `/preview/<theme>/*` static pages (the only surface
+  renderable without a live tenant); since those share each theme's stylesheet, the live
+  buyer slots inherit the same responsive layer.
+
 ## 6. Risks / open questions
 
 - **Checkout theming** is the riskiest slot — server actions (`setAddressAction`,

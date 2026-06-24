@@ -36,7 +36,7 @@ export function AccountShell({
         <p style={{ fontSize: 13, color: "#78716c", margin: 0 }}>{customer.email}</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 28, alignItems: "start" }}>
+      <div className="account-grid">
         <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {NAV.map((item) => {
             const active = item.section === section

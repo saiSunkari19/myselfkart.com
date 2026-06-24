@@ -16,6 +16,18 @@
   .inner { grid-template-columns: 1fr; }
   .summaryCol { order: -1; }
 }
+@media (max-width: 768px) {
+  .inner { gap: 28px; }
+  .summaryCol { position: static; top: auto; }
+  .pageWrap { padding-top: 28px; }
+}
+@media (max-width: 480px) {
+  .bankGrid { grid-template-columns: repeat(2, 1fr); }
+  .stepLabel { font-size: 12px; }
+  .successCard { padding: 36px 22px; }
+  .successBtns { flex-direction: column; }
+  .successTimeline { gap: 4px; }
+}
 
 /* Logo */
 .logoLink {

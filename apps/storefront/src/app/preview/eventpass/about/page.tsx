@@ -8,6 +8,20 @@ export default function AboutPage() {
   const { basePath } = useTemplateConfig()
   return (
     <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+      <style>{`
+        @media (max-width: 1024px) {
+          .ep-about-story { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .ep-about-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 32px 24px !important; }
+          .ep-about-stats > div { border-left: none !important; padding: 0 !important; }
+          .ep-about-contact { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        }
+        @media (max-width: 640px) {
+          .ep-about-hero-overlay { left: 20px !important; right: 20px !important; bottom: 32px !important; }
+          .ep-about-section { padding-left: 20px !important; padding-right: 20px !important; }
+          .ep-about-contact { grid-template-columns: 1fr !important; }
+          .ep-about-cta { flex-direction: column !important; align-items: flex-start !important; gap: 20px !important; padding: 40px 20px !important; }
+        }
+      `}</style>
       <NavBar />
 
       {/* Hero — full bleed image with text */}
@@ -21,7 +35,7 @@ export default function AboutPage() {
           position: "absolute", inset: 0,
           background: "linear-gradient(to right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 100%)",
         }} />
-        <div style={{ position: "absolute", bottom: 56, left: 60, maxWidth: 560 }}>
+        <div className="ep-about-hero-overlay" style={{ position: "absolute", bottom: 56, left: 60, maxWidth: 560 }}>
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16 }}>
             About EventPass
           </p>
@@ -35,8 +49,8 @@ export default function AboutPage() {
       </div>
 
       {/* Story — editorial 2 column */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 60px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
+      <div className="ep-about-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 60px" }}>
+        <div className="ep-about-story" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
           <div>
             <h2 style={{
               fontSize: "clamp(28px, 3vw, 40px)", fontWeight: 900,
@@ -65,8 +79,8 @@ export default function AboutPage() {
 
       {/* Stats — full bleed accent */}
       <div style={{ background: T.bgSubtle, borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 60px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
+        <div className="ep-about-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 60px" }}>
+          <div className="ep-about-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
             {[
               { value: "500+", label: "Events listed", sub: "across 20+ cities" },
               { value: "50,000+", label: "Tickets booked", sub: "with zero signups" },
@@ -109,14 +123,14 @@ export default function AboutPage() {
       </div>
 
       {/* Contact — merged in from the old standalone /contact page */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 60px" }}>
+      <div className="ep-about-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 60px" }}>
         <p style={{ color: T.textLight, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16 }}>
           Get in touch
         </p>
         <h2 style={{ color: T.text, fontSize: 30, fontWeight: 900, margin: "0 0 32px", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
           Have a question? We typically respond within 2 hours.
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+        <div className="ep-about-contact" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
           {[
             { icon: "📧", title: "Email Support", desc: "support@eventpass.in", sub: "We reply within 2 hours" },
             { icon: "💬", title: "Live Chat", desc: "Available Mon–Sat, 10am–7pm", sub: "Average response: 5 minutes" },
@@ -143,7 +157,7 @@ export default function AboutPage() {
 
       {/* Footer CTA — minimal */}
       <div style={{ borderTop: `1px solid ${T.border}`, background: T.bgSubtle }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "60px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="ep-about-cta" style={{ maxWidth: 1200, margin: "0 auto", padding: "60px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h3 style={{ color: T.text, fontWeight: 800, fontSize: 24, margin: "0 0 8px", letterSpacing: "-0.5px" }}>
               Find something worth going to.

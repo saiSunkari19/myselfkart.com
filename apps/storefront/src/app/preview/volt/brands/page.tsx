@@ -40,7 +40,7 @@ export default function BrandsPage() {
         </section>
 
         {/* Featured brand products */}
-        <section className={`${s.section} ${s.sectionBg}`} style={{ margin: "0 -24px", padding: "40px 24px" }}>
+        <section className={`${s.section} ${s.sectionBg}`} style={{ marginInline: "calc(var(--container-pad) * -1)", padding: "40px var(--container-pad)" }}>
           <Reveal>
             <div className={s.sectionHead}>
               <div>

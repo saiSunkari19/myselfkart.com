@@ -20,7 +20,7 @@ export default function ReturnsPage() {
         <div style={{ maxWidth: 780, margin: "0 auto", padding: "60px 0 100px" }}>
 
           {/* Highlights */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginBottom: 64 }}>
+          <div className={s.grid3} style={{ gap: 20, marginBottom: 64 }}>
             {[
               { icon: "30", unit: "Days", label: "Full Returns Window", sub: "No questions asked" },
               { icon: "∞", unit: "", label: "Lifetime Exchange", sub: "At current gold value" },
@@ -76,7 +76,7 @@ export default function ReturnsPage() {
                 {section.title}
               </h2>
               {section.items.map(([label, detail]) => (
-                <div key={label} style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20, marginBottom: 16, padding: "12px 0", borderBottom: "1px solid #f5f0e8" }}>
+                <div key={label} className={s.labelRow} style={{ gap: 20, marginBottom: 16, padding: "12px 0", borderBottom: "1px solid #f5f0e8" }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1410" }}>{label}</div>
                   <div style={{ fontSize: 14, color: "#6b5f52", lineHeight: 1.7 }}>{detail}</div>
                 </div>

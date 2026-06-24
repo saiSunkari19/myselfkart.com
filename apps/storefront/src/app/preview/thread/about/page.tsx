@@ -60,7 +60,7 @@ export default function AboutPage() {
         <section className={s.section} style={{ textAlign: "center" }}>
           <div className={s.sectionLabel}>By the numbers</div>
           <h2 className={s.sectionTitle}>Thread in 2026</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 32, marginTop: 48 }}>
+          <div className={s.grid4} style={{ gap: 32, marginTop: 48 }}>
             {[
               { value: "15,000+", label: "Customers", sub: "across India" },
               { value: "600+", label: "Products", sub: "in our range" },
@@ -82,7 +82,7 @@ export default function AboutPage() {
             <div className={s.sectionLabel}>Get in touch</div>
             <h2 className={s.sectionTitle}>We'd love to hear from you</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
+          <div className={s.grid4} style={{ gap: 24 }}>
             {[
               { icon: "📧", title: "Email", text: "hello@thread.in" },
               { icon: "📱", title: "Phone", text: "+91 98000 00000\nMon–Fri, 10am–6pm IST" },

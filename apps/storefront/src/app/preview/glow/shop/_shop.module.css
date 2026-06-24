@@ -45,6 +45,17 @@
   .shopLayout { grid-template-columns: 1fr; }
   .sidebar { display: none; }
 }
+/* Bare-container page sections need edge gutters once the viewport drops below
+   the 1240px container width. Desktop layout unaffected. */
+@media (max-width: 1024px) {
+  .pageHeader { padding-left: 20px; padding-right: 20px; }
+  .shopOuter { padding-left: 20px; padding-right: 20px; }
+}
+@media (max-width: 768px) {
+  .pageHeader { padding-top: 36px; padding-bottom: 28px; }
+  .shopOuter { padding-top: 32px; }
+  .shopLayout { gap: 28px; }
+}
 
 /* ── Sidebar ── */
 .sidebar {
