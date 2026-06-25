@@ -1424,9 +1424,17 @@
   color: #dc2626;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 8px;
-  display: block;
+  /* Generous mobile tap target. The bare 11.5px text was only a ~14px-tall hit
+     area — easy to miss with a finger, which reads as "Remove does nothing"
+     even though the server action fires fine. */
+  display: inline-block;
+  margin-top: 2px;
+  padding: 10px 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  -webkit-tap-highlight-color: rgba(220, 38, 38, 0.14);
 }
+.removeBtn:hover { color: #b91c1c; }
 
 /* ---- Order Summary ---- */
 .orderSummary {

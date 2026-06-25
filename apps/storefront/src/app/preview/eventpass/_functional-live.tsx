@@ -97,7 +97,7 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
                     <form action={updateLineItemAction} style={{ display: "inline" }}>
                       <input type="hidden" name="line_item_id" value={item.id} />
-                      <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
+                      <input type="hidden" name="quantity" value={item.quantity - 1} />
                       <button type="submit" aria-label="Decrease quantity" style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: "#fff", color: T.text, cursor: "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1 }}>−</button>
                     </form>
                     <form action={updateLineItemAction} style={{ display: "inline" }}>
@@ -137,7 +137,7 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                   <div style={{ color: T.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{formatMoney(item.total, cur)}</div>
                   <form action={removeLineItemAction}>
                     <input type="hidden" name="line_item_id" value={item.id} />
-                    <button type="submit" style={{ background: "none", border: "none", color: T.danger, fontSize: 13, cursor: "pointer", padding: 0 }}>Remove</button>
+                    <button type="submit" style={{ background: "none", border: "none", color: T.danger, fontSize: 13, cursor: "pointer", padding: "8px 8px", textDecoration: "underline", textUnderlineOffset: 2 }}>Remove</button>
                   </form>
                 </div>
               </div>

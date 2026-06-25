@@ -89,7 +89,7 @@ export function VoltCartLivePage({ config, cart, cartCount }: CartProps) {
                     <div className={s.qtyControl} style={{ marginTop: 10 }}>
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
                         <input type="hidden" name="line_item_id" value={item.id} />
-                        <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
+                        <input type="hidden" name="quantity" value={item.quantity - 1} />
                         <button className={s.qtyBtn} type="submit" aria-label="Decrease quantity">−</button>
                       </form>
                       <form action={updateLineItemAction} style={{ display: "inline" }}>
