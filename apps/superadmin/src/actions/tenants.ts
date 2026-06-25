@@ -110,7 +110,7 @@ export async function testTenantShiprocketAction(
       ok: boolean
       message?: string
       pickup_locations?: string[]
-    }>(`/selfkart/platform/tenants/${id}/shiprocket-credentials/test`, {
+    }>(`/selfkart/platform/tenants/${id}/shiprocket-credentials/verify`, {
       method: "POST",
       body: {
         api_email: String(formData.get("api_email") ?? "").trim(),
