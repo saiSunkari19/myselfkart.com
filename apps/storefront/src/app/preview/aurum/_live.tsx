@@ -176,14 +176,14 @@ function ProductSection({ label, title, sub, products, cta, cream, grid3 }: {
 }
 
 /* ---- Categories (real categories; hidden when none) ---- */
-function CollectionsSection({ categories }: { categories: HomeProps["categories"] }) {
+function CategoriesSection({ categories }: { categories: HomeProps["categories"] }) {
   if (categories.length === 0) return null
   return (
     <section className={s.section}>
       <div className={s.container}>
         <div className={s.sectionCenter} style={{ marginBottom: 16 }}>
-          <span className={s.sectionLabel}>Curated for You</span>
-          <h2 className={s.sectionTitle}>Our Collections</h2>
+          <span className={s.sectionLabel}>Browse</span>
+          <h2 className={s.sectionTitle}>Shop by Category</h2>
           <GoldDivider />
         </div>
         <div className={s.collectionGrid}>
@@ -194,6 +194,36 @@ function CollectionsSection({ categories }: { categories: HomeProps["categories"
               <div className={s.collectionInfo}>
                 <div className={s.collectionName}>{cat.name}</div>
                 <div className={s.collectionCount}>{cat.count} piece{cat.count !== 1 ? "s" : ""}</div>
+                <div className={s.collectionCta}>Explore Category →</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ---- Collections (real Medusa collections; seller-curated, distinct from the
+   category taxonomy; hidden when none) ---- */
+function CollectionsSection({ collections }: { collections: HomeProps["collections"] }) {
+  if (collections.length === 0) return null
+  return (
+    <section className={`${s.section} ${s.sectionCream}`}>
+      <div className={s.container}>
+        <div className={s.sectionCenter} style={{ marginBottom: 16 }}>
+          <span className={s.sectionLabel}>Curated for You</span>
+          <h2 className={s.sectionTitle}>Our Collections</h2>
+          <GoldDivider />
+        </div>
+        <div className={s.collectionGrid}>
+          {collections.map((col, i) => (
+            <Link key={col.id} href={col.href} className={s.collectionCard}>
+              <img src={FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]} alt={col.name} />
+              <div className={s.collectionOverlay} />
+              <div className={s.collectionInfo}>
+                <div className={s.collectionName}>{col.name}</div>
+                <div className={s.collectionCount}>{col.count} piece{col.count !== 1 ? "s" : ""}</div>
                 <div className={s.collectionCta}>Explore Collection →</div>
               </div>
             </Link>
@@ -344,14 +374,15 @@ function Newsletter({ config }: { config: StoreConfig | null }) {
 }
 
 /* ---- Home slot ---- */
-export function AurumLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
+export function AurumLivePage({ config, cartCount, products, newArrivals, deals, categories, collections }: HomeProps) {
   const hasDeals = deals.length > 0
   return (
     <div className={s.page} style={aurumColorVars(config)}>
       <AurumNav config={config} cartCount={cartCount} hasDeals={hasDeals} categories={categories} />
       <Hero config={config} hasDeals={hasDeals} />
       <TrustStrip config={config} />
-      <CollectionsSection categories={categories} />
+      <CollectionsSection collections={collections} />
+      <CategoriesSection categories={categories} />
       <ProductSection
         label="Just Arrived" title="New Arrivals"
         sub="Freshly crafted, now available. Each piece certified and ready to ship."

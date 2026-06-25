@@ -4,6 +4,11 @@ import { getTenantMedusa } from "./client"
 import { getRegion } from "./region"
 import type { TenantResolution } from "../tenant/types"
 
+export type StoreVariantOption = {
+  value: string
+  option: { title: string } | null
+}
+
 export type StoreVariant = {
   id: string
   title: string | null
@@ -14,6 +19,9 @@ export type StoreVariant = {
     original_amount: number | null
     currency_code: string | null
   } | null
+  // Per-variant option picks (e.g. {value:"Red", option:{title:"Color"}}) —
+  // used to derive the product's distinct color/size facets for shop filters.
+  options?: StoreVariantOption[]
 }
 
 export type StoreTag = {
@@ -24,6 +32,12 @@ export type StoreTag = {
 export type StoreCategory = {
   id: string
   name: string
+  handle: string | null
+}
+
+export type StoreCollection = {
+  id: string
+  title: string
   handle: string | null
 }
 
@@ -45,14 +59,21 @@ export type StoreProduct = {
   // Real Medusa product categories assigned to this product. Empty when the
   // seller hasn't set up categories — the browse nav then falls back to tags.
   categories: StoreCategory[]
+  // The Medusa collection this product belongs to (seller-curated grouping such
+  // as "New Arrival" / "Best seller"). null when the product is in no collection;
+  // surfaced alongside categories in the browse nav.
+  collection: StoreCollection | null
   variants: StoreVariant[]
+  // Per-product merchandising metadata written by the seller CSV import
+  // (rating, review_count, warranty, returns_policy). null when never set.
+  metadata: Record<string, unknown> | null
 }
 
 // calculated_price requires a region_id on the query so Medusa can resolve the
 // price for that region's currency. The price is in major units (e.g. 49.99) —
 // render it directly, never divide by 100.
 const PRODUCT_FIELDS =
-  "id,title,handle,thumbnail,images.url,description,created_at,*tags,categories.id,categories.name,categories.handle,*variants,variants.calculated_price"
+  "id,title,handle,thumbnail,images.url,description,created_at,metadata,*tags,categories.id,categories.name,categories.handle,collection.id,collection.title,collection.handle,*variants,variants.calculated_price,variants.options.value,variants.options.option.title"
 
 /**
  * Lists products for the resolved tenant. The per-tenant SDK attaches the

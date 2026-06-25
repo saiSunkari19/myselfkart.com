@@ -32,7 +32,7 @@ export default function NewLaunchesPage() {
               <div className={s.sectionTitle}>📅 Coming Soon</div>
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+          <div className={s.grid3}>
             {[
               { name: "Apple iPhone 17", brand: "Apple", date: "September 2025", image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80" },
               { name: "Samsung Galaxy S26", brand: "Samsung", date: "January 2026", image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80" },

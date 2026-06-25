@@ -27,7 +27,7 @@ export default function ConfirmationPage() {
             <div style={{ fontSize: 24, fontWeight: 600, color: "#b8962e", letterSpacing: 2, fontFamily: "Georgia, serif" }}>{orderId}</div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginBottom: 48 }}>
+          <div className={s.grid3} style={{ gap: 20, marginBottom: 48 }}>
             {[
               { icon: "📦", title: "Insured Packaging", text: "Your jewellery will be packed in our signature luxury box" },
               { icon: "🚚", title: "3–5 Business Days", text: "Real-time tracking will be shared via email and SMS" },

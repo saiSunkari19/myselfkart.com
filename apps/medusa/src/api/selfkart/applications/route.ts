@@ -12,6 +12,8 @@ import {
   RESERVED_SUBDOMAINS,
 } from "../../../platform/auth"
 import { insertApplication, type SellingOn } from "../../../platform/repository"
+import { renderStoreEmail } from "../../../lib/email-template"
+import { sendPlatformEmail } from "../../../lib/store-email"
 
 const SELLING_ON_VALUES: ReadonlySet<SellingOn> = new Set<SellingOn>([
   "instagram_whatsapp",
@@ -119,6 +121,42 @@ export async function POST(req: MedusaRequest, res: MedusaResponse): Promise<voi
       return
     }
     throw error
+  }
+
+  // P-3: notify ops of the new application (platform identity). Non-fatal — a mail
+  // failure must not fail the public funnel; the application row is already saved.
+  try {
+    const opsTo =
+      process.env.SELFKART_ENQUIRY_TO || process.env.RESEND_REPLY_TO || "connect@myselfkart.com"
+    const { html, text } = renderStoreEmail({
+      storeName: "Selfkart",
+      heading: "New seller application",
+      intro: `${ownerName} wants to open "${storeName}" on Selfkart.`,
+      rows: [
+        { label: "Store", value: storeName },
+        { label: "Owner", value: ownerName },
+        { label: "Email", value: ownerEmail },
+        { label: "Phone", value: phone ?? "—" },
+        { label: "Subdomain", value: `${desiredSubdomain}.myselfkart.com` },
+        { label: "Market", value: `${country.toUpperCase()} / ${currency.toUpperCase()}` },
+        { label: "Selling on", value: sellingOn ?? "—" },
+      ],
+      outroHtml: notes
+        ? `<p style="margin:16px 0 0;color:#374151;font-size:14px;"><strong>Notes:</strong> ${notes}</p>`
+        : undefined,
+      footerNote: "Review and approve in the Selfkart superadmin console.",
+    })
+    await sendPlatformEmail(req.scope, {
+      to: opsTo,
+      subject: `New seller application: ${storeName}`,
+      html,
+      text,
+      template: "seller-application-enquiry",
+      idempotencyKey: `enquiry:${id}`,
+      data: { reply_to: ownerEmail },
+    })
+  } catch {
+    // swallow — the funnel response below is the source of truth
   }
 
   res.status(201).json({ id, status: "pending" })

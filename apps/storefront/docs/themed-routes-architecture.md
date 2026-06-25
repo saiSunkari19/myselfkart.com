@@ -113,12 +113,29 @@ Legend: `[ ]` todo · `[x]` done · `[~]` partial/interim
   `/shop?category=` filters by real category id **or** tag id (`filterByCategory`).
   Verified against live data: cloth tenant has 0 categories → falls back to tags;
   wiring activates automatically once a seller assigns categories.
-- [x] Product fetch carries `created_at`, `tags`, `categories`, `original_amount` — `lib/medusa/products.ts`
+- [x] Product fetch carries `created_at`, `tags`, `categories`, `collection`, `original_amount` — `lib/medusa/products.ts`
+- [x] **Real collections** surfaced as a **distinct browse group**, separate from the
+  category taxonomy (collections ≠ categories in Medusa). Product fetch carries the
+  Medusa `collection` relation; `getProductCollections()` derives seller-curated
+  collections ("Summer Collection") and `resolveCollections()` returns them as their
+  own `CategoryView[]`, passed via a dedicated `collections` prop on `HomeProps`/
+  `ShopProps`. `resolveCategories()` returns ONLY the category taxonomy (real
+  categories, else tags) and never mixes collections in. Each theme renders a separate
+  "Shop by Collection" section / filter group alongside (not merged into) categories.
+  `/shop?category=<collection_id>` still filters by collection membership
+  (`productsInCategoryOrTag` matches category **or** collection **or** tag id; the shop
+  route's active-id check accepts a category or collection id).
+  - **History:** collections were first merged into the `categories` prop (one nav,
+    no new slot). That conflated the two concepts — a collection rendered identically
+    to a category — so they were split into their own prop + per-theme section. All
+    five themes (volt, glow, thread, aurum, eventpass) implement the collection group;
+    glow's Home intentionally has no browse section, so only its Shop surfaces it.
 - [n/a] ~~`getPromotions(tenant)` → time-limited deals~~ — **Medusa promotions are
   cart-level**, not a browseable store endpoint. Browseable "deals" = sale prices
   (price lists), already detected. A merchant "Sale" can be modelled as a category.
-- [ ] (optional / deferred) `app/collections/[handle]` route + `Theme.Collection`
-  slot — `sdk.store.collection.list` exists; add when a tenant uses collections
+- [ ] (optional / deferred) dedicated `app/collections/[handle]` landing route +
+  `Theme.Collection` slot — collections are now navigable via `/shop?category=`; a
+  bespoke per-collection landing page would add a slot every theme must implement.
   (adds a slot every theme must implement).
 
 ### Phase 4 — Port remaining live themes
@@ -167,6 +184,15 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
 - [x] **Duplicate-import visibility** — `prepare` now reports `existing_products` /
   `new_products` (handles already present → updated, not duplicated); the admin
   Product Upload page shows this + a "stock was reset" note.
+- [x] **Inventory items labelled by product, not "Default"** — Medusa's core import
+  names every inventory item after the *variant* title, so single-variant products
+  showed "Default" in the admin Inventory list and multi-variant ones showed a bare
+  option value ("M", "200 ml"). The post-import heal now backfills product-aware titles
+  (`ensureInventoryItemTitles` in `seed-tenant-inventory-resources.ts`, called from the
+  `complete` route): single/unnamed variant → `<Product Title>`, real variant title →
+  `<Product Title> - <Variant Title>`. Idempotent + tenant-scoped. Applied to existing
+  live data (192 items relabelled; 0 "Default" remain). Stock itself was always created
+  (levels exist) — this was purely a labelling bug.
 - [ ] (optional) Hard-block re-import behind an "allow updates" toggle
 - [ ] Document promotions reality (cart-level) + categories setup for sellers
 
@@ -251,6 +277,26 @@ goal is not to rebuild it but to **guarantee the buyer (live) path never touches
   now use a real product thumbnail (`CategoryView.image`) with a neutral generated
   placeholder, instead of hardcoded Unsplash apparel photos. `tsc` + `next build` +
   tests green.
+
+- 2026-06-24 — **Responsive pass across all five themes.** Every theme's stylesheet
+  got a desktop-first responsive layer (breakpoints 1024 / 768 / 640 / 400). volt was the
+  reference; aurum/thread/glow/eventpass followed the same strategy (the latter four built
+  by parallel agents, then reviewed). What changed per theme: 2-column **page** layouts
+  (product detail, cart, checkout, shop filter sidebar) collapse to 1 col ≤1024px with
+  sticky sidebars/summaries made static; product/category/brand grids step 4→3→2 at
+  768/640; the fixed header becomes `position: static` + wraps (search on its own row) on
+  mobile so the nav no longer overflows; forms → 1 col; footers collapse; heroes shrink.
+  Two structural helpers introduced: a `--container-pad` var (24px → 16px mobile) so inline
+  full-bleed `margin: 0 -Npx` sections stay in sync, and responsive grid utilities
+  (`.grid2/3/4/5` with `minmax(0,1fr)`) that replaced inline `repeat(N,1fr)` grids on the
+  static preview pages (those bypassed the module and overflowed on mobile). Shared
+  account/order components: `account-shell` 2-col → stacked via a global `.account-grid`;
+  order-summary steps use `auto-fit minmax`. Verified at 390/768/1440 with a puppeteer
+  + system-Chrome harness that measures `documentElement.scrollWidth` (zero horizontal
+  overflow on all themes' core pages). `tsc`, all 21 tests, and `next build` green.
+  Note: this was tested against the `/preview/<theme>/*` static pages (the only surface
+  renderable without a live tenant); since those share each theme's stylesheet, the live
+  buyer slots inherit the same responsive layer.
 
 ## 6. Risks / open questions
 

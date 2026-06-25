@@ -81,9 +81,14 @@ export default function AboutPage() {
         <section className={s.section} style={{ textAlign: "center" }}>
           <div className={s.sectionLabel}>By the numbers</div>
           <h2 className={s.sectionTitle}>Thread in 2026</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 32, marginTop: 48 }}>
-            {stats.map((stat: typeof DEFAULT_ABOUT_STATS[number], i: number) => (
-              <div key={stat.label ?? i} style={{ background: "#f2efe9", borderRadius: 16, padding: 32 }}>
+          <div className={s.grid4} style={{ gap: 32, marginTop: 48 }}>
+            {[
+              { value: "15,000+", label: "Customers", sub: "across India" },
+              { value: "600+", label: "Products", sub: "in our range" },
+              { value: "4", label: "Factories", sub: "all certified" },
+              { value: "100%", label: "Natural fibres", sub: "by default" },
+            ].map(stat => (
+              <div key={stat.label} style={{ background: "#f2efe9", borderRadius: 16, padding: 32 }}>
                 <div style={{ fontSize: 40, fontWeight: 900, color: "#1a1a1a", letterSpacing: -2, marginBottom: 6 }}>{stat.value}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>{stat.label}</div>
                 <div style={{ fontSize: 13, color: "#a09890" }}>{stat.sub}</div>
@@ -98,7 +103,7 @@ export default function AboutPage() {
             <div className={s.sectionLabel}>Get in touch</div>
             <h2 className={s.sectionTitle}>We'd love to hear from you</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
+          <div className={s.grid4} style={{ gap: 24 }}>
             {[
               { icon: "📧", title: "Email", text: config?.contact_email || "hello@thread.in" },
               { icon: "📱", title: "Phone", text: config?.contact_phone ? `${config.contact_phone}\nMon–Fri, 10am–6pm IST` : "+91 98000 00000\nMon–Fri, 10am–6pm IST" },

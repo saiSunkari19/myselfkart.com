@@ -271,6 +271,34 @@ function CategoriesSection({ categories, accent }: { categories: HomeProps["cate
   )
 }
 
+/** Collections (seller-curated Medusa collections; hidden when none). Kept
+    distinct from the category taxonomy so the two never render mixed. */
+function CollectionsSection({ collections, accent }: { collections: HomeProps["collections"]; accent: string }) {
+  if (collections.length === 0) return null
+  return (
+    <section style={{ padding: "72px 40px", background: T.bg }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <SectionHeader label="Curated" title="Shop by Collection" subtitle="Hand-picked line-ups worth your time" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
+          {collections.map(col => (
+            <Link key={col.id} href={col.href} style={{ textDecoration: "none" }}>
+              <div style={{
+                background: T.bgCard, border: `1px solid ${T.border}`,
+                borderRadius: T.radiusLg, padding: "24px 16px", textAlign: "center",
+                cursor: "pointer", boxShadow: T.shadow,
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 10, color: accent }}>✨</div>
+                <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{col.name}</div>
+                <div style={{ color: T.textLight, fontSize: 12 }}>{col.count} event{col.count !== 1 ? "s" : ""}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const DEFAULT_HOW_IT_WORKS = [
   { step: "01", title: "Discover", desc: "Browse curated events across categories and dates.", icon: "🔍" },
   { step: "02", title: "Choose tickets", desc: "Pick your ticket type and set quantity. Done.", icon: "🎟️" },
@@ -309,7 +337,7 @@ function HowItWorksSection({ config }: { config: StoreConfig | null }) {
 // ---------------------------------------------------------------------------
 // Home slot
 // ---------------------------------------------------------------------------
-export function EventpassLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
+export function EventpassLivePage({ config, cartCount, products, newArrivals, deals, categories, collections }: HomeProps) {
   const hasDeals = deals.length > 0
   const accent = eventAccent(config)
   const trending = newArrivals.length > 0 ? newArrivals : products
@@ -327,6 +355,7 @@ export function EventpassLivePage({ config, cartCount, products, newArrivals, de
         subtitle="Events everyone's talking about this week"
         products={trending.slice(0, 6)} accent={accent} cta={{ href: "/shop" }}
       />
+      <CollectionsSection collections={collections} accent={accent} />
       <CategoriesSection categories={categories} accent={accent} />
       <EventGridSection
         label="Editor's picks" title="Featured Events"

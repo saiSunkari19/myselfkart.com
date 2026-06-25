@@ -55,6 +55,8 @@
   -webkit-font-smoothing: antialiased;
   font-size: 15px;
   line-height: 1.65;
+  --container-pad: 48px;
+  --container-wide-pad: 32px;
 }
 
 /* ---- Page Loader ---- */
@@ -235,18 +237,28 @@
 .container {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 0 48px;
+  padding: 0 var(--container-pad, 48px);
 }
 .containerNarrow {
   max-width: 880px;
   margin: 0 auto;
-  padding: 0 48px;
+  padding: 0 var(--container-pad, 48px);
 }
 .containerWide {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 var(--container-wide-pad, 32px);
 }
+
+/* Responsive grid utilities — replace inline repeat(N,1fr) on static pages.
+   minmax(0,1fr) lets cells shrink below content width (no overflow). */
+.grid2, .grid3, .grid4, .grid5 { display: grid; }
+.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* label / value spec row — fixed label column, collapses to 1 col on mobile */
+.labelRow { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
 
 /* ---- Buttons ---- */
 .btn {
@@ -312,6 +324,11 @@
 }
 .btnFull { width: 100%; }
 .btnLg { padding: 18px 48px; font-size: 12px; letter-spacing: 2.5px; }
+
+/* Live AddToCart wrapper — own class so the global `.add-to-cart` flex-row +
+   dark-button rules don't override Aurum's stacked CTA + qty stepper. */
+.buyForm { display: block; margin-top: 8px; }
+.buyActions { display: flex; gap: 12px; margin: 16px 0 24px; }
 
 /* ---- Gold ornamental line ---- */
 .goldLine {
@@ -429,7 +446,7 @@
   z-index: 1;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 0 48px;
+  padding: 0 var(--container-pad, 48px);
   width: 100%;
 }
 .heroLabel {
@@ -502,7 +519,7 @@
 .trustInner {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 0 48px;
+  padding: 0 var(--container-pad, 48px);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
@@ -1384,7 +1401,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2px;
-  margin: 0 -48px;
+  margin: 0 calc(var(--container-pad, 48px) * -1);
 }
 .craftPanel {
   aspect-ratio: 4/3;
@@ -1707,7 +1724,7 @@
   z-index: 1;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 80px 48px;
+  padding: 80px var(--container-pad, 48px);
   max-width: 600px;
 }
 
@@ -1754,7 +1771,7 @@
 .footerTop {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 40px 48px 32px;
+  padding: 40px var(--container-pad, 48px) 32px;
   display: grid;
   grid-template-columns: 2.5fr 1fr 1fr 1fr;
   gap: 64px;
@@ -1819,7 +1836,7 @@
 .footerBottom {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 20px 48px;
+  padding: 20px var(--container-pad, 48px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1918,3 +1935,118 @@
 .reviewStars { color: #b8962e; font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
 .reviewText { font-size: 13px; color: #6b5f52; line-height: 1.8; }
 .reviewProduct { font-size: 11px; color: #b8962e; margin-top: 8px; letter-spacing: 0.5px; }
+
+/* min-width:0 lets grid/flex cells shrink below their content width (no overflow) */
+.collectionCard,
+.productCard,
+.storeCard,
+.careCard,
+.certCard,
+.testimonialCard,
+.aboutValue { min-width: 0; }
+
+/* ============================================================
+   Responsive — desktop-first overrides (base targets ≥1025px)
+   Verified at 390 / 768 / 1440px.
+   ============================================================ */
+
+/* Tablet landscape & small laptop — collapse 2-column page layouts */
+@media (max-width: 1024px) {
+  .shopLayout { grid-template-columns: 1fr; gap: 32px; }
+  .shopFilters { position: static; top: auto; }
+  .productDetail { grid-template-columns: 1fr; gap: 40px; }
+  .productGallery { position: static; top: auto; }
+  .cartLayout { grid-template-columns: 1fr; gap: 40px; }
+  .checkoutLayout { grid-template-columns: 1fr; gap: 40px; }
+  .orderSummary { position: static; top: auto; }
+  .aboutHero { gap: 36px; }
+  .productGrid4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .footerTop { grid-template-columns: 1fr 1fr 1fr; gap: 40px; }
+  .footerBrand { grid-column: 1 / -1; }
+}
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+  .productGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .productGrid3, .productGrid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .collectionGrid, .collectionGrid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .aboutValuesGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+  .storeGrid, .careGrid, .testimonialsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid3, .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .section { padding: 40px 0; }
+}
+
+/* Mobile — let the header flow (not fixed) so the nav wraps without the
+   fixed-height overlap math. */
+@media (max-width: 640px) {
+  .page { --container-pad: 20px; --container-wide-pad: 20px; }
+
+  .announcementBar { position: static; height: auto; padding: 8px 16px; gap: 10px; line-height: 1.4; text-align: center; }
+  .nav { position: static; top: auto; height: auto; }
+  .navInner {
+    grid-template-columns: auto 1fr auto;
+    padding: 12px 20px;
+    gap: 12px;
+  }
+  .navLeft { gap: 16px; }
+  .navLogoText { font-size: 18px; letter-spacing: 5px; }
+  .navRight { gap: 14px; }
+  .pageShell { padding-top: 0; }
+  .pageShell > .hero:first-child,
+  .pageShell > .editorial:first-child { margin-top: 0; }
+
+  .hero { height: auto !important; min-height: 0; aspect-ratio: 3 / 4; }
+  .heroContent { max-width: 100%; }
+  .heroTitle { font-size: 38px; max-width: 100%; }
+  .heroSub { max-width: 100%; }
+  .heroCtas { flex-wrap: wrap; }
+
+  .trustInner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 0; }
+  .trustItem:nth-child(2n) { border-right: none; }
+
+  .productGrid, .productGrid3, .productGrid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .collectionGrid, .collectionGrid2, .collectionGrid4 { grid-template-columns: 1fr; }
+  .aboutValuesGrid { grid-template-columns: 1fr; gap: 24px; }
+  .storeGrid, .careGrid, .testimonialsGrid { grid-template-columns: 1fr; }
+  .certGrid { grid-template-columns: 1fr; }
+  .craftGrid { grid-template-columns: 1fr; }
+  .aboutHero, .contactGrid { grid-template-columns: 1fr; gap: 32px; }
+
+  .formGrid { grid-template-columns: 1fr; }
+  .grid3, .grid4, .grid5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2 { grid-template-columns: 1fr; }
+
+  .cartItem { grid-template-columns: 80px 1fr; gap: 16px; }
+  .cartItemImg { grid-row: span 2; }
+  .labelRow { grid-template-columns: 1fr; gap: 4px !important; }
+
+  .footerTop { grid-template-columns: 1fr 1fr; gap: 32px 24px; }
+  .footerBottom { flex-direction: column; gap: 14px; align-items: flex-start; }
+  .footerCerts { flex-wrap: wrap; gap: 12px; }
+
+  .newsletterForm { flex-direction: column; max-width: none; border: none; }
+  .newsletterInput { border: 1px solid rgba(255,255,255,0.15); }
+  .newsletterBtn { border: 1px solid #b8962e; }
+
+  /* Gallery: main image on top, thumbnails in a row below */
+  .productGallery { display: flex; flex-direction: column-reverse; gap: 10px; position: static; top: auto; }
+  .productMainImg { grid-column: auto; }
+  .productThumbs { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .productThumbs::-webkit-scrollbar { display: none; }
+  .productThumb { width: 56px; flex-shrink: 0; }
+
+  .formBlock { padding: 24px 20px; }
+  .orderSummary { padding: 28px 20px; }
+  .confirmWrap { margin: 48px auto; }
+  .staticWrap { padding: 40px var(--container-pad, 20px) 64px; }
+  .sectionHead { flex-direction: column; gap: 12px; }
+}
+
+/* Small phones */
+@media (max-width: 400px) {
+  .trustInner { grid-template-columns: 1fr; gap: 16px; }
+  .trustItem { border-right: none; justify-content: flex-start; }
+  .grid3, .grid4 { grid-template-columns: 1fr; }
+  .grid5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

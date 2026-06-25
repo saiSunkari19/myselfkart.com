@@ -98,6 +98,11 @@ export async function PUT(req: MedusaRequest, res: MedusaResponse): Promise<void
   json("hero_cta")
   json("trust_badges")
 
+  // ── Product detail page ─────────────────────────────────────────────────────
+  str("pdp_shipping_text")
+  str("pdp_returns_text")
+  str("pdp_delivery_text")
+
   // ── Policies ─────────────────────────────────────────────────────────────────
   str("return_policy")
   str("shipping_policy")

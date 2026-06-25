@@ -28,6 +28,7 @@
   --nav-h: 64px;
   --bar-h: 36px;
   --header-h: 100px;
+  --container-pad: 24px;
 }
 
 /* ---- Animations ---- */
@@ -134,12 +135,12 @@
 .container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--container-pad);
 }
 .containerWide {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--container-pad);
 }
 .main {
   padding-top: var(--header-h);
@@ -812,6 +813,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   padding: 20px 12px;
   background: #fff;
   border: 1px solid var(--border);
@@ -860,6 +862,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
+  min-width: 0;
   padding: 20px;
   background: #fff;
   border: 1px solid var(--border);
@@ -1220,6 +1223,32 @@
 }
 .deliveryRow strong { color: var(--text); }
 .deliveryIcon { font-size: 16px; flex-shrink: 0; }
+.detailVariantSelect {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+/* Wrapper for the live AddToCart form. Its own class (not the global
+   `.add-to-cart`) so the global flex-row + `button { background: var(--fg) }`
+   rules don't override Volt's stacked full-width buttons or the accent CTA. */
+.detailBuy {
+  display: block;
+  margin-top: 8px;
+}
+.detailQtyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 .detailActions {
   display: flex;
   flex-direction: column;
@@ -1847,4 +1876,103 @@
   border: none;
   border-top: 1px solid var(--border);
   margin: 24px 0;
+}
+
+/* "Why buy" / decorative feature grid (was an inline repeat(4,1fr)) */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* Responsive grid utilities — replace inline repeat(N,1fr) on static pages.
+   minmax(0,1fr) lets cells shrink below content width (no overflow). */
+.grid2, .grid3, .grid4, .grid5 { display: grid; gap: 16px; }
+.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+/* ============================================================
+   Responsive — desktop-first overrides (base targets ≥1025px)
+   Verified at 390 / 768 / 1440px.
+   ============================================================ */
+
+/* Tablet landscape & small laptop — collapse 2-column page layouts */
+@media (max-width: 1024px) {
+  .shopLayout { grid-template-columns: 1fr; }
+  .filterSidebar { position: static; top: auto; }
+  .detailLayout { grid-template-columns: 1fr; gap: 28px; }
+  .cartLayout { grid-template-columns: 1fr; }
+  .checkoutLayout { grid-template-columns: 1fr; }
+  .orderSummary { position: static; top: auto; }
+  .productGrid5 { grid-template-columns: repeat(4, 1fr); }
+  .footerGrid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .footerBrand { grid-column: 1 / -1; }
+}
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+  .heroContent { padding: 0 40px; }
+  .productGrid, .productGrid3, .productGrid5 { grid-template-columns: repeat(3, 1fr); }
+  .categoryGrid { grid-template-columns: repeat(4, 1fr); }
+  .brandGrid { grid-template-columns: repeat(4, 1fr); }
+  .featureGrid { grid-template-columns: repeat(2, 1fr); }
+  .grid4, .grid5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .section { padding: 40px 0; }
+}
+
+/* Mobile — let the header flow (not fixed) so the nav wraps to two rows
+   without the fixed-height overlap math, keeping search + links. */
+@media (max-width: 640px) {
+  .announcementBar { position: static; height: auto; padding: 8px 12px; gap: 12px; }
+  .nav { position: static; height: auto; }
+  .navInner { flex-wrap: wrap; gap: 10px 12px; padding: 10px 16px; }
+  .navLogo { order: 1; }
+  .navLinks { order: 2; margin-left: auto; gap: 2px; }
+  .navLink { padding: 7px 9px; font-size: 12.5px; }
+  .navCart { padding: 7px 11px; }
+  .navSearch { order: 3; flex-basis: 100%; max-width: none; }
+  .main { padding-top: 0; }
+
+  .pageShell { --container-pad: 16px; }
+  .heroContent { padding: 0 20px; }
+  .hero { min-height: 440px; max-height: none; height: auto; aspect-ratio: 4 / 5; }
+  .heroSub { font-size: 14px; }
+  .heroActions { flex-wrap: wrap; }
+
+  .productGrid, .productGrid3, .productGrid5 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .categoryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .brandGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footerGrid { grid-template-columns: 1fr 1fr; gap: 28px; }
+
+  .formGrid { grid-template-columns: 1fr; }
+  .paymentMethods { grid-template-columns: repeat(2, 1fr); }
+  .grid3, .grid4, .grid5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2 { grid-template-columns: 1fr; }
+
+  .cartItem { grid-template-columns: 64px 1fr auto; gap: 12px; padding: 12px; }
+  .cartItemImg { align-self: start; }
+
+  .dealCardImg { width: 110px; min-width: 110px; }
+
+  .newsletter { padding: 28px 20px; }
+  .newsletterForm { flex-direction: column; max-width: none; }
+  .newsletterBtn { height: 44px; }
+  .newsletterTitle { font-size: 20px; }
+
+  .sectionHead { flex-direction: column; gap: 8px; }
+  .detailPriceMain { font-size: 26px; }
+  .specRow { grid-template-columns: 110px 1fr; gap: 10px; }
+  .tabList { overflow-x: auto; scrollbar-width: none; }
+  .tabList::-webkit-scrollbar { display: none; }
+  .footerBottom { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .infoContent { padding: 32px 0 60px; }
+}
+
+/* Small phones */
+@media (max-width: 400px) {
+  .categoryGrid { grid-template-columns: repeat(2, 1fr); }
+  .featureGrid { grid-template-columns: repeat(2, 1fr); }
+  .navLink { padding: 6px 7px; }
 }

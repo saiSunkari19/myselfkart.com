@@ -17,7 +17,7 @@ export default function ReturnsPage() {
         </div>
       </div>
       <div className={s.container}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, padding: "40px 0" }}>
+        <div className={s.grid4} style={{ padding: "40px 0" }}>
           {[{ icon: "10", unit: "Days", label: "Return Window" }, { icon: "₀", unit: "", label: "Return Pickup Fee" }, { icon: "7", unit: "Days", label: "Refund Timeline" }, { icon: "100%", unit: "", label: "Refund Guaranteed" }].map(h => (
             <div key={h.label} style={{ textAlign: "center", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px 16px", borderTop: "3px solid var(--accent)" }}>
               <div style={{ fontSize: 36, fontWeight: 900, color: "var(--accent)" }}>{h.icon}<span style={{ fontSize: 16 }}>{h.unit}</span></div>

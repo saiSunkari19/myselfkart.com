@@ -93,7 +93,7 @@ export function ThreadNav({ config, hasDeals, cartCount = 0 }: NavProps) {
           </div>
           <Link href="/" className={s.navLogo}>
             {config?.logo_url
-              ? <img src={config.logo_url} alt={storeName} style={{ height: 28, objectFit: "contain" }} />
+              ? <img src={config.logo_url} alt={storeName} style={{ height: 38, maxWidth: 180, objectFit: "contain" }} />
               : storeName}
           </Link>
           <div className={s.navActions}>
@@ -206,6 +206,38 @@ function ProductSection({ label, title, sub, products, cta }: {
   )
 }
 
+/* ---- Collections (seller-curated Medusa collections; hidden when none).
+   Kept distinct from the category taxonomy below — same card markup, own heading. ---- */
+function CollectionsSection({ collections }: { collections: HomeProps["collections"] }) {
+  if (collections.length === 0) return null
+  return (
+    <section className={s.section}>
+      <div className={s.container}>
+        <div className={s.sectionCenter} style={{ marginBottom: 40 }}>
+          <div className={s.sectionLabel} style={{ marginBottom: 12 }}>Curated</div>
+          <h2 className={s.sectionTitle} style={{ marginBottom: 16 }}>Shop by Collection</h2>
+          <p className={`${s.sectionSub} ${s.sectionSubCenter}`} style={{ marginBottom: 0 }}>Hand-picked edits, grouped just for you.</p>
+        </div>
+        <div className={s.categoryGrid}>
+          {collections.map((col) => (
+            <Link key={col.id} href={col.href} className={s.categoryCard}>
+              <img
+                src={col.image ?? `https://placehold.co/600x750/png?text=${encodeURIComponent(col.name)}`}
+                alt={col.name}
+              />
+              <div className={s.categoryOverlay} />
+              <div className={s.categoryInfo}>
+                <div className={s.categoryName}>{col.name}</div>
+                <div className={s.categoryCount}>{col.count} style{col.count !== 1 ? "s" : ""}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ---- Categories (real categories; hidden when none) ---- */
 function CategoriesSection({ categories }: { categories: HomeProps["categories"] }) {
   if (categories.length === 0) return null
@@ -309,7 +341,7 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
 }
 
 /* ---- Home slot ---- */
-export function ThreadLivePage({ config, cartCount, products, newArrivals, deals, categories }: HomeProps) {
+export function ThreadLivePage({ config, cartCount, products, newArrivals, deals, categories, collections }: HomeProps) {
   const hasDeals = deals.length > 0
   return (
     <div className={s.page} style={threadColorVars(config)}>
@@ -320,6 +352,7 @@ export function ThreadLivePage({ config, cartCount, products, newArrivals, deals
         sub="Our latest pieces, freshly added to the collection."
         products={newArrivals.slice(0, 4)} cta={{ label: "View All", href: "/shop" }}
       />
+      <CollectionsSection collections={collections} />
       <CategoriesSection categories={categories} />
       <EditorialBanner config={config} />
       <ProductSection

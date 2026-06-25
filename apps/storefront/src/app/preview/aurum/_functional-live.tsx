@@ -63,7 +63,11 @@ export function AurumCartLivePage({ config, cart, cartCount }: CartProps) {
                 const atMax = maxQty !== undefined && item.quantity >= maxQty
                 return (
                 <div key={item.id} className={s.cartItem}>
-                  {item.thumbnail ? (
+                  {item.handle ? (
+                    <Link href={`/products/${item.handle}`} className={s.cartItemImg}>
+                      {item.thumbnail ? <img src={item.thumbnail} alt={item.title} /> : null}
+                    </Link>
+                  ) : item.thumbnail ? (
                     <div className={s.cartItemImg}><img src={item.thumbnail} alt={item.title} /></div>
                   ) : <div className={s.cartItemImg} />}
                   <div>
@@ -96,11 +100,7 @@ export function AurumCartLivePage({ config, cart, cartCount }: CartProps) {
                         <button className={s.qtyBtn} type="submit" aria-label="Increase quantity" disabled={atMax}>+</button>
                       </form>
                     </div>
-                    {maxQty !== undefined && (
-                      <div className={s.cartItemMeta} style={{ color: atMax ? "#b8463a" : undefined }}>
-                        {atMax ? "Max available quantity reached" : `${maxQty} available`}
-                      </div>
-                    )}
+                    {/* Stock count intentionally hidden; the disabled + button enforces the max. */}
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 17, fontWeight: 500, color: "#1a1410", marginBottom: 8 }}>
@@ -341,7 +341,12 @@ export function AurumOrderLivePage({ config, cartCount, order }: OrderProps) {
               <div className={s.orderSummaryTitle}>Items Ordered</div>
               {order.items.map(item => (
                 <div key={item.id} className={s.summaryRow}>
-                  <span>{item.title} × {item.quantity}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {item.thumbnail && <img src={item.thumbnail} alt="" width={40} height={40} style={{ borderRadius: 4, objectFit: "cover", flexShrink: 0 }} />}
+                    <span>
+                      {item.handle ? <Link href={`/products/${item.handle}`} style={{ color: "inherit" }}>{item.title}</Link> : item.title} × {item.quantity}
+                    </span>
+                  </span>
                   <strong>{formatMoney(item.total, cur)}</strong>
                 </div>
               ))}

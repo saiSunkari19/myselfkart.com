@@ -25,6 +25,8 @@ export type CartLineItem = {
   thumbnail: string | null
   product_title: string | null
   variant_title: string | null
+  /** Product slug for linking back to the PDP, or null if unavailable. */
+  handle: string | null
   /**
    * Remaining units the variant's stock allows for this line item, or
    * `null` when stock isn't tracked (`manage_inventory: false`) or
@@ -33,8 +35,8 @@ export type CartLineItem = {
   availableQuantity: number | null
 }
 
-type RawCartLineItem = Omit<CartLineItem, "availableQuantity"> & {
-  product?: { id?: string } | null
+type RawCartLineItem = Omit<CartLineItem, "availableQuantity" | "handle"> & {
+  product?: { id?: string; handle?: string | null } | null
   variant?: { id?: string } | null
 }
 
@@ -71,7 +73,7 @@ export type ShippingOption = {
 // units — render directly, never divide by 100.
 const CART_FIELDS =
   "id,email,currency_code,total,subtotal,tax_total,shipping_total,item_total," +
-  "*items,*items.product,*items.variant," +
+  "*items,*items.product,items.product.handle,*items.variant," +
   "*shipping_address,*billing_address," +
   "*shipping_methods,*payment_collection,*payment_collection.payment_sessions"
 
@@ -98,6 +100,7 @@ async function asCart(tenant: TenantResolution, cart: unknown): Promise<Cart> {
       const { product: _product, variant: _variant, ...rest } = item
       return {
         ...rest,
+        handle: _product?.handle ?? null,
         availableQuantity: variantId ? availability[variantId]?.availableQuantity ?? null : null,
       }
     }),

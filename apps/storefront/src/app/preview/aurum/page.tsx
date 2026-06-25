@@ -109,7 +109,7 @@ const BridalEditorial = () => (
       className={s.editorialBg}
     />
     <div className={s.editorialOverlay} />
-    <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "80px 48px", width: "100%" }}>
+    <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "80px var(--container-pad, 48px)", width: "100%" }}>
       <Reveal>
         <span className={s.sectionLabel}>Royal Bridal 2026</span>
         <h2 className={s.sectionTitle} style={{ color: "#fff", maxWidth: 560, fontSize: "clamp(32px,4vw,60px)" }}>
@@ -118,7 +118,7 @@ const BridalEditorial = () => (
         <p className={s.sectionSub} style={{ color: "rgba(255,255,255,0.55)", maxWidth: 420 }}>
           Kundan, Polki, and heirloom gold — bridal jewellery crafted over months for a day you'll remember forever.
         </p>
-        <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
+        <div style={{ display: "flex", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
           <Link href="/preview/aurum/bridal" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
             Explore Bridal
           </Link>
@@ -226,7 +226,7 @@ const CertificationSection = () => (
           </p>
         </div>
       </Reveal>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2 }}>
+      <div className={s.grid4} style={{ gap: 2 }}>
         {[
           { icon: "🏅", title: "BIS Hallmarked", desc: "Every gold piece is hallmarked under the Bureau of Indian Standards — 916 for 22K, 750 for 18K." },
           { icon: "💎", title: "GIA Certified", desc: "Our diamonds are graded by the Gemological Institute of America — the world's most trusted diamond laboratory." },
@@ -295,7 +295,7 @@ const GiftSection = () => (
       className={s.editorialBg}
     />
     <div className={s.editorialOverlay} />
-    <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "80px 48px", width: "100%" }}>
+    <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "80px var(--container-pad, 48px)", width: "100%" }}>
       <Reveal>
         <span className={s.sectionLabel}>Gift Collection</span>
         <h2 className={s.sectionTitle} style={{ color: "#fff", fontSize: "clamp(28px,3.5vw,52px)" }}>
@@ -328,10 +328,10 @@ const StoreStrip = () => (
           </Link>
         </div>
       </Reveal>
-      <div style={{ display: "flex", gap: 2 }}>
+      <div className={s.grid5} style={{ gap: 2 }}>
         {["Mumbai", "New Delhi", "Bangalore", "Chennai", "Hyderabad"].map((city, i) => (
           <div key={city} style={{
-            flex: 1,
+            minWidth: 0,
             background: "#fff",
             padding: "24px",
             borderLeft: i === 0 ? "2px solid #b8962e" : "1px solid #e8e0d4",

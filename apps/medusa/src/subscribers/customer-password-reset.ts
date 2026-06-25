@@ -1,6 +1,10 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { Knex } from "knex"
+
+import { getStoreConfig } from "../platform/repository"
+import { renderStoreEmail } from "../lib/email-template"
+import { sendStoreEmail } from "../lib/store-email"
 
 type PasswordResetEvent = {
   entity_id: string
@@ -50,30 +54,31 @@ export default async function customerPasswordResetHandler({
   const protocol = host.includes("localhost") ? "http" : "https"
   const resetUrl = `${protocol}://${host}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
 
-  let notificationService: any = null
   try {
-    notificationService = container.resolve(Modules.NOTIFICATION)
-  } catch {
-    notificationService = null
-  }
+    const config = await getStoreConfig(knex, tenantId)
+    const storeName = config?.store_name?.trim() || "Store"
+    const { html, text } = renderStoreEmail({
+      storeName,
+      logoUrl: config?.logo_url,
+      primaryColor: config?.primary_color,
+      preheader: `Reset your ${storeName} password`,
+      heading: "Reset your password",
+      intro: `We received a request to reset the password for your ${storeName} account. This link expires shortly.`,
+      button: { label: "Reset your password", url: resetUrl },
+      outroHtml: `<p style="margin:16px 0 0;color:#6b7280;font-size:13px;">If the button doesn't work, paste this link into your browser:<br><a href="${resetUrl}" style="color:#6b7280;">${resetUrl}</a></p><p style="margin:12px 0 0;color:#6b7280;font-size:13px;">If you didn't request this, you can safely ignore this email.</p>`,
+      supportEmail: config?.contact_email,
+      footerNote: `Sent by ${storeName} via Selfkart.`,
+    })
 
-  if (!notificationService) {
-    logger.warn(`[password-reset] no notification provider configured. Reset URL for ${email}: ${resetUrl}`)
-    return
-  }
-
-  try {
-    await notificationService.createNotifications({
+    await sendStoreEmail(container, {
+      tenantId,
       to: email,
-      channel: "email",
-      // A SendGrid dynamic-template id; the reset URL is passed as template data.
-      template: process.env.SENDGRID_PASSWORD_RESET_TEMPLATE ?? "password-reset",
-      content: {
-        subject: "Reset your password",
-        text: `Reset your password using this link: ${resetUrl}`,
-        html: `<p>We received a request to reset your password.</p><p><a href="${resetUrl}">Reset your password</a></p><p>If the button doesn't work, paste this URL into your browser:<br>${resetUrl}</p><p>If you didn't request this, you can ignore this email.</p>`,
-      },
-      data: { reset_url: resetUrl, email },
+      subject: `Reset your ${storeName} password`,
+      html,
+      text,
+      template: "customer-password-reset",
+      idempotencyKey: `password-reset:${tenantId}:${token}`,
+      data: { reset_url: resetUrl },
     })
     logger.info(`[password-reset] sent reset email to ${email} for tenant ${tenantId}`)
   } catch (err) {

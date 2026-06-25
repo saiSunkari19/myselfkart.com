@@ -1,12 +1,13 @@
+import { redirect } from "next/navigation"
 import Link from "next/link"
 
 import { StorefrontStatePage } from "../components/storefront-state"
 import { formatMoney } from "../lib/format"
 import { THEMES, getTheme } from "../lib/themes"
-import { mapProducts, resolveCategories } from "../lib/views"
+import { mapProducts, resolveCategories, resolveCollections } from "../lib/views"
 import { getDeals, getNewArrivals } from "../lib/merchandising"
 import { listTenantProducts } from "../lib/medusa/products"
-import { resolveTenant } from "../lib/tenant/resolve-tenant"
+import { isStorefrontDemoHost, resolveTenant } from "../lib/tenant/resolve-tenant"
 import { fetchStoreConfig } from "../lib/store-config"
 import { getCartItemCount } from "../lib/cart/item-count"
 
@@ -16,6 +17,13 @@ export default async function HomePage() {
   const tenant = await resolveTenant()
 
   if (!tenant) {
+    // The tenant-less platform/OAuth-broker host has no store of its own — serve
+    // the public glow demo there instead of "store not found" so visitors can
+    // walk a full store flow. Only the home route redirects; /auth/google/* and
+    // other routes on this host are untouched.
+    if (await isStorefrontDemoHost()) {
+      redirect("/preview/glow")
+    }
     return <StorefrontStatePage state="not-found" />
   }
 
@@ -45,6 +53,7 @@ export default async function HomePage() {
         cartCount={cartCount}
         products={mapProducts(products)}
         categories={resolveCategories(products)}
+        collections={resolveCollections(products)}
         deals={mapProducts(getDeals(products))}
         newArrivals={mapProducts(getNewArrivals(products))}
       />

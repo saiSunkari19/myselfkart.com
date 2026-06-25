@@ -234,3 +234,22 @@ section {
   gap: 0.5rem;
   align-items: center;
 }
+
+/* Account layout (theme-agnostic shell) — sidebar nav + panel.
+   Collapses to a stacked layout with a wrapping nav row on mobile. */
+.account-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .account-grid > nav {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+  }
+}

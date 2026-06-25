@@ -12,10 +12,12 @@ import s from "./_styles.module.css"
  * filter. Filtering happens in the route (which knows the raw products); this
  * slot just renders the `ShopProps` view models it is handed.
  */
-export function VoltShopLivePage({ config, cartCount, products: productViews, categories, activeCategory, page, totalPages, totalCount }: ShopProps) {
+export function VoltShopLivePage({ config, cartCount, products: productViews, categories, collections, activeCategory, page, totalPages, totalCount }: ShopProps) {
   const storeName = config?.store_name ?? "VOLT"
   const products = productViews.map(viewToVolt)
-  const activeName = activeCategory ? categories.find(c => c.id === activeCategory)?.name : null
+  const activeName = activeCategory
+    ? [...collections, ...categories].find(c => c.id === activeCategory)?.name
+    : null
 
   const colorOverrides = {
     ...(config?.accent_color ? { "--accent": config.accent_color } : {}),
@@ -28,6 +30,22 @@ export function VoltShopLivePage({ config, cartCount, products: productViews, ca
       <PageLoader />
       <VoltNav config={config} cartCount={cartCount} hasDeals={false} categories={categories} />
       <div className={s.main}>
+        {collections.length > 0 && (
+          <div className={s.categoryBar}>
+            <div className={s.categoryBarInner}>
+              <span className={s.categoryBarItem} style={{ fontWeight: 700, opacity: 0.55, cursor: "default" }}>Collections</span>
+              {collections.map(col => (
+                <Link
+                  key={col.id}
+                  href={col.href}
+                  className={`${s.categoryBarItem} ${activeCategory === col.id ? s.categoryBarItemActive : ""}`}
+                >
+                  {col.name} ({col.count})
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         {categories.length > 0 && (
           <div className={s.categoryBar}>
             <div className={s.categoryBarInner}>

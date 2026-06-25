@@ -38,6 +38,22 @@ export default defineMiddlewares({
       matcher: "/admin/selfkart/product-imports/prepare",
       middlewares: [upload.single("file"), tenantContextMiddleware],
     },
+    // Core POST /admin/uploads (store logo, product images, any admin upload)
+    // runs multer (upload.array("files")) before its handler kicks off
+    // uploadFilesWorkflow -> TenantR2FileService.upload -> requireTenantContext().
+    // multer breaks the ALS context for the same reason as product-imports above
+    // (its next() fires from the root async context), so the upload workflow runs
+    // with no tenant and throws. We don't own the core route, but core's
+    // per-route middlewares load from @medusajs/medusa (scanned before our local
+    // src/api), so this entry registers AFTER core's multer — re-establishing the
+    // tenant ALS context from req.auth_context before the handler runs the
+    // workflow. No multer here: core already parsed the body; a second multer
+    // would re-consume the (now empty) stream and clobber req.files.
+    {
+      method: ["POST"],
+      matcher: "/admin/uploads",
+      middlewares: [tenantContextMiddleware],
+    },
     // /store* tenant is derived from the request DOMAIN: the Next.js storefront
     // resolves it from Host server-side and sends the tenant_id with an HMAC
     // signature (SELFKART_STOREFRONT_SECRET). The browser cannot forge it, and

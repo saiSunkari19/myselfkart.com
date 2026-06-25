@@ -84,9 +84,12 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
               const atMax = maxQty !== undefined && item.quantity >= maxQty
               return (
               <div key={item.id} style={{ ...cardStyle, display: "flex", gap: 16, alignItems: "center", padding: 16 }}>
-                <div style={{ width: 72, height: 72, borderRadius: T.radiusSm, overflow: "hidden", background: T.bgSubtle, flexShrink: 0 }}>
+                <Link
+                  href={item.handle ? `/products/${item.handle}` : "#"}
+                  style={{ width: 72, height: 72, borderRadius: T.radiusSm, overflow: "hidden", background: T.bgSubtle, flexShrink: 0, display: "block" }}
+                >
                   {item.thumbnail && <img src={item.thumbnail} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                </div>
+                </Link>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ color: T.text, fontWeight: 700, fontSize: 15 }}>{item.product_title ?? item.title}</div>
                   {item.variant_title && <div style={{ color: T.textMuted, fontSize: 13 }}>{item.variant_title}</div>}
@@ -128,11 +131,7 @@ export function EventpassCartLivePage({ config, cart, cartCount }: CartProps) {
                       >+</button>
                     </form>
                   </div>
-                  {maxQty !== undefined && (
-                    <div style={{ fontSize: 12, marginTop: 6, color: atMax ? T.danger : T.textLight }}>
-                      {atMax ? "Max available quantity reached" : `${maxQty} available`}
-                    </div>
-                  )}
+                  {/* Stock count intentionally hidden; the disabled + button enforces the max. */}
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ color: T.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>{formatMoney(item.total, cur)}</div>
@@ -232,7 +231,7 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
               {savedAddresses && savedAddresses.length > 0 ? (
                 <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? eventAccent(config)} />
               ) : null}
-              <form action={setAddressAction} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <form action={setAddressAction} className="ep-checkout-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div><label style={labelStyle}>First Name</label><input name="first_name" style={inputStyle} defaultValue={addr?.first_name ?? ""} required /></div>
                 <div><label style={labelStyle}>Last Name</label><input name="last_name" style={inputStyle} defaultValue={addr?.last_name ?? ""} required /></div>
                 <div><label style={labelStyle}>Email (e-tickets sent here)</label><input name="email" type="email" style={inputStyle} defaultValue={cart.email ?? ""} required /></div>
@@ -319,7 +318,8 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
         </div>
       </main>
       <EventpassFooter config={config} />
-      <style>{`@media (max-width: 768px) { .ep-checkout-grid { grid-template-columns: 1fr !important; } }`}</style>
+      <style>{`@media (max-width: 768px) { .ep-checkout-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 480px) { .ep-checkout-form { grid-template-columns: 1fr !important; } }`}</style>
     </div>
   )
 }
@@ -356,7 +356,12 @@ export function EventpassOrderLivePage({ config, cartCount, order }: OrderProps)
           <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Your Tickets</div>
           {order.items.map(item => (
             <div key={item.id} style={rowStyle}>
-              <span>{item.title} × {item.quantity}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {item.thumbnail && <img src={item.thumbnail} alt="" width={40} height={40} style={{ borderRadius: T.radiusSm, objectFit: "cover", flexShrink: 0 }} />}
+                <span>
+                  {item.handle ? <Link href={`/products/${item.handle}`} style={{ color: "inherit" }}>{item.title}</Link> : item.title} × {item.quantity}
+                </span>
+              </span>
               <strong style={{ color: T.text }}>{formatMoney(item.total, cur)}</strong>
             </div>
           ))}

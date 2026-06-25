@@ -16,6 +16,8 @@ import {
   type CartAddress,
 } from "../medusa/cart"
 import { getRegion } from "../medusa/region"
+import { createCustomerAddress, listCustomerAddresses } from "../medusa/customer"
+import { getCustomerToken } from "../customer/cookie"
 import {
   getPaymentConfig,
   initiateRazorpaySession,
@@ -39,7 +41,15 @@ async function requireActiveTenant(): Promise<TenantResolution> {
 async function ensureCartId(tenant: TenantResolution): Promise<string> {
   const existing = await getCartId()
   if (existing) {
-    return existing
+    // Don't trust the cookie blindly: a completed, deleted, expired, or
+    // reseeded cart id lingers in the 30-day cookie and would otherwise make
+    // every add-to-cart 404 against /store/carts/<gone>/line-items with no way
+    // to recover. Verify it still resolves for this tenant; drop it if not.
+    const cart = await getCart(tenant, existing)
+    if (cart) {
+      return existing
+    }
+    await clearCartId()
   }
   const region = await getRegion(tenant)
   if (!region) {
@@ -54,14 +64,18 @@ export async function addToCartAction(formData: FormData): Promise<void> {
   const tenant = await requireActiveTenant()
   const variantId = String(formData.get("variant_id") ?? "")
   const quantity = Math.max(1, Number(formData.get("quantity") ?? 1))
+  // "Buy Now" adds the item then jumps straight to checkout; the plain
+  // "Add to cart" submit (no buy_now field) lands on the cart as before.
+  const buyNow = String(formData.get("buy_now") ?? "") === "1"
   if (!variantId) {
     return
   }
 
   const cartId = await ensureCartId(tenant)
   await addLineItem(tenant, cartId, variantId, quantity)
-  revalidatePath("/cart")
-  redirect("/cart")
+  const destination = buyNow ? "/checkout" : "/cart"
+  revalidatePath(destination)
+  redirect(destination)
 }
 
 export async function updateLineItemAction(formData: FormData): Promise<void> {
@@ -76,7 +90,7 @@ export async function updateLineItemAction(formData: FormData): Promise<void> {
   if (requestedQuantity <= 0) {
     await deleteLineItem(tenant, cartId, lineItemId)
     revalidatePath("/cart")
-    return
+    redirect("/cart")
   }
 
   // Clamp to remaining stock so an over-eager +/- click (or a stale quantity
@@ -88,7 +102,12 @@ export async function updateLineItemAction(formData: FormData): Promise<void> {
   const quantity = Math.min(requestedQuantity, max)
 
   await updateLineItem(tenant, cartId, lineItemId, quantity)
+  // Redirect (not just revalidate) so the cart re-renders fresh — mirrors
+  // addToCartAction. A bare revalidatePath leaves the themed cart's uncontrolled
+  // quantity <input> showing the typed/clicked value while the totals look
+  // unchanged, which reads as "the +/- buttons do nothing".
   revalidatePath("/cart")
+  redirect("/cart")
 }
 
 export async function removeLineItemAction(formData: FormData): Promise<void> {
@@ -100,6 +119,7 @@ export async function removeLineItemAction(formData: FormData): Promise<void> {
   }
   await deleteLineItem(tenant, cartId, lineItemId)
   revalidatePath("/cart")
+  redirect("/cart")
 }
 
 export async function setAddressAction(formData: FormData): Promise<void> {
@@ -122,6 +142,36 @@ export async function setAddressAction(formData: FormData): Promise<void> {
   }
 
   await setCustomerDetails(tenant, cartId, email, address)
+
+  // Mirror the checkout address into the signed-in customer's address book so it
+  // appears under Account → Addresses and can be reused next time. Deduped by
+  // street + postal code, and best-effort: a failure here must never block the
+  // checkout (the cart already has the address it needs).
+  const token = await getCustomerToken()
+  if (token) {
+    try {
+      const sig = (a: { address_1?: string | null; postal_code?: string | null }) =>
+        `${(a.address_1 ?? "").trim().toLowerCase()}|${(a.postal_code ?? "").trim()}`
+      const newSig = sig({ address_1: address.address_1, postal_code: address.postal_code })
+      const existing = await listCustomerAddresses(tenant, token)
+      if (!existing.some((a) => sig(a) === newSig)) {
+        await createCustomerAddress(tenant, token, {
+          first_name: address.first_name,
+          last_name: address.last_name,
+          address_1: address.address_1,
+          city: address.city,
+          province: address.province,
+          postal_code: address.postal_code,
+          country_code: address.country_code,
+          phone: address.phone,
+        })
+        revalidatePath("/account/addresses")
+      }
+    } catch {
+      /* best-effort: never block checkout on address-book sync */
+    }
+  }
+
   revalidatePath("/checkout")
 }
 

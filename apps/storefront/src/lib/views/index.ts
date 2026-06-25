@@ -15,8 +15,22 @@ export type { CategoryView } from "./category"
 export {
   deriveCategoriesFromTags,
   resolveCategories,
+  resolveCollections,
   filterByCategory,
 } from "./category"
+
+export type { ProductFilters, PriceBucket } from "./filters"
+export {
+  PRICE_BUCKETS,
+  RATING_OPTIONS,
+  EMPTY_FILTERS,
+  parseProductFilters,
+  hasActiveFilters,
+  applyProductFilters,
+  deriveColorFacets,
+  deriveSizeFacets,
+  buildShopFilterHref,
+} from "./filters"
 
 // Cart / checkout / order shapes are already view-friendly; alias them here so
 // themes depend on the views barrel, not on the Medusa data layer. Phase 2

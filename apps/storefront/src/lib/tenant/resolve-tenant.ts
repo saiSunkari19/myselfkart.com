@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { cache } from "react"
 
 import { baseMedusa } from "../medusa/client"
+import { matchesDemoHost, normalizeHost } from "./demo-host"
 import { signStorefrontValue } from "./signing"
 import type { TenantResolution, TenantStatus } from "./types"
 
@@ -20,10 +21,7 @@ type ResolveResponse = {
  * `x-forwarded-host` so it works behind a reverse proxy / load balancer.
  */
 function resolveHost(headerHost: string | null): string {
-  if (!headerHost) {
-    return ""
-  }
-  return headerHost.split(",")[0].trim().toLowerCase().split(":")[0]
+  return normalizeHost(headerHost)
 }
 
 /**
@@ -73,3 +71,18 @@ export const resolveTenant = cache(async (): Promise<TenantResolution | null> =>
     headerList.get("x-forwarded-host") || headerList.get("host")
   )
 })
+
+/**
+ * True when the current request host is a configured platform demo host
+ * (`SELFKART_STOREFRONT_DEMO_HOST`, comma-separated). These are tenant-less
+ * platform hosts — notably the OAuth broker host — so instead of "store not
+ * found" their home route serves the public demo store. Never matches a real
+ * tenant domain (a demo host must not be a tenant_domains row).
+ */
+export async function isStorefrontDemoHost(): Promise<boolean> {
+  const headerList = await headers()
+  return matchesDemoHost(
+    headerList.get("x-forwarded-host") || headerList.get("host"),
+    process.env.SELFKART_STOREFRONT_DEMO_HOST
+  )
+}

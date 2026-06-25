@@ -8,6 +8,7 @@ import { TenantDeletePanel } from "@/components/tenant-delete-panel"
 import { TenantHostForm } from "@/components/tenant-host-form"
 import { TenantLoginPanel } from "@/components/tenant-login-panel"
 import { TenantRazorpayForm } from "@/components/tenant-razorpay-form"
+import { TenantShiprocketForm } from "@/components/tenant-shiprocket-form"
 import { TenantStatusToggle } from "@/components/tenant-status-toggle"
 import { formatDate, storefrontUrl } from "@/lib/format"
 import { platformFetch, PlatformApiError } from "@/lib/medusa"
@@ -48,7 +49,8 @@ export default async function TenantDetailPage({
     throw error
   }
 
-  const { tenant, domains, stats, owner, admin_email, payment_credentials } = detail
+  const { tenant, domains, stats, owner, admin_email, payment_credentials, shiprocket_credentials } =
+    detail
 
   return (
     <>
@@ -142,6 +144,13 @@ export default async function TenantDetailPage({
           <TenantRazorpayForm
             tenantId={tenant.id}
             credentials={payment_credentials.razorpay}
+          />
+        </Panel>
+
+        <Panel title="Shipping">
+          <TenantShiprocketForm
+            tenantId={tenant.id}
+            credentials={shiprocket_credentials}
           />
         </Panel>
 

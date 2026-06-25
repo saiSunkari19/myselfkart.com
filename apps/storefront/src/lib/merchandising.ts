@@ -99,19 +99,39 @@ export function getProductCategories(products: StoreProduct[]): DerivedCategory[
   return [...byId.values()].sort((a, b) => b.count - a.count)
 }
 
+/**
+ * Seller-curated Medusa collections present on the fetched products, with
+ * counts, most-populated first. Empty when no product belongs to a collection.
+ * Collections are a distinct, intentional grouping (e.g. "New Arrival") and are
+ * surfaced *alongside* categories/tags, not as a fallback for them.
+ */
+export function getProductCollections(products: StoreProduct[]): DerivedCategory[] {
+  const byId = new Map<string, DerivedCategory>()
+  for (const p of products) {
+    const c = p.collection
+    if (!c) continue
+    const existing = byId.get(c.id)
+    if (existing) existing.count++
+    else byId.set(c.id, { id: c.id, name: c.title, count: 1 })
+  }
+  return [...byId.values()].sort((a, b) => b.count - a.count)
+}
+
 /** Products carrying a given tag id. */
 export function productsInCategory(products: StoreProduct[], tagId: string): StoreProduct[] {
   return products.filter(p => (p.tags ?? []).some(t => t.id === tagId))
 }
 
 /**
- * Products matching a browse id that may be either a real category id or a tag
- * id (the `?category=` param carries whichever the nav was built from).
+ * Products matching a browse id that may be a real category id, a collection
+ * id, or a tag id (the `?category=` param carries whichever the nav was built
+ * from).
  */
 export function productsInCategoryOrTag(products: StoreProduct[], id: string): StoreProduct[] {
   return products.filter(
     p =>
       (p.categories ?? []).some(c => c.id === id) ||
+      p.collection?.id === id ||
       (p.tags ?? []).some(t => t.id === id)
   )
 }

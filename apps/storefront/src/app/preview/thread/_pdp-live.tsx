@@ -61,18 +61,28 @@ export function ThreadPdpLivePage({ config, cartCount, product, variants, relate
 
               <hr className={s.productDetailDivider} />
 
-              {/* Real variant selector + add-to-cart server action */}
-              <div style={{ marginBottom: 32 }}>
-                <AddToCart variants={variants} />
-              </div>
+              {/* Real variant selector + add-to-cart server action, Thread-skinned */}
+              <AddToCart
+                variants={variants}
+                buyNow
+                classes={{
+                  form: s.buyForm,
+                  qty: s.qtyRow,
+                  qtyBtn: s.qtyBtn,
+                  qtyVal: s.qtyVal,
+                  actions: s.buyActions,
+                  primary: `${s.btn} ${s.btnFull}`,
+                  secondary: `${s.btn} ${s.btnOutline}`,
+                }}
+              />
 
               <hr className={s.productDetailDivider} />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
-                  { icon: "🚚", text: "Free shipping on orders above ₹2,999" },
-                  { icon: "↩️", text: "Free returns within 30 days" },
-                  { icon: "📦", text: "Ships in 2–4 business days" },
+                  { icon: "🚚", text: config?.pdp_shipping_text || "Free shipping on orders above ₹2,999" },
+                  { icon: "↩️", text: config?.pdp_returns_text || "Free returns within 30 days" },
+                  { icon: "📦", text: config?.pdp_delivery_text || "Ships in 2–4 business days" },
                 ].map(item => (
                   <div key={item.text} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: "#6b6560" }}>
                     <span>{item.icon}</span>

@@ -37,7 +37,7 @@ export default function EventDetailPage() {
         <div style={{ position: "relative", height: 480, overflow: "hidden" }}>
           <img src={event.heroImage} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 60%)" }} />
-          <div style={{ position: "absolute", bottom: 40, left: 40 }}>
+          <div className="ep-detail-hero-overlay" style={{ position: "absolute", bottom: 40, left: 40 }}>
             <span style={{
               background: event.tagColor, color: "#fff",
               fontSize: 12, fontWeight: 700, borderRadius: 6, padding: "4px 12px", marginBottom: 12, display: "inline-block",
@@ -45,7 +45,7 @@ export default function EventDetailPage() {
             <h1 style={{ color: "#fff", fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 900, margin: "0 0 8px", letterSpacing: "-1px" }}>
               {event.title}
             </h1>
-            <div style={{ display: "flex", gap: 24 }}>
+            <div className="ep-detail-meta" style={{ display: "flex", gap: 24 }}>
               <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 15 }}>📅 {event.date} · {event.time}</span>
               <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 15 }}>📍 {event.venue}</span>
               <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 15 }}>🏷️ {event.category}</span>
@@ -56,7 +56,18 @@ export default function EventDetailPage() {
 
       {/* Body */}
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "48px 40px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 48, alignItems: "start" }}>
+        <style>{`
+          @media (max-width: 1024px) {
+            .ep-detail-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+            .ep-ticket-card { position: static !important; top: auto !important; }
+          }
+          @media (max-width: 640px) {
+            .ep-detail-hero-overlay { left: 16px !important; right: 16px !important; bottom: 24px !important; }
+            .ep-detail-meta { flex-wrap: wrap; gap: 8px 16px !important; }
+            .ep-gallery-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+        <div className="ep-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 48, alignItems: "start" }}>
 
           {/* Left column */}
           <div>
@@ -118,7 +129,7 @@ export default function EventDetailPage() {
                 {event.gallery.length > 0 && (
                   <>
                     <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Gallery</h3>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 32 }}>
+                    <div className="ep-gallery-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 32 }}>
                       {event.gallery.map((img, i) => (
                         <img key={i} src={img} alt="" style={{ width: "100%", borderRadius: 12, objectFit: "cover", aspectRatio: "16/9" }} />
                       ))}
@@ -187,7 +198,7 @@ export default function EventDetailPage() {
           </div>
 
           {/* Sticky ticket card */}
-          <div style={{ position: "sticky", top: 80 }}>
+          <div className="ep-ticket-card" style={{ position: "sticky", top: 80 }}>
             <div style={{
               background: T.bgCard, border: `1px solid ${T.border}`,
               borderRadius: T.radiusLg, padding: 28, boxShadow: T.shadowLg,

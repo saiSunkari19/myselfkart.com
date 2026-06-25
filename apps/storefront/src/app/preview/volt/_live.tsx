@@ -167,7 +167,7 @@ const DEFAULT_NEWSLETTER = {
 }
 
 /* ---- Home slot (StoreTheme.Home) — renders the tenant's real products ---- */
-export function VoltLivePage({ config, cartCount, products: productViews, categories, deals: dealViews, newArrivals }: HomeProps) {
+export function VoltLivePage({ config, cartCount, products: productViews, categories, collections, deals: dealViews, newArrivals }: HomeProps) {
   const storeName = config?.store_name ?? "VOLT"
 
   const products = productViews.map(viewToVolt)
@@ -205,7 +205,36 @@ export function VoltLivePage({ config, cartCount, products: productViews, catego
         <TrustStrip />
         <CategoryBar categories={categories} />
 
-        {/* Shop by Category — derived from product tags */}
+        {/* Shop by Collection — seller-curated Medusa collections, kept distinct
+            from the category taxonomy below */}
+        {collections.length > 0 && (
+          <section className={s.section}>
+            <div className={s.container}>
+              <Reveal>
+                <div className={s.sectionHead}>
+                  <div>
+                    <span className={s.sectionLabel}>Curated</span>
+                    <div className={s.sectionTitle}>Shop by Collection</div>
+                  </div>
+                  <Link href="/shop" className={s.viewAll}>View All →</Link>
+                </div>
+              </Reveal>
+              <div className={s.categoryGrid}>
+                {collections.slice(0, 6).map((col, i) => (
+                  <Reveal key={col.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
+                    <Link href={col.href} className={s.categoryCard}>
+                      <div className={s.categoryIcon}>✨</div>
+                      <div className={s.categoryName}>{col.name}</div>
+                      <div className={s.categoryCount}>{col.count} products</div>
+                    </Link>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Shop by Category — real Medusa categories (else product tags) */}
         {categories.length > 0 && (
           <section className={`${s.section} ${s.sectionBg}`}>
             <div className={s.container}>
@@ -298,7 +327,7 @@ export function VoltLivePage({ config, cartCount, products: productViews, catego
                 <div className={s.sectionTitle} style={{ color: "#fff" }}>Built for Trust</div>
               </div>
             </Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+            <div className={s.featureGrid}>
               {whyBuy.map((item: typeof DEFAULT_WHY_BUY[number], i: number) => (
                 <Reveal key={item.title} delay={(i % 4) as 0 | 1 | 2 | 3}>
                   <div style={{ textAlign: "center", padding: "28px 20px" }}>

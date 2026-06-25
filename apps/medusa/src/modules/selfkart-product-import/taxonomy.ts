@@ -35,12 +35,31 @@ export type AssociationSeed = {
   categoryId: string
 }
 
+/** Per-product merchandising metadata, written to product.metadata post-import. */
+export type ProductMetaSeed = {
+  productHandle: string
+  rating: number | null
+  reviewCount: number | null
+  warranty: string | null
+  returnsPolicy: string | null
+}
+
+/** Per-variant stock, keyed by SKU (the stable variant identifier in the CSV).
+ * Applied as an inventory-level override after import; variants without a value
+ * keep the import's global default quantity. */
+export type VariantStockSeed = {
+  sku: string
+  quantity: number
+}
+
 export type SellerImportSeeds = {
   collections: CollectionSeed[]
   types: TypeSeed[]
   tags: TagSeed[]
   categories: CategorySeed[]
   associations: AssociationSeed[]
+  productMeta: ProductMetaSeed[]
+  variantStock: VariantStockSeed[]
 }
 
 export function scopedImportId(tenantId: string, id: string): string {
@@ -80,6 +99,8 @@ export function extractSellerImportSeeds(
   const tags = new Map<string, TagSeed>()
   const categories = new Map<string, CategorySeed>()
   const associations = new Map<string, AssociationSeed>()
+  const productMeta = new Map<string, ProductMetaSeed>()
+  const variantStock = new Map<string, VariantStockSeed>()
 
   for (const row of rows) {
     const collectionId = row["Product Collection Id"] ?? ""
@@ -150,6 +171,36 @@ export function extractSellerImportSeeds(
         categoryId: scopedCategoryId,
       })
     }
+
+    // Merchandising metadata is per-product (the same handle repeats once per
+    // variant row — first non-empty value wins). Only record a seed when at
+    // least one field is present so untagged products don't get empty metadata.
+    if (productHandle) {
+      const rating = parseNumeric(row["Product Rating"])
+      const reviewCount = parseNumeric(row["Product Review Count"])
+      const warranty = (row["Product Warranty"] ?? "").trim() || null
+      const returnsPolicy = (row["Product Returns Policy"] ?? "").trim() || null
+
+      if (rating != null || reviewCount != null || warranty || returnsPolicy) {
+        const existing = productMeta.get(productHandle)
+        productMeta.set(productHandle, {
+          productHandle,
+          rating: existing?.rating ?? rating,
+          reviewCount: existing?.reviewCount ?? reviewCount,
+          warranty: existing?.warranty ?? warranty,
+          returnsPolicy: existing?.returnsPolicy ?? returnsPolicy,
+        })
+      }
+    }
+
+    // Per-variant stock is keyed by SKU (one variant per row). A blank quantity
+    // means "use the import's global default"; a present, non-negative integer
+    // overrides it for that variant only.
+    const sku = (row["Variant SKU"] ?? "").trim()
+    const quantity = parseNumeric(row["Variant Inventory Quantity"])
+    if (sku && quantity != null && quantity >= 0) {
+      variantStock.set(sku, { sku, quantity: Math.trunc(quantity) })
+    }
   }
 
   return {
@@ -158,7 +209,17 @@ export function extractSellerImportSeeds(
     tags: [...tags.values()],
     categories: [...categories.values()],
     associations: [...associations.values()],
+    productMeta: [...productMeta.values()],
+    variantStock: [...variantStock.values()],
   }
+}
+
+/** Parse a numeric CSV cell, returning null for blank/non-numeric values. */
+function parseNumeric(value: string | undefined): number | null {
+  const trimmed = (value ?? "").trim()
+  if (!trimmed) return null
+  const n = Number(trimmed)
+  return Number.isFinite(n) ? n : null
 }
 
 export async function upsertSellerImportTaxonomy(
@@ -251,6 +312,53 @@ export async function upsertSellerImportTaxonomy(
         updated_at: trx.fn.now(),
       })
   }
+}
+
+/**
+ * Merge per-product merchandising metadata (rating, review count, warranty,
+ * returns policy) into product.metadata. jsonb-merges so existing metadata keys
+ * are preserved; only the supplied keys are overwritten. Tenant-scoped through
+ * the RLS context the caller sets on `trx`.
+ */
+export async function applySellerImportProductMeta(
+  trx: Knex.Transaction,
+  productMeta: ProductMetaSeed[]
+): Promise<number> {
+  let updated = 0
+
+  for (const meta of productMeta) {
+    const product = await trx("product")
+      .where({ handle: meta.productHandle })
+      .whereNull("deleted_at")
+      .first("id")
+
+    if (!product?.id) {
+      continue
+    }
+
+    const patch: Record<string, unknown> = {}
+    if (meta.rating != null) patch.rating = meta.rating
+    if (meta.reviewCount != null) patch.review_count = meta.reviewCount
+    if (meta.warranty) patch.warranty = meta.warranty
+    if (meta.returnsPolicy) patch.returns_policy = meta.returnsPolicy
+
+    if (Object.keys(patch).length === 0) {
+      continue
+    }
+
+    await trx("product")
+      .where({ id: product.id })
+      .update({
+        metadata: trx.raw("COALESCE(metadata, '{}'::jsonb) || ?::jsonb", [
+          JSON.stringify(patch),
+        ]),
+        updated_at: trx.fn.now(),
+      })
+
+    updated += 1
+  }
+
+  return updated
 }
 
 export async function linkSellerImportProducts(

@@ -51,11 +51,11 @@ export default function AboutPage() {
             </div>
           </Reveal>
           <Reveal>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, margin: "40px 0" }}>
-              {stats.map((stat: typeof DEFAULT_ABOUT_STATS[number], i: number) => (
-                <div key={stat.label ?? i} style={{ textAlign: "center", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px 16px", borderTop: "3px solid var(--accent)" }}>
-                  <div style={{ fontSize: 32, fontWeight: 900, color: "var(--accent)" }}>{stat.value}</div>
-                  <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 4 }}>{stat.label}</div>
+            <div className={s.grid4} style={{ margin: "40px 0" }}>
+              {[["50L+", "Happy Customers"], ["40+", "Brand Partners"], ["1,000+", "Products"], ["10+", "Years of Trust"]].map(([num, label]) => (
+                <div key={label} style={{ textAlign: "center", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px 16px", borderTop: "3px solid var(--accent)" }}>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: "var(--accent)" }}>{num}</div>
+                  <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 4 }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -79,7 +79,7 @@ export default function AboutPage() {
             <div className={s.infoSection}>
               <h2>Get in Touch</h2>
               <p>We typically respond within 2 hours on business days.</p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 20 }}>
+              <div className={s.grid3} style={{ marginTop: 20 }}>
                 {[
                   { icon: "📞", title: "Phone Support", lines: config?.contact_phone ? [config.contact_phone, "Mon–Sat 9am–9pm", "Sun 10am–6pm"] : ["1800-VOLT-CARE (Toll Free)", "Mon–Sat 9am–9pm", "Sun 10am–6pm"] },
                   { icon: "📧", title: "Email Support", lines: config?.contact_email ? [config.contact_email, "Response within 2 hours"] : ["support@volt.in", "Response within 2 hours"] },

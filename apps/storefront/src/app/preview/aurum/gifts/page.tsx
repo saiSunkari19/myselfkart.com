@@ -23,7 +23,7 @@ export default function GiftsPage() {
           className={s.editorialBg}
         />
         <div className={s.editorialOverlay} />
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "100px 48px", width: "100%" }}>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 1320, margin: "0 auto", padding: "100px var(--container-pad, 48px)", width: "100%" }}>
           <Reveal>
             <span className={s.sectionLabel}>Gift Collection</span>
             <h1 className={s.sectionTitle} style={{ color: "#fff", fontSize: "clamp(36px,5vw,64px)" }}>
@@ -40,7 +40,7 @@ export default function GiftsPage() {
       {/* Gift services */}
       <section className={`${s.sectionSm} ${s.sectionCream}`}>
         <div className={s.container}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2 }}>
+          <div className={s.grid4} style={{ gap: 2 }}>
             {[
               { icon: "🎁", title: "Luxury Gift Box", desc: "Every order ships in our signature gift box with satin ribbon." },
               { icon: "✍️", title: "Personal Message", desc: "Add a handwritten message card — complimentary on all gifts." },

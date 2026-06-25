@@ -64,6 +64,7 @@ export type TenantDetail = {
   payment_credentials: {
     razorpay: TenantPaymentCredential | null
   }
+  shiprocket_credentials: TenantShiprocketCredential | null
   owner: {
     name: string
     email: string
@@ -79,6 +80,16 @@ export type TenantPaymentCredential = {
   key_id: string
   key_secret_hint: string
   webhook_secret_hint: string
+  ready: boolean
+  updated_at: string
+}
+
+export type TenantShiprocketCredential = {
+  enabled: boolean
+  api_email: string
+  api_password_hint: string
+  webhook_secret_hint: string | null
+  pickup_location: string | null
   ready: boolean
   updated_at: string
 }

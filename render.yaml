@@ -89,9 +89,25 @@ services:
         sync: false
       - key: GOOGLE_CALLBACK_URL
         sync: false
-      # SendGrid — only needed to actually deliver customer password-reset emails.
-      # Without it the reset subscriber logs the reset URL instead. Set both keys
-      # (and the dynamic-template id) together, or leave all blank.
+      # Resend — preferred "email" provider (precedence Resend -> SendGrid -> local).
+      # Set RESEND_API_KEY in the dashboard. Buyer mail is sent as
+      # "<Store>" <store+<tenant_id>@SELFKART_EMAIL_DOMAIN>; RESEND_FROM/REPLY_TO are
+      # the fallback identity for platform mail.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: noreply@myselfkart.com
+      - key: RESEND_REPLY_TO
+        value: connect@myselfkart.com
+      - key: SELFKART_EMAIL_DOMAIN
+        value: myselfkart.com
+      # Shiprocket shipment-status webhook secret. MUST match the Token set in the
+      # Shiprocket panel (Settings -> API -> Webhook, Auth Token Type x-api-key).
+      # Webhook URL registered there: https://api.myselfkart.com/webhooks/delivery/<tenant_id>
+      - key: SHIPROCKET_WEBHOOK_SECRET
+        sync: false
+      # SendGrid — legacy fallback, used for "email" only if Resend is not set.
+      # Without any email provider the reset subscriber logs the reset URL instead.
       - key: SENDGRID_API_KEY
         sync: false
       - key: SENDGRID_FROM

@@ -49,7 +49,7 @@ export default function BridalPage() {
               <GoldDivider />
             </div>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 28 }}>
+          <div className={s.grid4} style={{ gap: 28 }}>
             {[
               { icon: "⏳", title: "80–120 Hours", sub: "Per bridal set" },
               { icon: "✋", title: "Hand-Crafted", sub: "By master karigar" },
@@ -97,7 +97,7 @@ export default function BridalPage() {
               <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.8, marginBottom: 36 }}>
                 Our bridal specialists will guide you through the entire process — from design consultation to final fitting. Every detail, perfectly handled.
               </p>
-              <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+              <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
                 <Link href={`${basePath}/contact`} className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>
                   Book Appointment
                 </Link>

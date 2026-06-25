@@ -20,7 +20,7 @@ export function GlowPdpLivePage({ config, product, variants, related }: PdpProps
       <div className={s.headerSpacer} />
       <section className={s.section}>
         <div className={s.container}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
+          <div className={s.pdpLayout} style={{ gap: 48, marginBottom: 0 }}>
             <div className={s.productImageWrap} style={{ borderRadius: 16, overflow: "hidden" }}>
               <img src={img} alt={product.title} className={s.productImg} />
             </div>
@@ -34,7 +34,18 @@ export function GlowPdpLivePage({ config, product, variants, related }: PdpProps
                 )}
               </div>
               {product.description && <p className={s.sectionSub} style={{ textAlign: "left", marginBottom: 24 }}>{product.description}</p>}
-              <AddToCart variants={variants} />
+              <AddToCart
+                variants={variants}
+                buyNow
+                classes={{
+                  form: s.buyForm,
+                  qty: s.qtyBox,
+                  qtyVal: s.qtyVal,
+                  actions: s.buyActions,
+                  primary: `${s.btn} ${s.btnDark}`,
+                  secondary: `${s.btn} ${s.btnOutlineDark}`,
+                }}
+              />
             </div>
           </div>
         </div>
