@@ -107,9 +107,9 @@ export default function AboutPage() {
                 padding: "0 40px",
                 borderLeft: i > 0 ? `1px solid ${T.border}` : "none",
               }}>
-                <div style={{ color: T.text, fontWeight: 900, fontSize: 36, letterSpacing: "-1px", marginBottom: 6 }}>{stat.value}</div>
-                <div style={{ color: T.text, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{stat.label}</div>
-                <div style={{ color: T.textLight, fontSize: 13 }}>{stat.sub}</div>
+                <div style={{ color: T.text, fontWeight: 900, fontSize: 36, letterSpacing: "-1px", marginBottom: 6 }}>{s.value}</div>
+                <div style={{ color: T.text, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{s.label}</div>
+                <div style={{ color: T.textLight, fontSize: 13 }}>{s.sub}</div>
               </div>
             ))}
           </div>
