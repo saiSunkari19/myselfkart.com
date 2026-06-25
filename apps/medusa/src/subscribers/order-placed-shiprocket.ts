@@ -77,6 +77,7 @@ export default async function orderPlacedShiprocketHandler({
           "currency_code",
           "total",
           "items.title",
+          "items.variant_sku",
           "items.quantity",
           "items.unit_price",
           "shipping_address.first_name",
@@ -100,8 +101,13 @@ export default async function orderPlacedShiprocketHandler({
 
       const country = COUNTRY_NAME[String(addr.country_code ?? "").toLowerCase()] ?? "India"
       const now = new Date().toISOString().replace("T", " ").slice(0, 16)
+      // Shiprocket requires a non-empty sku per line item ("order_items.0.sku
+      // field is required when is document is 0"). Use the variant SKU; fall
+      // back to the line id so the push never fails on a product saved without
+      // a SKU.
       const items = (order.items ?? []).map((it: any) => ({
         name: String(it?.title ?? "Item"),
+        sku: String(it?.variant_sku || it?.id || it?.title || "SKU"),
         units: Number(it?.quantity ?? 1),
         selling_price: Number(it?.unit_price ?? 0),
       }))

@@ -5,6 +5,7 @@ import { PageLoader, Footer } from "./_components"
 import { VoltNav } from "./_live"
 import { RazorpayCheckout } from "../../../components/razorpay-checkout"
 import { SavedAddressPicker } from "../../../components/storefront/account/saved-address-picker"
+import { deriveOrderStatus } from "../../../components/storefront/account/order-status-badge"
 import {
   removeLineItemAction,
   updateLineItemAction,
@@ -322,6 +323,17 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
 
 /* ---- Order confirmation ---- */
 export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
+  // Live status (cancelled/shipped/delivered…) derived from Medusa, so a status
+  // change in admin is reflected here instead of a permanent "Order Confirmed!".
+  const status = deriveOrderStatus(order)
+  const cancelled = status.label === "Cancelled"
+  const headline = cancelled
+    ? "Order Cancelled"
+    : status.label === "Shipped"
+      ? "Your order has shipped"
+      : status.label === "Delivered"
+        ? "Order Delivered"
+        : "Order Confirmed!"
   return (
     <div className={s.pageShell} style={colorVars(config)}>
       <PageLoader />
@@ -330,11 +342,22 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
         <div className={s.container}>
           <section className={s.section}>
             <div style={{ textAlign: "center", maxWidth: 600, margin: "0 auto" }}>
-              <div style={{ fontSize: 64, marginBottom: 20 }} aria-hidden>✅</div>
-              <h1 style={{ fontSize: 32, fontWeight: 900, color: "var(--text)", marginBottom: 8 }}>Order Confirmed!</h1>
+              <div style={{ fontSize: 64, marginBottom: 20 }} aria-hidden>{cancelled ? "❌" : "✅"}</div>
+              <h1 style={{ fontSize: 32, fontWeight: 900, color: "var(--text)", marginBottom: 12 }}>{headline}</h1>
+              <div style={{ marginBottom: 16 }}>
+                <span style={{ display: "inline-block", fontSize: 12.5, fontWeight: 700, color: status.color, background: status.bg, borderRadius: 999, padding: "5px 14px" }}>
+                  {status.label}
+                </span>
+              </div>
               <p style={{ fontSize: 15, color: "var(--text2)", marginBottom: 28 }}>
-                Thank you for your order
-                {order.email ? <> — a receipt is on its way to {order.email}</> : null}.
+                {cancelled ? (
+                  <>This order was cancelled. If this is unexpected, contact support.</>
+                ) : (
+                  <>
+                    Thank you for your order
+                    {order.email ? <> — a receipt is on its way to {order.email}</> : null}.
+                  </>
+                )}
               </p>
 
               <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 28px", marginBottom: 20, borderTop: "3px solid var(--accent)" }}>
@@ -364,19 +387,21 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
                 </div>
               </div>
 
-              <div className={s.grid3} style={{ marginBottom: 36 }}>
-                {[
-                  { icon: "📦", title: "Packed Same Day", text: "Your order is being picked and packed" },
-                  { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },
-                  { icon: "📱", title: "Track via SMS", text: "You'll receive tracking updates on your phone" },
-                ].map(step => (
-                  <div key={step.title} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 16px", textAlign: "center" }}>
-                    <div style={{ fontSize: 28, marginBottom: 8 }} aria-hidden>{step.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{step.title}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--text3)" }}>{step.text}</div>
-                  </div>
-                ))}
-              </div>
+              {!cancelled ? (
+                <div className={s.grid3} style={{ marginBottom: 36 }}>
+                  {[
+                    { icon: "📦", title: "Packed Same Day", text: "Your order is being picked and packed" },
+                    { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },
+                    { icon: "📱", title: "Track via SMS", text: "You'll receive tracking updates on your phone" },
+                  ].map(step => (
+                    <div key={step.title} style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 16px", textAlign: "center" }}>
+                      <div style={{ fontSize: 28, marginBottom: 8 }} aria-hidden>{step.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{step.title}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--text3)" }}>{step.text}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                 <Link href="/shop" className={`${s.btn} ${s.btnPrimary} ${s.btnLg}`}>Continue Shopping</Link>
