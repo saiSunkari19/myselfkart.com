@@ -26,6 +26,7 @@ import {
 } from "../medusa/payment"
 import { resolveTenant } from "../tenant/resolve-tenant"
 import type { TenantResolution } from "../tenant/types"
+import { isCompleteShippingAddress } from "./address"
 import { clearCartId, getCartId, setCartId } from "./cookie"
 
 async function requireActiveTenant(): Promise<TenantResolution> {
@@ -200,6 +201,14 @@ export async function placeOrderAction(): Promise<void> {
     redirect("/cart")
   }
 
+  // Never let an order through without a deliverable address + a chosen method —
+  // Medusa pre-fills an empty shipping_address, so guard on completeness.
+  if (!isCompleteShippingAddress(cart.shipping_address) || cart.shipping_methods.length === 0) {
+    redirect(
+      `/checkout?error=${encodeURIComponent("Add your shipping details and a delivery method first.")}`
+    )
+  }
+
   await initiatePayment(tenant, cart)
   const result = await completeCart(tenant, cartId)
 
@@ -229,7 +238,7 @@ export async function startRazorpayCheckoutAction(): Promise<
   if (!cart) {
     return { ok: false, error: "Your cart could not be found." }
   }
-  if (!cart.shipping_address || cart.shipping_methods.length === 0) {
+  if (!isCompleteShippingAddress(cart.shipping_address) || cart.shipping_methods.length === 0) {
     return {
       ok: false,
       error: "Add your shipping details and a delivery method first.",

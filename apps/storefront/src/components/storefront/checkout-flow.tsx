@@ -8,6 +8,7 @@ import {
   setShippingMethodAction,
 } from "../../lib/cart/actions"
 import { formatMoney } from "../../lib/format"
+import { isCompleteShippingAddress } from "../../lib/cart/address"
 import { RazorpayCheckout } from "../razorpay-checkout"
 import { SavedAddressPicker } from "./account/saved-address-picker"
 import type { CartView, ShippingOptionView, CustomerAddressView } from "../../lib/views"
@@ -48,7 +49,7 @@ export function CheckoutFlow({
     )
   }
 
-  const hasAddress = Boolean(cart.shipping_address)
+  const hasAddress = isCompleteShippingAddress(cart.shipping_address)
   const hasShipping = cart.shipping_methods.length > 0
   const addr = cart.shipping_address
 

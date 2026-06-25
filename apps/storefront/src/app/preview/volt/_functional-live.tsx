@@ -13,6 +13,7 @@ import {
   placeOrderAction,
 } from "../../../lib/cart/actions"
 import { formatMoney } from "../../../lib/format"
+import { isCompleteShippingAddress } from "../../../lib/cart/address"
 import { SubmitButton } from "../../../components/submit-button"
 import { SaveAndAdvance } from "../../../components/save-and-advance"
 import type { CartProps, CheckoutProps, OrderProps } from "../../../lib/themes/types"
@@ -166,8 +167,43 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
 
   const cur = cart.currency_code
   const addr = cart.shipping_address
-  const hasAddress = Boolean(addr)
+  const hasAddress = isCompleteShippingAddress(addr)
   const hasShipping = cart.shipping_methods.length > 0
+  const addrName = [addr?.first_name, addr?.last_name].filter(Boolean).join(" ")
+  const addrLine = [addr?.address_1, addr?.city, addr?.province, addr?.postal_code]
+    .filter(Boolean)
+    .join(", ")
+
+  // Address entry — a saved-address picker (one click delivers) plus the manual
+  // form. Reused in the empty state and behind the "Change address" disclosure
+  // once an address is set, so the form never sits open next to a saved choice.
+  const addressForm = (
+    <>
+      {savedAddresses && savedAddresses.length > 0 ? (
+        <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? undefined} />
+      ) : null}
+      <form action={setAddressAction} className={s.formGrid}>
+        <div className={s.formGroup}><label className={s.formLabel}>First Name</label><input name="first_name" className={s.formInput} defaultValue={addr?.first_name ?? ""} required /></div>
+        <div className={s.formGroup}><label className={s.formLabel}>Last Name</label><input name="last_name" className={s.formInput} defaultValue={addr?.last_name ?? ""} required /></div>
+        <div className={s.formGroup}><label className={s.formLabel}>Email Address</label><input name="email" type="email" className={s.formInput} defaultValue={cart.email ?? ""} required /></div>
+        <div className={s.formGroup}><label className={s.formLabel}>Mobile Number</label><input name="phone" type="tel" className={s.formInput} defaultValue={addr?.phone ?? ""} /></div>
+        <div className={`${s.formGroup} ${s.formGroupFull}`}><label className={s.formLabel}>Street Address</label><input name="address_1" className={s.formInput} defaultValue={addr?.address_1 ?? ""} required /></div>
+        <div className={s.formGroup}><label className={s.formLabel}>City</label><input name="city" className={s.formInput} defaultValue={addr?.city ?? ""} required /></div>
+        <div className={s.formGroup}><label className={s.formLabel}>State / Province</label><input name="province" className={s.formInput} defaultValue={addr?.province ?? ""} /></div>
+        <div className={s.formGroup}><label className={s.formLabel}>PIN Code</label><input name="postal_code" className={s.formInput} defaultValue={addr?.postal_code ?? ""} required /></div>
+        <div className={s.formGroup}>
+          <label className={s.formLabel}>Country</label>
+          <select name="country_code" className={s.formSelect} defaultValue={addr?.country_code ?? (countries[0]?.iso_2 ?? "")} required>
+            <option value="" disabled>Select country</option>
+            {countries.map(c => <option key={c.iso_2} value={c.iso_2}>{c.display_name ?? c.iso_2.toUpperCase()}</option>)}
+          </select>
+        </div>
+        <div className={s.formGroupFull}>
+          <SubmitButton className={`${s.btn} ${s.btnPrimary}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
+        </div>
+      </form>
+    </>
+  )
 
   return (
     <div className={s.pageShell} style={colorVars(config)}>
@@ -192,32 +228,20 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
                   <div className={s.formCardHeadTitle}>Shipping Information</div>
                 </div>
                 <div className={s.formCardBody}>
-                  {savedAddresses && savedAddresses.length > 0 ? (
-                    <SavedAddressPicker addresses={savedAddresses} email={customer?.email ?? cart.email ?? ""} accent={config?.accent_color ?? undefined} />
-                  ) : null}
-                  <form action={setAddressAction} className={s.formGrid}>
-                    <div className={s.formGroup}><label className={s.formLabel}>First Name</label><input name="first_name" className={s.formInput} defaultValue={addr?.first_name ?? ""} required /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>Last Name</label><input name="last_name" className={s.formInput} defaultValue={addr?.last_name ?? ""} required /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>Email Address</label><input name="email" type="email" className={s.formInput} defaultValue={cart.email ?? ""} required /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>Mobile Number</label><input name="phone" type="tel" className={s.formInput} defaultValue={addr?.phone ?? ""} /></div>
-                    <div className={`${s.formGroup} ${s.formGroupFull}`}><label className={s.formLabel}>Street Address</label><input name="address_1" className={s.formInput} defaultValue={addr?.address_1 ?? ""} required /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>City</label><input name="city" className={s.formInput} defaultValue={addr?.city ?? ""} required /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>State / Province</label><input name="province" className={s.formInput} defaultValue={addr?.province ?? ""} /></div>
-                    <div className={s.formGroup}><label className={s.formLabel}>PIN Code</label><input name="postal_code" className={s.formInput} defaultValue={addr?.postal_code ?? ""} required /></div>
-                    <div className={s.formGroup}>
-                      <label className={s.formLabel}>Country</label>
-                      <select name="country_code" className={s.formSelect} defaultValue={addr?.country_code ?? (countries[0]?.iso_2 ?? "")} required>
-                        <option value="" disabled>Select country</option>
-                        {countries.map(c => <option key={c.iso_2} value={c.iso_2}>{c.display_name ?? c.iso_2.toUpperCase()}</option>)}
-                      </select>
+                  {hasAddress ? (
+                    <div>
+                      <div style={{ fontWeight: 700, color: "var(--text)" }}>{addrName || "Saved address"}</div>
+                      <div className={s.cartItemMeta} style={{ marginTop: 2 }}>{addrLine}</div>
+                      {addr?.phone ? <div className={s.cartItemMeta}>{addr.phone}</div> : null}
+                      {cart.email ? <div className={s.cartItemMeta}>{cart.email}</div> : null}
+                      <details style={{ marginTop: 12 }}>
+                        <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--accent)" }}>Change address</summary>
+                        <div style={{ marginTop: 14 }}>{addressForm}</div>
+                      </details>
                     </div>
-                    <div className={s.formGroupFull}>
-                      <SubmitButton className={`${s.btn} ${s.btnPrimary}`} pendingLabel="Saving…">Save &amp; Continue</SubmitButton>
-                      <div style={{ textAlign: "center", marginTop: 8 }}>
-                        <SaveAndAdvance nextSectionId="volt-delivery-section" label="Address saved" style={{ marginLeft: 0 }} />
-                      </div>
-                    </div>
-                  </form>
+                  ) : (
+                    addressForm
+                  )}
                 </div>
               </div>
 
@@ -236,7 +260,7 @@ export function VoltCheckoutLivePage({ config, cart, cartCount, shippingOptions,
                     <form action={setShippingMethodAction}>
                       {shippingOptions.map(option => (
                         <label key={option.id} className={s.summaryRow} style={{ cursor: "pointer" }}>
-                          <span><input type="radio" name="option_id" value={option.id} required defaultChecked={cart.shipping_methods.some(m => m.name === option.name)} /> {option.name}</span>
+                          <span><input type="radio" name="option_id" value={option.id} required defaultChecked={shippingOptions.length === 1 || cart.shipping_methods.some(m => m.name === option.name)} /> {option.name}</span>
                           <span>{formatMoney(option.amount ?? 0, cur)}</span>
                         </label>
                       ))}
