@@ -118,7 +118,10 @@ export default async function orderPlacedShiprocketHandler({
         pickup_location: pickup,
         billing_customer_name: addr.first_name ?? "Customer",
         billing_last_name: addr.last_name ?? "",
-        billing_address: addr.address_1,
+        // Combine line 1 + the locality/landmark line so Shiprocket's address
+        // line carries the full street (a bare house number trips its "junk
+        // address" RTO heuristic).
+        billing_address: [addr.address_1, addr.address_2].filter(Boolean).join(", "),
         billing_address_2: addr.address_2 ?? "",
         billing_city: addr.city ?? "",
         billing_pincode: addr.postal_code ?? "",

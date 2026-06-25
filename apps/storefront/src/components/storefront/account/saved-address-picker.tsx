@@ -68,6 +68,7 @@ export function SavedAddressPicker({
         <input type="hidden" name="first_name" value={addr?.first_name ?? ""} />
         <input type="hidden" name="last_name" value={addr?.last_name ?? ""} />
         <input type="hidden" name="address_1" value={addr?.address_1 ?? ""} />
+        <input type="hidden" name="address_2" value={addr?.address_2 ?? ""} />
         <input type="hidden" name="city" value={addr?.city ?? ""} />
         <input type="hidden" name="province" value={addr?.province ?? ""} />
         <input type="hidden" name="postal_code" value={addr?.postal_code ?? ""} />

@@ -238,6 +238,7 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
                 <div><label style={labelStyle}>Email (e-tickets sent here)</label><input name="email" type="email" style={inputStyle} defaultValue={cart.email ?? ""} required /></div>
                 <div><label style={labelStyle}>Phone</label><input name="phone" type="tel" style={inputStyle} defaultValue={addr?.phone ?? ""} /></div>
                 <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Address</label><input name="address_1" style={inputStyle} defaultValue={addr?.address_1 ?? ""} required /></div>
+                <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Area / Locality / Landmark</label><input name="address_2" style={inputStyle} defaultValue={addr?.address_2 ?? ""} placeholder="Optional — helps delivery" /></div>
                 <div><label style={labelStyle}>City</label><input name="city" style={inputStyle} defaultValue={addr?.city ?? ""} required /></div>
                 <div><label style={labelStyle}>State / Province</label><input name="province" style={inputStyle} defaultValue={addr?.province ?? ""} /></div>
                 <div><label style={labelStyle}>PIN Code</label><input name="postal_code" style={inputStyle} defaultValue={addr?.postal_code ?? ""} required /></div>
