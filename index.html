@@ -809,8 +809,8 @@
     </div>
 
     <!-- Apply form -->
-    <form id="store-plan-form" action="/.netlify/functions/apply" method="POST" novalidate style="scroll-margin-top:84px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:40px 36px;box-shadow:0 24px 60px -32px rgba(22,23,43,.18);">
-      <!-- Submissions are emailed via Resend (Netlify function) to connect@myselfkart.com, then redirected to thanks.html -->
+    <form id="store-plan-form" action="/api/apply" method="POST" novalidate style="scroll-margin-top:84px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:40px 36px;box-shadow:0 24px 60px -32px rgba(22,23,43,.18);">
+      <!-- Submissions are emailed via Resend (Vercel /api/apply function) to connect@myselfkart.com, then redirected to thanks.html -->
       <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div style="font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1.15;">Get your free store plan</div>
       <p style="font-size:15px;color:var(--muted);line-height:1.6;margin:10px 0 0;">Takes 30 seconds. No card, no commitment.</p>

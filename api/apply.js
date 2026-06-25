@@ -1,13 +1,15 @@
-// Netlify Function: receives the store-plan apply form and emails it via Resend.
+// Vercel Serverless Function: receives the store-plan apply form and emails it via Resend.
 //
-// Required Netlify environment variables (Site settings → Environment variables):
+// Reached at /api/apply (Vercel maps the /api folder automatically).
+//
+// Required Vercel environment variables (Project → Settings → Environment Variables):
 //   RESEND_API_KEY   – your Resend API key (re_...)
 //   FORM_TO          – where submissions land (e.g. connect@myselfkart.com)
 //   FORM_FROM        – verified sender on a Resend-verified domain
 //                      (e.g. "MySelfKart <noreply@myselfkart.com>")
 //
-// The form posts as application/x-www-form-urlencoded and we 302-redirect
-// to /thanks.html on success — same UX as the old FormSubmit setup, no JS needed.
+// The form posts as application/x-www-form-urlencoded and we 303-redirect
+// to /thanks.html on success — same UX as before, no JS needed.
 
 const SOURCE_LABELS = {
   instagram_whatsapp: "Instagram / WhatsApp",
@@ -23,27 +25,28 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
-const redirect = (location) => ({
-  statusCode: 303,
-  headers: { Location: location },
-  body: "",
-});
+// Read a field from Vercel's parsed body (object) or a raw urlencoded string.
+function fieldReader(body) {
+  if (body && typeof body === "object") {
+    return (k) => (body[k] == null ? "" : String(body[k])).trim();
+  }
+  const params = new URLSearchParams(typeof body === "string" ? body : "");
+  return (k) => (params.get(k) || "").trim();
+}
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+module.exports = async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(405).send("Method Not Allowed");
+    return;
   }
 
-  // Parse the urlencoded form body.
-  const params = new URLSearchParams(
-    event.isBase64Encoded
-      ? Buffer.from(event.body || "", "base64").toString("utf8")
-      : event.body || ""
-  );
-  const get = (k) => (params.get(k) || "").trim();
+  const get = fieldReader(req.body);
 
   // Honeypot: bots fill the hidden _honey field — silently "succeed".
-  if (get("_honey")) return redirect("/thanks.html");
+  if (get("_honey")) {
+    res.redirect(303, "/thanks.html");
+    return;
+  }
 
   const name = get("name");
   const phone = get("phone");
@@ -51,7 +54,8 @@ exports.handler = async (event) => {
   const notes = get("notes");
 
   if (!name || !phone) {
-    return { statusCode: 400, body: "Name and phone are required." };
+    res.status(400).send("Name and phone are required.");
+    return;
   }
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -60,7 +64,8 @@ exports.handler = async (event) => {
 
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set");
-    return { statusCode: 500, body: "Email service not configured." };
+    res.status(500).send("Email service not configured.");
+    return;
   }
 
   const sourceLabel = SOURCE_LABELS[source] || source || "—";
@@ -90,7 +95,7 @@ exports.handler = async (event) => {
     `Name: ${name}\nWhatsApp: ${phone}\nSelling on: ${sourceLabel}\nNotes: ${notes || "—"}\n`;
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -105,15 +110,17 @@ exports.handler = async (event) => {
       }),
     });
 
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error("Resend error", res.status, detail);
-      return { statusCode: 502, body: "Could not send your enquiry. Please try again." };
+    if (!resp.ok) {
+      const detail = await resp.text();
+      console.error("Resend error", resp.status, detail);
+      res.status(502).send("Could not send your enquiry. Please try again.");
+      return;
     }
   } catch (err) {
     console.error("Resend request failed", err);
-    return { statusCode: 502, body: "Could not send your enquiry. Please try again." };
+    res.status(502).send("Could not send your enquiry. Please try again.");
+    return;
   }
 
-  return redirect("/thanks.html");
+  res.redirect(303, "/thanks.html");
 };

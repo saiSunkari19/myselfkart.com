@@ -30,27 +30,15 @@ The pages ship with full meta tags: canonical URLs, Open Graph + Twitter Cards, 
 > sips -s format jpeg -s formatOptions 88 -z 630 1200 og-image.svg --out og-image.jpg
 > ```
 
-## Deploy (Netlify)
+## Deploy (Vercel)
 
-This is a static site, so any host works. Two ways on Netlify:
+This is a static site with one serverless function, deployed on **Vercel**:
 
-- **Drag-and-drop:** upload `myselfkart-site.zip` (the deployable bundle of all 9 static files) at [app.netlify.com/drop](https://app.netlify.com/drop).
-- **Connect the repo:** point Netlify at this repository with **no build command** and the **publish directory** set to the repo root (`.`).
+- **Connect the repo:** import this repository into Vercel. Framework preset **Other**, **no build command**, output directory the repo root. Static files are served from the root; the `api/` folder is auto-detected as serverless functions.
 
-Rebuild the zip after any change:
+The apply form posts to a **Vercel Serverless Function** (`api/apply.js`, reached at `/api/apply`) that emails each submission via [Resend](https://resend.com) to `connect@myselfkart.com`, then redirects to `thanks.html`.
 
-```sh
-zip myselfkart-site.zip \
-  index.html privacy.html terms.html thanks.html \
-  favicon.jpeg myselfkart.svg og-image.jpg robots.txt sitemap.xml \
-  netlify.toml netlify/functions/apply.js
-```
-
-> The apply form now relies on a Netlify Function, so **connecting the repo** is the recommended deploy method (functions deploy automatically). If you drag-and-drop the zip, make sure `netlify.toml` and `netlify/functions/` are included (above).
-
-The apply form posts to a small **Netlify Function** (`netlify/functions/apply.js`) that emails each submission via [Resend](https://resend.com) to `connect@myselfkart.com`, then redirects to `thanks.html`.
-
-Set these environment variables in **Netlify → Site settings → Environment variables**:
+Set these environment variables in **Vercel → Project → Settings → Environment Variables** (then redeploy):
 
 | Variable | Example | Notes |
 |---|---|---|
