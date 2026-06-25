@@ -5,6 +5,7 @@ import Link from "next/link"
 import React from "react"
 import { type Event } from "./_data"
 import type { NavProps, FooterProps } from "../../../lib/themes/types"
+import { SocialLinks } from "../../../lib/components/social-links"
 
 // ---------------------------------------------------------------------------
 // Theme tokens
@@ -198,9 +199,8 @@ export function EventpassFooter({ config, hasDeals }: FooterProps & { hasDeals?:
           <p style={{ color: T.textMuted, fontSize: 14, lineHeight: 1.8, maxWidth: 280, margin: 0 }}>
             {tagline}
           </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-            {config?.instagram_url && <a href={config.instagram_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>Instagram</a>}
-            {config?.youtube_url && <a href={config.youtube_url} style={{ color: T.textMuted, textDecoration: "none", fontSize: 13 }}>YouTube</a>}
+          <div style={{ marginTop: 16 }}>
+            <SocialLinks config={config} color={T.textMuted} gap={12} />
           </div>
         </div>
         {[

@@ -41,6 +41,27 @@ export type ProductView = {
   warranty: string | null
   /** Per-product returns policy override; falls back to store config in themes. */
   returnsPolicy: string | null
+  /** Distinct "Color" option values across variants, e.g. ["Red","Blue"]. Empty when the product has no color option. */
+  colors: string[]
+  /** Distinct "Size" option values across variants, e.g. ["S","M","L"]. Empty when the product has no size option. */
+  sizes: string[]
+  /** True if any variant is purchasable (unlimited stock or quantity > 0). True when availability wasn't fetched for this route. */
+  inStock: boolean
+}
+
+/** Per-variant stock lookup, as returned by `getVariantAvailability`. */
+type AvailabilityMap = Record<string, { availableQuantity: number | null }>
+
+/** Distinct option values for a variant whose option title matches one of `titles` (case-insensitive). */
+function optionValues(p: StoreProduct, titles: string[]): string[] {
+  const set = new Set<string>()
+  for (const v of p.variants ?? []) {
+    for (const opt of v.options ?? []) {
+      const title = opt.option?.title?.toLowerCase()
+      if (title && titles.includes(title)) set.add(opt.value)
+    }
+  }
+  return [...set]
 }
 
 function lowestPricedVariant(p: StoreProduct) {
@@ -48,12 +69,17 @@ function lowestPricedVariant(p: StoreProduct) {
 }
 
 /** Map a single Medusa product to the theme-agnostic view model. */
-export function mapProduct(p: StoreProduct): ProductView {
+export function mapProduct(p: StoreProduct, availability?: AvailabilityMap): ProductView {
   const variant = lowestPricedVariant(p)
   const cp = variant?.calculated_price ?? null
   const discount = discountPercent(p)
   const onSale = isOnSale(p)
   const meta = p.metadata ?? {}
+  const inStock = (p.variants ?? []).some(v => {
+    const avail = availability?.[v.id]
+    // No availability data fetched for this route, or unlimited stock — treat as purchasable.
+    return !avail || avail.availableQuantity == null || avail.availableQuantity > 0
+  })
   return {
     id: p.id,
     handle: p.handle,
@@ -73,6 +99,9 @@ export function mapProduct(p: StoreProduct): ProductView {
     reviewCount: numericMeta(meta.review_count),
     warranty: stringMeta(meta.warranty),
     returnsPolicy: stringMeta(meta.returns_policy),
+    colors: optionValues(p, ["color", "colour"]),
+    sizes: optionValues(p, ["size"]),
+    inStock,
   }
 }
 
@@ -90,6 +119,6 @@ function stringMeta(value: unknown): string | null {
   return trimmed || null
 }
 
-export function mapProducts(products: StoreProduct[]): ProductView[] {
-  return products.map(mapProduct)
+export function mapProducts(products: StoreProduct[], availability?: AvailabilityMap): ProductView[] {
+  return products.map(p => mapProduct(p, availability))
 }

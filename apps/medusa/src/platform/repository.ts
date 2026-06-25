@@ -1030,6 +1030,10 @@ export type StoreConfig = {
   hero_subtext: string | null
   hero_cta: HeroCta | null
   trust_badges: TrustBadge[] | null
+  // Product detail page — trust lines shown under Add to Cart
+  pdp_shipping_text: string | null
+  pdp_returns_text: string | null
+  pdp_delivery_text: string | null
   // Policies
   return_policy: string | null
   shipping_policy: string | null

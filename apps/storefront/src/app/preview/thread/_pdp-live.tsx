@@ -80,9 +80,9 @@ export function ThreadPdpLivePage({ config, cartCount, product, variants, relate
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
-                  { icon: "🚚", text: "Free shipping on orders above ₹2,999" },
-                  { icon: "↩️", text: "Free returns within 30 days" },
-                  { icon: "📦", text: "Ships in 2–4 business days" },
+                  { icon: "🚚", text: config?.pdp_shipping_text || "Free shipping on orders above ₹2,999" },
+                  { icon: "↩️", text: config?.pdp_returns_text || "Free returns within 30 days" },
+                  { icon: "📦", text: config?.pdp_delivery_text || "Ships in 2–4 business days" },
                 ].map(item => (
                   <div key={item.text} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: "#6b6560" }}>
                     <span>{item.icon}</span>

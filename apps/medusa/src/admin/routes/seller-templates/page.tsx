@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Swatch } from "@medusajs/icons"
+import { ArrowUpRightOnBox, Swatch } from "@medusajs/icons"
 import {
   Badge,
   Button,
@@ -20,6 +20,37 @@ import { useEffect, useRef, useState } from "react"
 type TemplateId = "eventpass" | "thread" | "aurum" | "volt" | "glow"
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
+
+// The nav bar only has room for a short, wide wordmark — logos must be
+// horizontal (wider than tall), not square or portrait, or they render tiny
+// and cropped in the header. Hero/banner images should be wide landscape
+// photos for the same reason — this is what was going wrong when sellers
+// uploaded portrait/ad creatives as logos or hero images.
+const LOGO_MIN_DIMENSION = 64
+const LOGO_MIN_RATIO = 1.5 // width / height — rejects square & portrait logos
+const LOGO_MAX_RATIO = 4 // width / height — rejects ultra-thin strips
+const HERO_MIN_WIDTH = 1200
+const HERO_MIN_RATIO = 1.3 // width / height — rejects portrait & square images
+
+// Favicons render in a tiny browser-tab square, so — unlike the nav logo —
+// they need to be square (or near-square), not horizontal.
+const FAVICON_MIN_DIMENSION = 16
+const FAVICON_MAX_RATIO = 1.25 // longest side : shortest side
+
+const getImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve({ width: img.naturalWidth, height: img.naturalHeight })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error("Could not read image."))
+    }
+    img.src = objectUrl
+  })
 
 type SectionFieldType = "text" | "richtext" | "image" | "icon" | "number"
 
@@ -108,6 +139,10 @@ type StoreConfig = {
   hero_subtext: string | null
   hero_cta: HeroCta | null
   trust_badges: TrustBadge[] | null
+  // Product detail page
+  pdp_shipping_text: string | null
+  pdp_returns_text: string | null
+  pdp_delivery_text: string | null
   // Policies
   return_policy: string | null
   shipping_policy: string | null
@@ -157,17 +192,20 @@ const FONT_OPTIONS = [
   { value: "montserrat", label: "Montserrat" },
 ]
 
+// `noData: true` filters have no product data behind them yet (no seller has
+// ever set a brand/material/weight value) — the toggle saves, but the
+// storefront has nothing to show until products carry that data.
 const ALL_FILTERS = [
   { key: "category", label: "Category" },
   { key: "price", label: "Price range" },
   { key: "availability", label: "Availability (in stock)" },
-  { key: "brand", label: "Brand" },
+  { key: "brand", label: "Brand", noData: true },
   { key: "rating", label: "Customer rating" },
   { key: "discount", label: "Discount / Offers" },
   { key: "color", label: "Color" },
   { key: "size", label: "Size" },
-  { key: "material", label: "Material" },
-  { key: "weight", label: "Weight" },
+  { key: "material", label: "Material", noData: true },
+  { key: "weight", label: "Weight", noData: true },
 ]
 
 // ---------------------------------------------------------------------------
@@ -326,6 +364,32 @@ const LogoUpload = ({
       toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 5MB.`)
       return
     }
+
+    if (file.type !== "image/svg+xml") {
+      try {
+        const { width, height } = await getImageDimensions(file)
+        if (width < LOGO_MIN_DIMENSION || height < LOGO_MIN_DIMENSION) {
+          toast.error(`Logo is too small (${width}×${height}px). Use at least ${LOGO_MIN_DIMENSION}×${LOGO_MIN_DIMENSION}px.`)
+          return
+        }
+        const ratio = width / height
+        if (ratio < LOGO_MIN_RATIO) {
+          toast.error(
+            `Logo must be horizontal — wider than tall, e.g. 320×96px (3:1). This image is ${width}×${height}px, too square or portrait for the header.`
+          )
+          return
+        }
+        if (ratio > LOGO_MAX_RATIO) {
+          toast.error(
+            `Logo is too wide and thin (${width}×${height}px). Keep it under ${LOGO_MAX_RATIO}:1 (width:height) so it stays legible.`
+          )
+          return
+        }
+      } catch {
+        // If we can't read dimensions, fall through and let the upload proceed.
+      }
+    }
+
     setUploading(true)
     try {
       const form = new FormData()
@@ -361,11 +425,9 @@ const LogoUpload = ({
       />
       <div className="flex items-center gap-3">
         {value && (
-          <img
-            src={value}
-            alt="Logo preview"
-            className="h-10 max-w-[120px] rounded border border-ui-border-base object-contain bg-ui-bg-subtle p-1"
-          />
+          <div className="flex h-14 w-36 items-center justify-center rounded border border-ui-border-base bg-white p-2">
+            <img src={value} alt="Logo preview" className="max-h-full max-w-full object-contain" />
+          </div>
         )}
         <Button
           variant="secondary"
@@ -388,7 +450,115 @@ const LogoUpload = ({
         )}
       </div>
       <Text size="xsmall" className="text-ui-fg-muted">
-        PNG, SVG, or ICO.
+        Horizontal logo only — wider than tall (e.g. 320×96px, ~3:1). PNG/SVG with
+        transparent background works best. Square or portrait logos will be rejected;
+        they render too small in the header.
+      </Text>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FaviconUpload — same upload flow as LogoUpload, but favicons render in a
+// tiny square browser tab, so the validation requires square (not horizontal).
+// ---------------------------------------------------------------------------
+
+const FaviconUpload = ({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (url: string) => void
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = async (file: File) => {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 5MB.`)
+      return
+    }
+
+    if (file.type !== "image/svg+xml") {
+      try {
+        const { width, height } = await getImageDimensions(file)
+        if (width < FAVICON_MIN_DIMENSION || height < FAVICON_MIN_DIMENSION) {
+          toast.error(`Favicon is too small (${width}×${height}px). Use at least ${FAVICON_MIN_DIMENSION}×${FAVICON_MIN_DIMENSION}px.`)
+          return
+        }
+        const ratio = Math.max(width, height) / Math.min(width, height)
+        if (ratio > FAVICON_MAX_RATIO) {
+          toast.error(
+            `Favicon should be square (${width}×${height}px isn't). Use a square icon, e.g. 64×64px.`
+          )
+          return
+        }
+      } catch {
+        // If we can't read dimensions, fall through and let the upload proceed.
+      }
+    }
+
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append("files", file)
+      const res = await fetch("/admin/uploads", {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.message ?? "Upload failed")
+      const url: string = body.files?.[0]?.url ?? ""
+      if (url) onChange(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Upload failed")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) handleFile(f)
+          e.target.value = ""
+        }}
+      />
+      <div className="flex items-center gap-3">
+        {value && (
+          <div className="flex h-14 w-14 items-center justify-center rounded border border-ui-border-base bg-white p-2">
+            <img src={value} alt="Favicon preview" className="max-h-full max-w-full object-contain" />
+          </div>
+        )}
+        <Button
+          variant="secondary"
+          size="small"
+          type="button"
+          isLoading={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {value ? "Replace favicon" : "Upload favicon"}
+        </Button>
+        {value && (
+          <Button
+            variant="transparent"
+            size="small"
+            type="button"
+            onClick={() => onChange("")}
+          >
+            Remove
+          </Button>
+        )}
+      </div>
+      <Text size="xsmall" className="text-ui-fg-muted">
+        Square icon, ideal size 64×64px (.ico, .png, or .svg) — the small icon shown in browser tabs.
       </Text>
     </div>
   )
@@ -542,7 +712,7 @@ const TemplatePicker = ({
               <Text size="small" weight="plus" className="text-ui-fg-base">
                 You selected: {pending.name}
               </Text>
-              <Text size="small" className="text-ui-fg-subtle">
+              <Text size="small" weight="plus" className="text-ui-fg-error">
                 This choice is final. You cannot change your template later.
                 Make sure you've previewed all options before confirming.
               </Text>
@@ -803,6 +973,7 @@ type TabId =
   | "theme"
   | "homepage"
   | "sections"
+  | "product"
   | "policies"
   | "contact"
   | "seo"
@@ -814,6 +985,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "theme", label: "Theme" },
   { id: "homepage", label: "Homepage" },
   { id: "sections", label: "Sections" },
+  { id: "product", label: "Product" },
   { id: "policies", label: "Policies" },
   { id: "contact", label: "Contact" },
   { id: "seo", label: "SEO" },
@@ -868,7 +1040,7 @@ const BrandingTab = ({ config }: { config: StoreConfig }) => {
             onChange={set("store_name")}
           />
         </FieldRow>
-        <FieldRow label="Tagline" hint="Shown beneath your logo on the storefront.">
+        <FieldRow label="Tagline" hint="Shown under your store name in the storefront footer.">
           <Input
             placeholder="Quality you can trust"
             value={form.tagline}
@@ -884,8 +1056,8 @@ const BrandingTab = ({ config }: { config: StoreConfig }) => {
             onChange={(url) => setForm((p) => ({ ...p, logo_url: url }))}
           />
         </FieldRow>
-        <FieldRow label="Favicon" hint="16×16 or 32×32 .ico or .png — the small icon shown in browser tabs.">
-          <LogoUpload
+        <FieldRow label="Favicon">
+          <FaviconUpload
             value={form.favicon_url}
             onChange={(url) => setForm((p) => ({ ...p, favicon_url: url }))}
           />
@@ -1092,7 +1264,7 @@ const HomepageTab = ({ config }: { config: StoreConfig }) => {
 
       <SectionBlock title="Hero banner">
         <FieldRow label="Banner image" hint="Full-width background image for the hero section.">
-          <LogoUpload
+          <HeroImageUpload
             value={form.hero_image_url}
             onChange={(url) => setForm((p) => ({ ...p, hero_image_url: url }))}
           />
@@ -1149,6 +1321,77 @@ const HomepageTab = ({ config }: { config: StoreConfig }) => {
       <div className="flex justify-end">
         <Button variant="primary" size="small" onClick={handleSave} isLoading={saving}>
           Save homepage
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// ProductTab — the trust lines shown under Add to Cart on the product detail
+// page (shipping / returns / delivery). Previously hardcoded per template.
+// ---------------------------------------------------------------------------
+
+const ProductTab = ({ config }: { config: StoreConfig }) => {
+  const [form, setForm] = useState({
+    pdp_shipping_text: config.pdp_shipping_text ?? "",
+    pdp_returns_text: config.pdp_returns_text ?? "",
+    pdp_delivery_text: config.pdp_delivery_text ?? "",
+  })
+  const [saving, setSaving] = useState(false)
+
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((p) => ({ ...p, [key]: e.target.value }))
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await apiFetch("/admin/selfkart/store-config/customize", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+      toast.success("Product page saved.")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 p-6">
+      <Text size="small" className="text-ui-fg-subtle">
+        These three lines show under Add to Cart on every product page. Leave a
+        field blank to use the default shown as its placeholder.
+      </Text>
+      <SectionBlock title="Delivery & returns">
+        <FieldRow label="Shipping line">
+          <Input
+            placeholder="Free shipping on orders above ₹2,999"
+            value={form.pdp_shipping_text}
+            onChange={set("pdp_shipping_text")}
+          />
+        </FieldRow>
+        <FieldRow label="Returns line">
+          <Input
+            placeholder="Free returns within 30 days"
+            value={form.pdp_returns_text}
+            onChange={set("pdp_returns_text")}
+          />
+        </FieldRow>
+        <FieldRow label="Delivery line">
+          <Input
+            placeholder="Ships in 2–4 business days"
+            value={form.pdp_delivery_text}
+            onChange={set("pdp_delivery_text")}
+          />
+        </FieldRow>
+      </SectionBlock>
+
+      <div className="flex justify-end">
+        <Button variant="primary" size="small" onClick={handleSave} isLoading={saving}>
+          Save product page
         </Button>
       </div>
     </div>
@@ -1588,13 +1831,19 @@ const FiltersTab = ({ config }: { config: StoreConfig }) => {
         </Text>
 
         <div className="flex flex-col gap-3 mt-2">
-          {ALL_FILTERS.map(({ key, label }) => (
-            <Toggle
-              key={key}
-              checked={enabled.has(key)}
-              onChange={() => toggle(key)}
-              label={label}
-            />
+          {ALL_FILTERS.map(({ key, label, noData }) => (
+            <div key={key} className="flex items-center gap-2">
+              <Toggle
+                checked={enabled.has(key)}
+                onChange={() => toggle(key)}
+                label={label}
+              />
+              {noData && (
+                <Text size="xsmall" className="text-ui-fg-muted">
+                  — no products have this set yet, so this won't show anything
+                </Text>
+              )}
+            </div>
           ))}
         </div>
 
@@ -1608,6 +1857,108 @@ const FiltersTab = ({ config }: { config: StoreConfig }) => {
           Save filter settings
         </Button>
       </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// HeroImageUpload — wide-crop preview so sellers can see how an image will
+// actually be cropped behind the hero text, with a hard floor on aspect
+// ratio/resolution so portrait or off-brand ad creatives can't be used.
+// ---------------------------------------------------------------------------
+
+const HeroImageUpload = ({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (url: string) => void
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = async (file: File) => {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 5MB.`)
+      return
+    }
+
+    try {
+      const { width, height } = await getImageDimensions(file)
+      if (width < HERO_MIN_WIDTH) {
+        toast.error(`Image is too small (${width}px wide). Use at least ${HERO_MIN_WIDTH}px wide.`)
+        return
+      }
+      if (width / height < HERO_MIN_RATIO) {
+        toast.error(
+          "That image is too tall for a hero banner — use a wide landscape photo, not a portrait or square crop."
+        )
+        return
+      }
+    } catch {
+      // If we can't read dimensions, fall through and let the upload proceed.
+    }
+
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append("files", file)
+      const res = await fetch("/admin/uploads", {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.message ?? "Upload failed")
+      const url: string = body.files?.[0]?.url ?? ""
+      if (url) onChange(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Upload failed")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) handleFile(f)
+          e.target.value = ""
+        }}
+      />
+      {value && (
+        <img
+          src={value}
+          alt="Hero banner preview"
+          className="aspect-[16/9] w-full max-w-md rounded border border-ui-border-base object-cover bg-ui-bg-subtle"
+        />
+      )}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="secondary"
+          size="small"
+          type="button"
+          isLoading={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {value ? "Replace image" : "Upload image"}
+        </Button>
+        {value && (
+          <Button variant="transparent" size="small" type="button" onClick={() => onChange("")}>
+            Remove
+          </Button>
+        )}
+      </div>
+      <Text size="xsmall" className="text-ui-fg-muted">
+        Wide landscape photo, at least {HERO_MIN_WIDTH}px wide (16:9 works best). Avoid portrait
+        crops or images with their own text/logo — your heading renders on top of this image.
+      </Text>
     </div>
   )
 }
@@ -1725,6 +2076,7 @@ const SectionField = ({
             type="number"
             min={1}
             max={5}
+            step={field.step ?? 1}
             value={value ?? ""}
             onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
           />
@@ -1953,6 +2305,7 @@ const CustomizeView = ({
       case "theme":     return <ThemeTab config={config} />
       case "homepage":  return <HomepageTab config={config} />
       case "sections":  return <SectionsTab config={config} template={selectedTemplate} />
+      case "product":   return <ProductTab config={config} />
       case "policies":  return <PoliciesTab config={config} />
       case "contact":   return <ContactTab config={config} />
       case "seo":       return <SEOTab config={config} />
@@ -1976,6 +2329,18 @@ const CustomizeView = ({
             <Badge color="grey" size="2xsmall">
               {selectedTemplate.name} — locked
             </Badge>
+          )}
+          {storefrontBase && (
+            <a
+              href={storefrontBase}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-full border border-ui-border-base bg-ui-bg-subtle px-3 py-1 text-sm text-ui-fg-base transition-colors hover:bg-ui-bg-subtle-hover hover:text-ui-fg-interactive"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-ui-tag-green-icon" />
+              Live store
+              <ArrowUpRightOnBox className="text-ui-fg-subtle" />
+            </a>
           )}
           <Button
             variant="secondary"

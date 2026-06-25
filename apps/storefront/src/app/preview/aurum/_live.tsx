@@ -6,6 +6,7 @@ import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
 import type { HomeProps } from "../../../lib/themes/types"
 import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
+import { StarRating } from "../../../lib/components/star-rating"
 import { AurumNav, AurumFooter } from "./_components"
 import s from "./_styles.module.css"
 
@@ -328,7 +329,7 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
           accentColor="var(--aurum-gold, #b08d4f)"
           renderItem={(t: typeof DEFAULT_AURUM_TESTIMONIALS[number], i: number) => (
             <div key={i} className={s.testimonialCard}>
-              <div className={s.testimonialStars}>{"★".repeat(t.stars)}</div>
+              <div className={s.testimonialStars}><StarRating rating={t.stars} /></div>
               <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
               <div className={s.testimonialAuthor}>
                 <div className={s.testimonialAvatar}>{t.name[0]}</div>

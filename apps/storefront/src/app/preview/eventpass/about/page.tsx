@@ -4,8 +4,16 @@ import Link from "next/link"
 import { NavBar, Footer, T } from "../_components"
 import { useTemplateConfig } from "../../../../lib/template-config-context"
 
+const DEFAULT_ABOUT_STATS = [
+  { value: "500+", label: "Events listed", sub: "across 20+ cities" },
+  { value: "50,000+", label: "Tickets booked", sub: "with zero signups" },
+  { value: "< 90s", label: "Average checkout time", sub: "from landing to ticket" },
+  { value: "4.9 / 5", label: "Buyer satisfaction", sub: "across 3,200+ reviews" },
+]
+
 export default function AboutPage() {
-  const { basePath } = useTemplateConfig()
+  const { basePath, config } = useTemplateConfig()
+  const stats = config?.sections?.about_stats?.items ?? DEFAULT_ABOUT_STATS
   return (
     <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
       <style>{`
@@ -64,15 +72,23 @@ export default function AboutPage() {
             }} />
           </div>
           <div>
-            <p style={{ color: T.textMuted, fontSize: 17, lineHeight: 1.9, margin: "0 0 24px" }}>
-              Every time we tried to book tickets for a concert, a stand-up show, or a conference — we hit the same wall. Create an account. Verify your email. Add your address. Pick a seat from a tiny blurry map. Re-enter your card details. Wait for an OTP.
-            </p>
-            <p style={{ color: T.textMuted, fontSize: 17, lineHeight: 1.9, margin: "0 0 24px" }}>
-              Half the time we'd give up and just not go. That's a problem — not because we lost tickets, but because the event lost us.
-            </p>
-            <p style={{ color: T.text, fontSize: 17, lineHeight: 1.9, margin: 0, fontWeight: 500 }}>
-              EventPass is the platform we wanted to exist. Name, email, phone — that's it. Your QR ticket lands in your inbox in seconds.
-            </p>
+            {config?.about_text ? (
+              <p style={{ color: T.textMuted, fontSize: 17, lineHeight: 1.9, margin: 0, whiteSpace: "pre-line" }}>
+                {config.about_text}
+              </p>
+            ) : (
+              <>
+                <p style={{ color: T.textMuted, fontSize: 17, lineHeight: 1.9, margin: "0 0 24px" }}>
+                  Every time we tried to book tickets for a concert, a stand-up show, or a conference — we hit the same wall. Create an account. Verify your email. Add your address. Pick a seat from a tiny blurry map. Re-enter your card details. Wait for an OTP.
+                </p>
+                <p style={{ color: T.textMuted, fontSize: 17, lineHeight: 1.9, margin: "0 0 24px" }}>
+                  Half the time we'd give up and just not go. That's a problem — not because we lost tickets, but because the event lost us.
+                </p>
+                <p style={{ color: T.text, fontSize: 17, lineHeight: 1.9, margin: 0, fontWeight: 500 }}>
+                  EventPass is the platform we wanted to exist. Name, email, phone — that's it. Your QR ticket lands in your inbox in seconds.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -91,9 +107,9 @@ export default function AboutPage() {
                 padding: "0 40px",
                 borderLeft: i > 0 ? `1px solid ${T.border}` : "none",
               }}>
-                <div style={{ color: T.text, fontWeight: 900, fontSize: 36, letterSpacing: "-1px", marginBottom: 6 }}>{s.value}</div>
-                <div style={{ color: T.text, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{s.label}</div>
-                <div style={{ color: T.textLight, fontSize: 13 }}>{s.sub}</div>
+                <div style={{ color: T.text, fontWeight: 900, fontSize: 36, letterSpacing: "-1px", marginBottom: 6 }}>{stat.value}</div>
+                <div style={{ color: T.text, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{stat.label}</div>
+                <div style={{ color: T.textLight, fontSize: 13 }}>{stat.sub}</div>
               </div>
             ))}
           </div>
@@ -132,10 +148,10 @@ export default function AboutPage() {
         </h2>
         <div className="ep-about-contact" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
           {[
-            { icon: "📧", title: "Email Support", desc: "support@eventpass.in", sub: "We reply within 2 hours" },
+            { icon: "📧", title: "Email Support", desc: config?.contact_email || "support@eventpass.in", sub: "We reply within 2 hours" },
             { icon: "💬", title: "Live Chat", desc: "Available Mon–Sat, 10am–7pm", sub: "Average response: 5 minutes" },
-            { icon: "📞", title: "Phone", desc: "+91 98765 00000", sub: "Mon–Fri, 10am–6pm" },
-            { icon: "🏢", title: "Office", desc: "Mumbai, Maharashtra, India", sub: "Not open to walk-ins" },
+            { icon: "📞", title: "Phone", desc: config?.contact_phone || "+91 98765 00000", sub: "Mon–Fri, 10am–6pm" },
+            { icon: "🏢", title: "Office", desc: config?.business_address || "Mumbai, Maharashtra, India", sub: "Not open to walk-ins" },
           ].map(item => (
             <div key={item.title} style={{
               display: "flex", flexDirection: "column", gap: 12, background: T.bgSubtle,

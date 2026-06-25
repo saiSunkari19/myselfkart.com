@@ -4,6 +4,11 @@ import { getTenantMedusa } from "./client"
 import { getRegion } from "./region"
 import type { TenantResolution } from "../tenant/types"
 
+export type StoreVariantOption = {
+  value: string
+  option: { title: string } | null
+}
+
 export type StoreVariant = {
   id: string
   title: string | null
@@ -14,6 +19,9 @@ export type StoreVariant = {
     original_amount: number | null
     currency_code: string | null
   } | null
+  // Per-variant option picks (e.g. {value:"Red", option:{title:"Color"}}) —
+  // used to derive the product's distinct color/size facets for shop filters.
+  options?: StoreVariantOption[]
 }
 
 export type StoreTag = {
@@ -65,7 +73,7 @@ export type StoreProduct = {
 // price for that region's currency. The price is in major units (e.g. 49.99) —
 // render it directly, never divide by 100.
 const PRODUCT_FIELDS =
-  "id,title,handle,thumbnail,images.url,description,created_at,metadata,*tags,categories.id,categories.name,categories.handle,collection.id,collection.title,collection.handle,*variants,variants.calculated_price"
+  "id,title,handle,thumbnail,images.url,description,created_at,metadata,*tags,categories.id,categories.name,categories.handle,collection.id,collection.title,collection.handle,*variants,variants.calculated_price,variants.options.value,variants.options.option.title"
 
 /**
  * Lists products for the resolved tenant. The per-tenant SDK attaches the

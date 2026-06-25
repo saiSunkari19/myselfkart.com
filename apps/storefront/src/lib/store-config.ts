@@ -60,6 +60,10 @@ export type StoreConfig = {
   hero_subtext: string | null
   hero_cta: HeroCta | null
   trust_badges: TrustBadge[] | null
+  // Product detail page — trust lines shown under Add to Cart
+  pdp_shipping_text: string | null
+  pdp_returns_text: string | null
+  pdp_delivery_text: string | null
   // Policies
   return_policy: string | null
   shipping_policy: string | null
@@ -82,6 +86,8 @@ export type StoreConfig = {
   free_shipping_threshold: number | null
   cod_enabled: boolean
   whatsapp_notifications_enabled: boolean
+  // Shop page filter visibility — which filter sections to render and in what order
+  filter_config: FilterConfig | null
   // Per-template homepage sections (testimonials, banners, etc.)
   sections: SectionsConfig | null
 }

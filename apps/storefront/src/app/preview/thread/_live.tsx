@@ -6,6 +6,8 @@ import type { StoreConfig } from "../../../lib/store-config"
 import type { ProductView } from "../../../lib/views"
 import type { HomeProps, NavProps, FooterProps } from "../../../lib/themes/types"
 import { TestimonialSlider } from "../../../lib/components/testimonial-slider"
+import { StarRating } from "../../../lib/components/star-rating"
+import { SocialLinks } from "../../../lib/components/social-links"
 import s from "./_styles.module.css"
 
 /**
@@ -91,7 +93,7 @@ export function ThreadNav({ config, hasDeals, cartCount = 0 }: NavProps) {
           </div>
           <Link href="/" className={s.navLogo}>
             {config?.logo_url
-              ? <img src={config.logo_url} alt={storeName} style={{ height: 28, objectFit: "contain" }} />
+              ? <img src={config.logo_url} alt={storeName} style={{ height: 38, maxWidth: 180, objectFit: "contain" }} />
               : storeName}
           </Link>
           <div className={s.navActions}>
@@ -117,10 +119,7 @@ export function ThreadFooter({ config, hasDeals }: FooterProps & { hasDeals?: bo
           <div className={s.footerBrand}>
             <Link href="/" className={s.footerLogo}>{storeName}</Link>
             <p className={s.footerTagline}>{tagline}</p>
-            <div className={s.footerSocials}>
-              {config?.instagram_url && <a href={config.instagram_url} className={s.footerSocial}>I</a>}
-              {config?.youtube_url && <a href={config.youtube_url} className={s.footerSocial}>Y</a>}
-            </div>
+            <SocialLinks config={config} size={16} className={s.footerSocials} itemClassName={s.footerSocial} />
           </div>
           <div>
             <div className={s.footerColTitle}>Shop</div>
@@ -324,7 +323,7 @@ function Testimonials({ config }: { config: StoreConfig | null }) {
           gap={24}
           renderItem={(t: typeof DEFAULT_THREAD_TESTIMONIALS[number], i: number) => (
             <div key={i} className={s.testimonialCard}>
-              <div className={s.testimonialStars}>{"★".repeat(t.stars)}</div>
+              <div className={s.testimonialStars}><StarRating rating={t.stars} /></div>
               <p className={s.testimonialText}>&quot;{t.text}&quot;</p>
               <div className={s.testimonialAuthor}>
                 <div className={s.testimonialAvatar}>{t.name[0]}</div>

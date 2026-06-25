@@ -11,6 +11,7 @@ import type {
   CustomerView,
   CustomerAddressView,
   CustomerOrderListItem,
+  ProductFilters,
 } from "../views"
 
 /**
@@ -61,6 +62,10 @@ export type ShopProps = ThemeContext & {
   totalPages: number
   /** Total matching products across all pages, for the "N products" count display. */
   totalCount: number
+  /** Currently active facet filter selections (price/availability/rating/sale/color/size). */
+  filters: ProductFilters
+  /** Distinct color/size values available across the current category's products, for sidebar options. */
+  facets: { colors: string[]; sizes: string[] }
 }
 
 export type PdpProps = ThemeContext & {

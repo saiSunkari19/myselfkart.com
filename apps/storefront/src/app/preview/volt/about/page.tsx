@@ -1,7 +1,19 @@
+"use client"
+
 import { PageShell, Reveal } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "./../_styles.module.css"
 
+const DEFAULT_ABOUT_STATS = [
+  { value: "50L+", label: "Happy Customers" },
+  { value: "40+", label: "Brand Partners" },
+  { value: "1,000+", label: "Products" },
+  { value: "10+", label: "Years of Trust" },
+]
+
 export default function AboutPage() {
+  const { config } = useTemplateConfig()
+  const stats = config?.sections?.about_stats?.items ?? DEFAULT_ABOUT_STATS
   return (
     <PageShell>
       <div className={s.pageHeader}>
@@ -28,8 +40,14 @@ export default function AboutPage() {
           <Reveal>
             <div className={s.infoSection}>
               <h2>Who We Are</h2>
-              <p>Volt Electronics is India's most trusted authorised electronics retailer, founded in 2014 with a single mission: make premium technology accessible to every Indian at fair prices, with an experience that matches the products we sell.</p>
-              <p>We are an authorised dealer for Apple, Samsung, Sony, Dell, OnePlus, Dyson, Nothing, Google, DJI, GoPro, and 40+ other leading technology brands. Every product we sell is 100% genuine, with full manufacturer warranty.</p>
+              {config?.about_text ? (
+                <p style={{ whiteSpace: "pre-line" }}>{config.about_text}</p>
+              ) : (
+                <>
+                  <p>Volt Electronics is India's most trusted authorised electronics retailer, founded in 2014 with a single mission: make premium technology accessible to every Indian at fair prices, with an experience that matches the products we sell.</p>
+                  <p>We are an authorised dealer for Apple, Samsung, Sony, Dell, OnePlus, Dyson, Nothing, Google, DJI, GoPro, and 40+ other leading technology brands. Every product we sell is 100% genuine, with full manufacturer warranty.</p>
+                </>
+              )}
             </div>
           </Reveal>
           <Reveal>
@@ -63,8 +81,8 @@ export default function AboutPage() {
               <p>We typically respond within 2 hours on business days.</p>
               <div className={s.grid3} style={{ marginTop: 20 }}>
                 {[
-                  { icon: "📞", title: "Phone Support", lines: ["1800-VOLT-CARE (Toll Free)", "Mon–Sat 9am–9pm", "Sun 10am–6pm"] },
-                  { icon: "📧", title: "Email Support", lines: ["support@volt.in", "Response within 2 hours"] },
+                  { icon: "📞", title: "Phone Support", lines: config?.contact_phone ? [config.contact_phone, "Mon–Sat 9am–9pm", "Sun 10am–6pm"] : ["1800-VOLT-CARE (Toll Free)", "Mon–Sat 9am–9pm", "Sun 10am–6pm"] },
+                  { icon: "📧", title: "Email Support", lines: config?.contact_email ? [config.contact_email, "Response within 2 hours"] : ["support@volt.in", "Response within 2 hours"] },
                   { icon: "💬", title: "Live Chat", lines: ["Available on website", "Mon–Sat 9am–9pm"] },
                 ].map(item => (
                   <div key={item.title} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px" }}>

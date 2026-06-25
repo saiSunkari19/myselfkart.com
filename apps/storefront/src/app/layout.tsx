@@ -41,9 +41,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const cssVars = buildCssVars(config)
   const fontLinks = getFontLinks(config)
   const storeName = config?.store_name ?? "Store"
+  const colorMode = config?.color_mode ?? "light"
 
   return (
-    <html lang="en" style={cssVars}>
+    <html lang="en" style={cssVars} data-theme={colorMode}>
       <head>
         {/* Preconnect to Google Fonts for faster load */}
         {fontLinks.length > 0 && (
