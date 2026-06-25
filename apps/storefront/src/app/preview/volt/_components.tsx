@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { type Product } from "./_data"
 import { useTemplateConfig } from "../../../lib/template-config-context"
 import type { NavProps } from "../../../lib/themes/types"
+import { SocialLinks } from "../../../lib/components/social-links"
 import s from "./_styles.module.css"
 
 // ---- Scroll Reveal ----
@@ -56,9 +57,15 @@ export function PageLoader() {
 export function Stars({ rating }: { rating: number }) {
   return (
     <div className={s.stars}>
-      {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ color: i <= Math.round(rating) ? "#f59e0b" : "#e2e8f0" }}>★</span>
-      ))}
+      {[1,2,3,4,5].map(i => {
+        const fillPct = Math.max(0, Math.min(1, rating - (i - 1))) * 100
+        return (
+          <span key={i} style={{ position: "relative", display: "inline-block" }}>
+            <span style={{ color: "#e2e8f0" }}>★</span>
+            <span style={{ position: "absolute", inset: 0, overflow: "hidden", width: `${fillPct}%`, color: "#f59e0b" }}>★</span>
+          </span>
+        )
+      })}
     </div>
   )
 }
@@ -203,11 +210,7 @@ export function Footer() {
           <div className={s.footerBrand}>
             <div className={s.footerLogo}>{storeName}<span className={s.footerLogoAccent}>.</span></div>
             <p className={s.footerTagline}>India's most trusted destination for premium electronics. Genuine products, unbeatable prices.</p>
-            <div className={s.footerSocial}>
-              {["𝕏", "📘", "📸", "▶"].map(icon => (
-                <button key={icon} className={s.footerSocialBtn}>{icon}</button>
-              ))}
-            </div>
+            <SocialLinks config={config} size={16} className={s.footerSocial} itemClassName={s.footerSocialBtn} />
           </div>
           {[
             { title: "Shop", links: [["Smartphones", `${basePath}/shop`], ["Laptops", `${basePath}/shop`], ["Audio", `${basePath}/shop`], ["Deals", `${basePath}/deals`], ["New Launches", `${basePath}/new-launches`]] },

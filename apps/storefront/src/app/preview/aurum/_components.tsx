@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { type Product } from "./_data"
 import type { NavProps, FooterProps } from "../../../lib/themes/types"
+import { SocialLinks } from "../../../lib/components/social-links"
 import s from "./_styles.module.css"
 
 // ---------------------------------------------------------------------------
@@ -159,6 +160,9 @@ export function AurumFooter({ config, hasDeals }: FooterProps & { hasDeals?: boo
             {["BIS 916", "GIA", "ISO 9001", "BIS 925"].map(c => (
               <span key={c} className={s.footerCertItem}>{c}</span>
             ))}
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <SocialLinks config={config} size={16} color="#b8962e" gap={14} />
           </div>
         </div>
         {[

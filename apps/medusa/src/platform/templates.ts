@@ -12,6 +12,8 @@ export type SectionFieldDef = {
   label: string
   type: SectionFieldType
   required?: boolean
+  /** For type "number" — input step, e.g. 0.5 to allow half-star ratings. */
+  step?: number
 }
 
 /**
@@ -78,6 +80,19 @@ export const TEMPLATES: Template[] = [
           { key: "desc", label: "Description", type: "text" },
         ],
       },
+      {
+        id: "about_stats",
+        type: "feature-list",
+        label: "About Page — Stats",
+        list: true,
+        minItems: 4,
+        maxItems: 4,
+        fields: [
+          { key: "value", label: "Stat value (e.g. 500+)", type: "text", required: true },
+          { key: "label", label: "Label", type: "text", required: true },
+          { key: "sub", label: "Subtext", type: "text" },
+        ],
+      },
     ],
   },
   {
@@ -114,11 +129,37 @@ export const TEMPLATES: Template[] = [
         fields: [
           { key: "name", label: "Name", type: "text", required: true },
           { key: "city", label: "City", type: "text" },
-          { key: "stars", label: "Stars (1-5)", type: "number" },
+          { key: "stars", label: "Stars (1-5)", type: "number", step: 0.5 },
           { key: "text", label: "Quote", type: "text", required: true },
         ],
       },
       // Newsletter intentionally removed — Thread's homepage no longer has one.
+      {
+        id: "about_values",
+        type: "feature-list",
+        label: "About Page — Values",
+        list: true,
+        minItems: 3,
+        maxItems: 6,
+        fields: [
+          { key: "icon", label: "Icon (emoji)", type: "icon" },
+          { key: "title", label: "Title", type: "text", required: true },
+          { key: "text", label: "Description", type: "text" },
+        ],
+      },
+      {
+        id: "about_stats",
+        type: "feature-list",
+        label: "About Page — Stats",
+        list: true,
+        minItems: 4,
+        maxItems: 4,
+        fields: [
+          { key: "value", label: "Stat value (e.g. 15,000+)", type: "text", required: true },
+          { key: "label", label: "Label", type: "text", required: true },
+          { key: "sub", label: "Subtext", type: "text" },
+        ],
+      },
     ],
   },
   {
@@ -181,7 +222,7 @@ export const TEMPLATES: Template[] = [
         fields: [
           { key: "name", label: "Name", type: "text", required: true },
           { key: "city", label: "City", type: "text" },
-          { key: "stars", label: "Stars (1-5)", type: "number" },
+          { key: "stars", label: "Stars (1-5)", type: "number", step: 0.5 },
           { key: "piece", label: "Product / piece name", type: "text" },
           { key: "text", label: "Quote", type: "text", required: true },
         ],
@@ -196,6 +237,32 @@ export const TEMPLATES: Template[] = [
           { key: "title", label: "Title", type: "text" },
           { key: "sub", label: "Subtext", type: "text" },
           { key: "button_label", label: "Button label", type: "text" },
+        ],
+      },
+      {
+        id: "about_values",
+        type: "feature-list",
+        label: "About Page — Values",
+        list: true,
+        minItems: 3,
+        maxItems: 6,
+        fields: [
+          { key: "icon", label: "Icon (emoji)", type: "icon" },
+          { key: "title", label: "Title", type: "text", required: true },
+          { key: "text", label: "Description", type: "text" },
+        ],
+      },
+      {
+        id: "about_stats",
+        type: "feature-list",
+        label: "About Page — Stats",
+        list: true,
+        minItems: 4,
+        maxItems: 4,
+        fields: [
+          { key: "value", label: "Stat value (e.g. 37)", type: "text", required: true },
+          { key: "label", label: "Label", type: "text", required: true },
+          { key: "sub", label: "Subtext", type: "text" },
         ],
       },
     ],
@@ -232,7 +299,7 @@ export const TEMPLATES: Template[] = [
         maxItems: 6,
         fields: [
           { key: "name", label: "Name", type: "text", required: true },
-          { key: "rating", label: "Rating (1-5)", type: "number" },
+          { key: "rating", label: "Rating (1-5)", type: "number", step: 0.5 },
           { key: "text", label: "Quote", type: "text", required: true },
           { key: "product", label: "Product purchased", type: "text" },
           { key: "avatar", label: "Avatar image", type: "image" },
@@ -247,6 +314,18 @@ export const TEMPLATES: Template[] = [
           { key: "title", label: "Title", type: "text" },
           { key: "sub", label: "Subtext", type: "text" },
           { key: "button_label", label: "Button label", type: "text" },
+        ],
+      },
+      {
+        id: "about_stats",
+        type: "feature-list",
+        label: "About Page — Stats",
+        list: true,
+        minItems: 4,
+        maxItems: 4,
+        fields: [
+          { key: "value", label: "Stat value (e.g. 50L+)", type: "text", required: true },
+          { key: "label", label: "Label", type: "text", required: true },
         ],
       },
     ],
@@ -274,7 +353,7 @@ export const TEMPLATES: Template[] = [
         fields: [
           { key: "name", label: "Name", type: "text", required: true },
           { key: "text", label: "Quote", type: "text", required: true },
-          { key: "stars", label: "Stars (1-5)", type: "number" },
+          { key: "stars", label: "Stars (1-5)", type: "number", step: 0.5 },
           { key: "avatar", label: "Avatar image", type: "image" },
         ],
       },

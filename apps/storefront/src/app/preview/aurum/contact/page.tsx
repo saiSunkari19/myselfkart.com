@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import { PageShell, Reveal } from "../_components"
+import { useTemplateConfig } from "../../../../lib/template-config-context"
 import s from "../_styles.module.css"
 
 export default function ContactPage() {
+  const { config } = useTemplateConfig()
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" })
   const [sent, setSent] = useState(false)
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -30,10 +32,10 @@ export default function ContactPage() {
             </Reveal>
 
             {[
-              { icon: "📧", label: "Email", text: "hello@aurum.in\nFor general enquiries" },
-              { icon: "📱", label: "Phone", text: "+91 98000 00000\nMon–Sat 10am–7pm" },
+              { icon: "📧", label: "Email", text: config?.contact_email ? `${config.contact_email}\nFor general enquiries` : "hello@aurum.in\nFor general enquiries" },
+              { icon: "📱", label: "Phone", text: config?.contact_phone ? `${config.contact_phone}\nMon–Sat 10am–7pm` : "+91 98000 00000\nMon–Sat 10am–7pm" },
               { icon: "💍", label: "Bridal Enquiries", text: "bridal@aurum.in\nAppointments · Custom sets · Consultations" },
-              { icon: "📍", label: "Head Office", text: "14 Johari Bazaar, Jaipur 302003\nBy appointment only" },
+              { icon: "📍", label: "Head Office", text: config?.business_address || "14 Johari Bazaar, Jaipur 302003\nBy appointment only" },
             ].map((item, i) => (
               <Reveal key={item.label} delay={(i % 4) as 0|1|2|3}>
                 <div className={s.contactItem}>

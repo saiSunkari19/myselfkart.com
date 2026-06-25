@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Swatch } from "@medusajs/icons"
+import { ArrowUpRightOnBox, Swatch } from "@medusajs/icons"
 import {
   Badge,
   Button,
@@ -542,7 +542,7 @@ const TemplatePicker = ({
               <Text size="small" weight="plus" className="text-ui-fg-base">
                 You selected: {pending.name}
               </Text>
-              <Text size="small" className="text-ui-fg-subtle">
+              <Text size="small" weight="plus" className="text-ui-fg-error">
                 This choice is final. You cannot change your template later.
                 Make sure you've previewed all options before confirming.
               </Text>
@@ -1725,6 +1725,7 @@ const SectionField = ({
             type="number"
             min={1}
             max={5}
+            step={field.step ?? 1}
             value={value ?? ""}
             onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
           />
@@ -1976,6 +1977,18 @@ const CustomizeView = ({
             <Badge color="grey" size="2xsmall">
               {selectedTemplate.name} — locked
             </Badge>
+          )}
+          {storefrontBase && (
+            <a
+              href={storefrontBase}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-full border border-ui-border-base bg-ui-bg-subtle px-3 py-1 text-sm text-ui-fg-base transition-colors hover:bg-ui-bg-subtle-hover hover:text-ui-fg-interactive"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-ui-tag-green-icon" />
+              Live store
+              <ArrowUpRightOnBox className="text-ui-fg-subtle" />
+            </a>
           )}
           <Button
             variant="secondary"
