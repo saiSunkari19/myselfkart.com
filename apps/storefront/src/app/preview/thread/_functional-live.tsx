@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { RazorpayCheckout } from "../../../components/razorpay-checkout"
 import { SavedAddressPicker } from "../../../components/storefront/account/saved-address-picker"
+import { deriveOrderStatus } from "../../../components/storefront/account/order-status-badge"
 import {
   removeLineItemAction,
   updateLineItemAction,
@@ -317,17 +318,31 @@ export function ThreadCheckoutLivePage({ config, cart, cartCount, shippingOption
 /* ---- Order confirmation ---- */
 export function ThreadOrderLivePage({ config, cartCount, order }: OrderProps) {
   const cur = order.currency_code
+  // Live status so a cancel/ship in admin shows here, not a frozen "Order Placed!".
+  const status = deriveOrderStatus(order)
+  const cancelled = status.label === "Cancelled"
+  const headline = cancelled
+    ? "Order Cancelled"
+    : status.label === "Shipped"
+      ? "Your order has shipped"
+      : status.label === "Delivered"
+        ? "Order Delivered"
+        : "Order Placed!"
   return (
     <div className={s.page} style={threadColorVars(config)}>
       <ThreadNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.confirmationWrap}>
-            <div className={s.confirmationIcon}>✅</div>
-            <h1 className={s.confirmationTitle}>Order Placed!</h1>
+            <div className={s.confirmationIcon}>{cancelled ? "❌" : "✅"}</div>
+            <h1 className={s.confirmationTitle}>{headline}</h1>
+            <div style={{ marginBottom: 14 }}>
+              <span style={{ display: "inline-block", fontSize: 12.5, fontWeight: 700, color: status.color, background: status.bg, borderRadius: 999, padding: "5px 14px" }}>{status.label}</span>
+            </div>
             <p className={s.confirmationSub}>
-              Thank you for your order. {order.email ? `A confirmation email is on its way to ${order.email}. ` : ""}
-              Your pieces are being prepared with care.
+              {cancelled
+                ? "This order was cancelled. If this is unexpected, contact support."
+                : <>Thank you for your order. {order.email ? `A confirmation email is on its way to ${order.email}. ` : ""}Your pieces are being prepared with care.</>}
             </p>
 
             <div className={s.orderCard}>

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { RazorpayCheckout } from "../../../components/razorpay-checkout"
 import { SavedAddressPicker } from "../../../components/storefront/account/saved-address-picker"
+import { deriveOrderStatus } from "../../../components/storefront/account/order-status-badge"
 import {
   removeLineItemAction,
   updateLineItemAction,
@@ -328,6 +329,9 @@ export function EventpassCheckoutLivePage({ config, cart, cartCount, shippingOpt
 export function EventpassOrderLivePage({ config, cartCount, order }: OrderProps) {
   const accent = eventAccent(config)
   const cur = order.currency_code
+  // Live status so a cancelled booking shows here, not a frozen "Confirmed".
+  const status = deriveOrderStatus(order)
+  const cancelled = status.label === "Cancelled"
 
   return (
     <div style={pageShell()}>
@@ -335,14 +339,18 @@ export function EventpassOrderLivePage({ config, cartCount, order }: OrderProps)
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "64px 40px 72px" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
-            width: 72, height: 72, borderRadius: "50%", background: T.accentLight,
+            width: 72, height: 72, borderRadius: "50%", background: cancelled ? status.bg : T.accentLight,
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36,
             margin: "0 auto 20px",
-          }}>🎟️</div>
-          <h1 style={{ color: T.text, fontSize: 32, fontWeight: 900, margin: "0 0 10px", letterSpacing: "-0.5px" }}>Booking Confirmed!</h1>
+          }}>{cancelled ? "🚫" : "🎟️"}</div>
+          <h1 style={{ color: T.text, fontSize: 32, fontWeight: 900, margin: "0 0 12px", letterSpacing: "-0.5px" }}>{cancelled ? "Booking Cancelled" : "Booking Confirmed!"}</h1>
+          <div style={{ marginBottom: 14 }}>
+            <span style={{ display: "inline-block", fontSize: 12.5, fontWeight: 700, color: status.color, background: status.bg, borderRadius: 999, padding: "5px 14px" }}>{status.label}</span>
+          </div>
           <p style={{ color: T.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-            {order.email ? `Your e-tickets have been sent to ${order.email}. ` : "Your e-tickets are on their way. "}
-            Show the QR at the venue — that&apos;s all you need.
+            {cancelled
+              ? "This booking was cancelled. If this is unexpected, contact support."
+              : <>{order.email ? `Your e-tickets have been sent to ${order.email}. ` : "Your e-tickets are on their way. "}Show the QR at the venue — that&apos;s all you need.</>}
           </p>
         </div>
 

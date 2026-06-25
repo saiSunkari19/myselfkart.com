@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { RazorpayCheckout } from "../../../components/razorpay-checkout"
 import { SavedAddressPicker } from "../../../components/storefront/account/saved-address-picker"
+import { deriveOrderStatus } from "../../../components/storefront/account/order-status-badge"
 import {
   removeLineItemAction,
   updateLineItemAction,
@@ -318,17 +319,29 @@ export function AurumCheckoutLivePage({ config, cart, cartCount, shippingOptions
 /* ---- Order confirmation ---- */
 export function AurumOrderLivePage({ config, cartCount, order }: OrderProps) {
   const cur = order.currency_code
+  // Live status — the eyebrow label reflects it, so a cancel/ship in admin shows.
+  const status = deriveOrderStatus(order)
+  const cancelled = status.label === "Cancelled"
+  const headline = cancelled
+    ? "Order Cancelled"
+    : status.label === "Shipped"
+      ? "Your order has shipped"
+      : status.label === "Delivered"
+        ? "Order Delivered"
+        : "Thank you for your order"
   return (
     <div className={s.page} style={aurumColorVars(config)}>
       <AurumNav config={config} cartCount={cartCount} hasDeals={false} categories={[]} />
       <div className={s.pageShell}>
         <div className={s.container}>
           <div className={s.confirmWrap}>
-            <div className={s.confirmIcon}>✦</div>
-            <div className={s.pageHeaderLabel}>Order Confirmed</div>
-            <h1 className={s.confirmTitle}>Thank you for your order</h1>
+            <div className={s.confirmIcon}>{cancelled ? "✕" : "✦"}</div>
+            <div className={s.pageHeaderLabel} style={{ color: status.color }}>{status.label}</div>
+            <h1 className={s.confirmTitle}>{headline}</h1>
             <p className={s.confirmSub}>
-              Your order has been placed successfully.
+              {cancelled
+                ? "This order was cancelled."
+                : "Your order has been placed successfully."}
               {order.email ? ` A confirmation email is on its way to ${order.email}.` : ""}
             </p>
 
