@@ -21,14 +21,20 @@ export type StoreOrder = {
   email: string | null
   currency_code: string
   total: number
+  /** Medusa's three independent status fields, used to derive a live label. */
+  status: string | null
+  fulfillment_status: string | null
+  payment_status: string | null
   items: StoreOrderItem[]
 }
 
 // `*items` is required for the line-item computed fields (total/quantity/etc.)
 // to resolve — narrowing to explicit `items.total` returns 0. The nested
 // product handle is added on top so each line can link back to its PDP.
+// The status fields let the confirmation page show the order's *live* state
+// (shipped/delivered/cancelled) instead of a hard-coded "confirmed".
 const ORDER_FIELDS =
-  "id,display_id,email,currency_code,total,*items,items.product.handle"
+  "id,display_id,email,currency_code,total,status,fulfillment_status,payment_status,*items,items.product.handle"
 
 type RawOrderItem = {
   id: string
@@ -59,6 +65,9 @@ export async function getTenantOrder(
     const raw = order as unknown as Omit<StoreOrder, "items"> & { items: RawOrderItem[] }
     return {
       ...raw,
+      status: raw.status ?? null,
+      fulfillment_status: raw.fulfillment_status ?? null,
+      payment_status: raw.payment_status ?? null,
       items: (raw.items ?? []).map((item) => ({
         id: item.id,
         title: item.title,

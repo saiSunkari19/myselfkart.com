@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { formatMoney } from "../../lib/format"
 import type { OrderView } from "../../lib/views"
+import { deriveOrderStatus } from "./account/order-status-badge"
 
 /**
  * Theme-agnostic order confirmation. Themes wrap this in their own chrome
@@ -20,16 +21,46 @@ export function OrderSummary({ order }: { order: OrderView }) {
     borderRadius: 12,
   }
 
+  // Live status derived from Medusa's order/fulfillment/payment fields, so a
+  // status change in admin (shipped, delivered, cancelled) is reflected here
+  // rather than a hard-coded "confirmed".
+  const status = deriveOrderStatus(order)
+  const f = order.fulfillment_status ?? ""
+  const isClosed =
+    order.status === "canceled" ||
+    f === "canceled" ||
+    f === "shipped" ||
+    f === "partially_shipped" ||
+    f === "delivered"
+
   return (
     <div className="order-confirmation" style={{ maxWidth: 640, margin: "0 auto", padding: "56px 20px 64px", textAlign: "center" }}>
       <div style={{ fontSize: 60, lineHeight: 1, marginBottom: 18 }} aria-hidden>✅</div>
       <h1 style={{ fontSize: 30, fontWeight: 800, color: primary, margin: "0 0 8px" }}>
         Thank you for your order
       </h1>
-      <p style={{ fontSize: 15, color: "#6b7280", margin: "0 0 28px" }}>
-        Order <strong style={{ color: "#374151" }}>#{order.display_id}</strong> is confirmed
+      <p style={{ fontSize: 15, color: "#6b7280", margin: "0 0 16px" }}>
+        Order <strong style={{ color: "#374151" }}>#{order.display_id}</strong>
         {order.email ? <> — a receipt will go to {order.email}</> : null}.
       </p>
+
+      {/* Live order status */}
+      <div style={{ marginBottom: 28 }}>
+        <span
+          style={{
+            display: "inline-block",
+            fontSize: 12.5,
+            fontWeight: 700,
+            color: status.color,
+            background: status.bg,
+            borderRadius: 999,
+            padding: "5px 14px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {status.label}
+        </span>
+      </div>
 
       {/* Order ID highlight */}
       <div style={{ ...card, borderTop: `3px solid ${accent}`, padding: "18px 24px", marginBottom: 28 }}>
@@ -95,20 +126,25 @@ export function OrderSummary({ order }: { order: OrderView }) {
         </div>
       </div>
 
-      {/* What happens next */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "28px 0 32px" }}>
-        {[
-          { icon: "📦", title: "Packed Same Day", text: "We're picking and packing your order" },
-          { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },
-          { icon: "📱", title: "Updates by SMS", text: "You'll get tracking on your phone" },
-        ].map((step) => (
-          <div key={step.title} style={{ ...card, padding: "18px 14px" }}>
-            <div style={{ fontSize: 26, marginBottom: 6 }} aria-hidden>{step.icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 4 }}>{step.title}</div>
-            <div style={{ fontSize: 11.5, color: "#9ca3af", lineHeight: 1.5 }}>{step.text}</div>
-          </div>
-        ))}
-      </div>
+      {/* What happens next — only while the order is still pre-shipment, so a
+          shipped/delivered/cancelled order doesn't show "Delivery in 2–3 days". */}
+      {!isClosed ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "28px 0 32px" }}>
+          {[
+            { icon: "📦", title: "Packed Same Day", text: "We're picking and packing your order" },
+            { icon: "🚚", title: "Delivery in 2–3 days", text: "Tracked and insured shipping" },
+            { icon: "📱", title: "Updates by SMS", text: "You'll get tracking on your phone" },
+          ].map((step) => (
+            <div key={step.title} style={{ ...card, padding: "18px 14px" }}>
+              <div style={{ fontSize: 26, marginBottom: 6 }} aria-hidden>{step.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 4 }}>{step.title}</div>
+              <div style={{ fontSize: 11.5, color: "#9ca3af", lineHeight: 1.5 }}>{step.text}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ margin: "28px 0 32px" }} />
+      )}
 
       <Link
         href="/"

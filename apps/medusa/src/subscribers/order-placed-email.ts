@@ -52,6 +52,11 @@ export default async function orderPlacedEmailHandler({
   try {
     await runWithTenantContext({ tenantId, source: "session" }, async () => {
       const query = container.resolve(ContainerRegistrationKeys.QUERY)
+      // Order/line-item totals are computed on-demand, not stored columns. They
+      // only resolve when `total` is requested explicitly (a bare `*` would
+      // override it) AND the items/summary relations are expanded with `*` so
+      // the calculation has its inputs. Narrowing to `items.total` returns 0 —
+      // hence the ₹0.00 / qty-1 email this replaces.
       const { data } = await query.graph({
         entity: "order",
         fields: [
@@ -60,9 +65,8 @@ export default async function orderPlacedEmailHandler({
           "email",
           "currency_code",
           "total",
-          "items.title",
-          "items.quantity",
-          "items.total",
+          "items.*",
+          "summary.*",
         ],
         filters: { id: orderId },
       })
