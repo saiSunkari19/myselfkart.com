@@ -1,0 +1,4 @@
+# Static site at the repo root, with serverless functions in netlify/functions.
+[build]
+  publish = "."
+  functions = "netlify/functions"
