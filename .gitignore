@@ -4,3 +4,6 @@
 # Editor
 .vscode/
 .idea/
+
+# Build artifact (regenerated, see README)
+myselfkart-site.zip
