@@ -15,6 +15,20 @@ export type StoreOrderItem = {
   handle: string | null
 }
 
+/** Where the order shipped. `company` carries the buyer's landmark. */
+export type StoreOrderAddress = {
+  first_name: string | null
+  last_name: string | null
+  company: string | null
+  address_1: string | null
+  address_2: string | null
+  city: string | null
+  province: string | null
+  postal_code: string | null
+  country_code: string | null
+  phone: string | null
+}
+
 export type StoreOrder = {
   id: string
   display_id: number
@@ -26,6 +40,8 @@ export type StoreOrder = {
   fulfillment_status: string | null
   payment_status: string | null
   items: StoreOrderItem[]
+  /** The delivery address for this order (each order can use a different one). */
+  shipping_address: StoreOrderAddress | null
 }
 
 // `*items` is required for the line-item computed fields (total/quantity/etc.)
@@ -34,7 +50,10 @@ export type StoreOrder = {
 // The status fields let the confirmation page show the order's *live* state
 // (shipped/delivered/cancelled) instead of a hard-coded "confirmed".
 const ORDER_FIELDS =
-  "id,display_id,email,currency_code,total,status,fulfillment_status,payment_status,*items,items.product.handle"
+  "id,display_id,email,currency_code,total,status,fulfillment_status,payment_status,*items,items.product.handle," +
+  "shipping_address.first_name,shipping_address.last_name,shipping_address.company," +
+  "shipping_address.address_1,shipping_address.address_2,shipping_address.city," +
+  "shipping_address.province,shipping_address.postal_code,shipping_address.country_code,shipping_address.phone"
 
 type RawOrderItem = {
   id: string
@@ -68,6 +87,7 @@ export async function getTenantOrder(
       status: raw.status ?? null,
       fulfillment_status: raw.fulfillment_status ?? null,
       payment_status: raw.payment_status ?? null,
+      shipping_address: raw.shipping_address ?? null,
       items: (raw.items ?? []).map((item) => ({
         id: item.id,
         title: item.title,

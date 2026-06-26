@@ -380,6 +380,19 @@ export function EventpassOrderLivePage({ config, cartCount, order }: OrderProps)
           </div>
         </div>
 
+        {order.shipping_address ? (
+          <div style={{ ...cardStyle, marginBottom: 24 }}>
+            <div style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Delivery Address</div>
+            <div style={{ fontSize: 13.5, color: T.textMuted, lineHeight: 1.7 }}>
+              <strong style={{ color: T.text }}>{[order.shipping_address.first_name, order.shipping_address.last_name].filter(Boolean).join(" ")}</strong><br />
+              {[order.shipping_address.address_1, order.shipping_address.address_2].filter(Boolean).join(", ")}<br />
+              {order.shipping_address.company ? <>Landmark: {order.shipping_address.company}<br /></> : null}
+              {[order.shipping_address.city, order.shipping_address.province, order.shipping_address.postal_code].filter(Boolean).join(", ")}<br />
+              {order.shipping_address.country_code?.toUpperCase()}{order.shipping_address.phone ? ` · ${order.shipping_address.phone}` : ""}
+            </div>
+          </div>
+        ) : null}
+
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <Link href="/" style={{ background: "#fff", color: T.text, textDecoration: "none", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 700 }}>Back to Home</Link>
           <Link href="/shop" style={{ background: accent, color: "#fff", textDecoration: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 700 }}>Browse More Events</Link>

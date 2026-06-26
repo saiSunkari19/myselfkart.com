@@ -336,6 +336,10 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
       : status.label === "Delivered"
         ? "Order Delivered"
         : "Order Confirmed!"
+  const ship = order.shipping_address
+  const shipName = ship ? [ship.first_name, ship.last_name].filter(Boolean).join(" ") : ""
+  const shipStreet = ship ? [ship.address_1, ship.address_2].filter(Boolean).join(", ") : ""
+  const shipCity = ship ? [ship.city, ship.province, ship.postal_code].filter(Boolean).join(", ") : ""
   return (
     <div className={s.pageShell} style={colorVars(config)}>
       <PageLoader />
@@ -388,6 +392,20 @@ export function VoltOrderLivePage({ config, cartCount, order }: OrderProps) {
                   <span>Total</span><span>{formatMoney(order.total, order.currency_code)}</span>
                 </div>
               </div>
+
+              {ship ? (
+                <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "16px 24px", marginBottom: 36, textAlign: "left" }}>
+                  <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "var(--text3)", marginBottom: 8 }}>Delivery address</div>
+                  <div style={{ fontSize: 14, color: "var(--text)", fontWeight: 700 }}>{shipName || "—"}</div>
+                  <div style={{ fontSize: 13.5, color: "var(--text2)", marginTop: 4, lineHeight: 1.6 }}>
+                    {shipStreet ? <>{shipStreet}<br /></> : null}
+                    {ship.company ? <>Landmark: {ship.company}<br /></> : null}
+                    {shipCity ? <>{shipCity}<br /></> : null}
+                    {ship.country_code ? ship.country_code.toUpperCase() : null}
+                    {ship.phone ? <> · {ship.phone}</> : null}
+                  </div>
+                </div>
+              ) : null}
 
               {!cancelled ? (
                 <div className={s.grid3} style={{ marginBottom: 36 }}>

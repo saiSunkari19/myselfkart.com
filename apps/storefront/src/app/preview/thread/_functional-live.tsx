@@ -372,6 +372,19 @@ export function ThreadOrderLivePage({ config, cartCount, order }: OrderProps) {
               </div>
             </div>
 
+            {order.shipping_address ? (
+              <div className={s.orderCard}>
+                <div className={s.orderCardTitle}>Delivery Address</div>
+                <div style={{ fontSize: 13.5, color: "#57534e", lineHeight: 1.7 }}>
+                  <strong style={{ color: "#1a1a1a" }}>{[order.shipping_address.first_name, order.shipping_address.last_name].filter(Boolean).join(" ")}</strong><br />
+                  {[order.shipping_address.address_1, order.shipping_address.address_2].filter(Boolean).join(", ")}<br />
+                  {order.shipping_address.company ? <>Landmark: {order.shipping_address.company}<br /></> : null}
+                  {[order.shipping_address.city, order.shipping_address.province, order.shipping_address.postal_code].filter(Boolean).join(", ")}<br />
+                  {order.shipping_address.country_code?.toUpperCase()}{order.shipping_address.phone ? ` · ${order.shipping_address.phone}` : ""}
+                </div>
+              </div>
+            ) : null}
+
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
               <Link href="/" className={`${s.btn} ${s.btnOutline}`}>Back to Home</Link>
               <Link href="/shop" className={s.btn}>Continue Shopping</Link>

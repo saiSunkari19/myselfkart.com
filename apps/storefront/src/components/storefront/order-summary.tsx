@@ -126,6 +126,25 @@ export function OrderSummary({ order }: { order: OrderView }) {
         </div>
       </div>
 
+      {/* Delivery address — each order can ship to a different saved address. */}
+      {order.shipping_address ? (
+        <div style={{ ...card, padding: "16px 22px", marginTop: 20, textAlign: "left" }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#9ca3af", marginBottom: 8 }}>Delivery address</div>
+          <div style={{ fontSize: 14, color: primary, fontWeight: 700 }}>
+            {[order.shipping_address.first_name, order.shipping_address.last_name].filter(Boolean).join(" ") || "—"}
+          </div>
+          <div style={{ fontSize: 13.5, color: "#6b7280", marginTop: 4, lineHeight: 1.6 }}>
+            {[order.shipping_address.address_1, order.shipping_address.address_2].filter(Boolean).join(", ")}
+            <br />
+            {order.shipping_address.company ? <>Landmark: {order.shipping_address.company}<br /></> : null}
+            {[order.shipping_address.city, order.shipping_address.province, order.shipping_address.postal_code].filter(Boolean).join(", ")}
+            <br />
+            {order.shipping_address.country_code?.toUpperCase()}
+            {order.shipping_address.phone ? ` · ${order.shipping_address.phone}` : ""}
+          </div>
+        </div>
+      ) : null}
+
       {/* What happens next — only while the order is still pre-shipment, so a
           shipped/delivered/cancelled order doesn't show "Delivery in 2–3 days". */}
       {!isClosed ? (

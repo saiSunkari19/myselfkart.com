@@ -371,6 +371,19 @@ export function AurumOrderLivePage({ config, cartCount, order }: OrderProps) {
               </div>
             </div>
 
+            {order.shipping_address ? (
+              <div className={s.confirmCard}>
+                <div className={s.orderSummaryTitle}>Delivery Address</div>
+                <div style={{ fontSize: 13.5, color: "#6b6256", lineHeight: 1.7, textAlign: "left" }}>
+                  <strong style={{ color: "#2b2b2b" }}>{[order.shipping_address.first_name, order.shipping_address.last_name].filter(Boolean).join(" ")}</strong><br />
+                  {[order.shipping_address.address_1, order.shipping_address.address_2].filter(Boolean).join(", ")}<br />
+                  {order.shipping_address.company ? <>Landmark: {order.shipping_address.company}<br /></> : null}
+                  {[order.shipping_address.city, order.shipping_address.province, order.shipping_address.postal_code].filter(Boolean).join(", ")}<br />
+                  {order.shipping_address.country_code?.toUpperCase()}{order.shipping_address.phone ? ` · ${order.shipping_address.phone}` : ""}
+                </div>
+              </div>
+            ) : null}
+
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
               <Link href="/shop" className={`${s.btn} ${s.btnGold} ${s.btnLg}`}>Continue Shopping</Link>
               <Link href="/" className={`${s.btn} ${s.btnOutline} ${s.btnLg}`}>Back to Home</Link>
