@@ -72,8 +72,8 @@ export function CheckoutFlow({
           <input name="email" type="email" placeholder="Email" required defaultValue={cart.email ?? ""} />
           <input name="first_name" placeholder="First name" required defaultValue={addr?.first_name ?? ""} />
           <input name="last_name" placeholder="Last name" required defaultValue={addr?.last_name ?? ""} />
-          <input name="address_1" placeholder="Address" required defaultValue={addr?.address_1 ?? ""} />
-          <input name="address_2" placeholder="Area / Locality / Landmark (optional)" defaultValue={addr?.address_2 ?? ""} />
+          <input name="address_1" placeholder="Address line 1 — house no., building, street" required defaultValue={addr?.address_1 ?? ""} />
+          <input name="address_2" placeholder="Address line 2 — area, locality, landmark (optional)" defaultValue={addr?.address_2 ?? ""} />
           <input name="city" placeholder="City" required defaultValue={addr?.city ?? ""} />
           <input name="province" placeholder="State / Province" defaultValue={addr?.province ?? ""} />
           <input name="postal_code" placeholder="Postal code" required defaultValue={addr?.postal_code ?? ""} />

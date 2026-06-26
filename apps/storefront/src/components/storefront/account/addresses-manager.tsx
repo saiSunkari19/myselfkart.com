@@ -36,11 +36,11 @@ function AddressFields({
           </Field>
         </div>
       </div>
-      <Field label="Address">
-        <input name="address_1" required defaultValue={address?.address_1 ?? ""} style={inputStyle} />
+      <Field label="Address line 1">
+        <input name="address_1" required defaultValue={address?.address_1 ?? ""} placeholder="House / flat no., building, street" style={inputStyle} />
       </Field>
-      <Field label="Apartment, suite, etc. (optional)">
-        <input name="address_2" defaultValue={address?.address_2 ?? ""} style={inputStyle} />
+      <Field label="Address line 2 (optional)">
+        <input name="address_2" defaultValue={address?.address_2 ?? ""} placeholder="Area, locality or a nearby landmark" style={inputStyle} />
       </Field>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}>
