@@ -32,7 +32,7 @@ export function SavedAddressPicker({
       <form action={setAddressAction}>
         {addresses.map((a) => {
           const name = [a.first_name, a.last_name].filter(Boolean).join(" ")
-          const line = [a.address_1, a.address_2, a.city, a.postal_code].filter(Boolean).join(", ")
+          const line = [a.address_1, a.address_2, a.company, a.city, a.postal_code].filter(Boolean).join(", ")
           return (
             <label
               key={a.id}
@@ -69,6 +69,7 @@ export function SavedAddressPicker({
         <input type="hidden" name="last_name" value={addr?.last_name ?? ""} />
         <input type="hidden" name="address_1" value={addr?.address_1 ?? ""} />
         <input type="hidden" name="address_2" value={addr?.address_2 ?? ""} />
+        <input type="hidden" name="company" value={addr?.company ?? ""} />
         <input type="hidden" name="city" value={addr?.city ?? ""} />
         <input type="hidden" name="province" value={addr?.province ?? ""} />
         <input type="hidden" name="postal_code" value={addr?.postal_code ?? ""} />

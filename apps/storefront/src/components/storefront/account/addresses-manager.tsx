@@ -40,7 +40,10 @@ function AddressFields({
         <input name="address_1" required defaultValue={address?.address_1 ?? ""} placeholder="House / flat no., building, street" style={inputStyle} />
       </Field>
       <Field label="Address line 2 (optional)">
-        <input name="address_2" defaultValue={address?.address_2 ?? ""} placeholder="Area, locality or a nearby landmark" style={inputStyle} />
+        <input name="address_2" defaultValue={address?.address_2 ?? ""} placeholder="Area, locality" style={inputStyle} />
+      </Field>
+      <Field label="Landmark (optional)">
+        <input name="company" defaultValue={address?.company ?? ""} placeholder="e.g. near Laxma Reddy shop" style={inputStyle} />
       </Field>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}>
@@ -106,6 +109,7 @@ function AddressCard({ address, countries, accent }: { address: CustomerAddressV
           <div style={{ fontSize: 13, color: "#57534e", marginTop: 4, lineHeight: 1.5 }}>
             {[address.address_1, address.address_2].filter(Boolean).join(", ")}
             <br />
+            {address.company ? <>Landmark: {address.company}<br /></> : null}
             {[address.city, address.province, address.postal_code].filter(Boolean).join(", ")}
             <br />
             {address.country_code?.toUpperCase()}

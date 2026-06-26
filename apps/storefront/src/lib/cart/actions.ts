@@ -136,6 +136,8 @@ export async function setAddressAction(formData: FormData): Promise<void> {
     last_name: String(formData.get("last_name") ?? "").trim(),
     address_1: String(formData.get("address_1") ?? "").trim(),
     address_2: String(formData.get("address_2") ?? "").trim() || undefined,
+    // Landmark — stored in the address `company` field (see CartAddress).
+    company: String(formData.get("company") ?? "").trim() || undefined,
     city: String(formData.get("city") ?? "").trim(),
     province: String(formData.get("province") ?? "").trim() || undefined,
     postal_code: String(formData.get("postal_code") ?? "").trim(),
@@ -160,6 +162,7 @@ export async function setAddressAction(formData: FormData): Promise<void> {
         await createCustomerAddress(tenant, token, {
           first_name: address.first_name,
           last_name: address.last_name,
+          company: address.company,
           address_1: address.address_1,
           address_2: address.address_2,
           city: address.city,

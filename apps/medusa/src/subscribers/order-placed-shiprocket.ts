@@ -82,6 +82,7 @@ export default async function orderPlacedShiprocketHandler({
           "items.unit_price",
           "shipping_address.first_name",
           "shipping_address.last_name",
+          "shipping_address.company",
           "shipping_address.address_1",
           "shipping_address.address_2",
           "shipping_address.city",
@@ -122,8 +123,9 @@ export default async function orderPlacedShiprocketHandler({
         // line carries the full street (a bare house number trips its "junk
         // address" RTO heuristic).
         billing_address: [addr.address_1, addr.address_2].filter(Boolean).join(", "),
-        // Locality already folded into billing_address above; don't repeat it.
-        billing_address_2: "",
+        // Shiprocket has no landmark field; the buyer's landmark is carried in the
+        // address `company` field — send it as the second address line.
+        billing_address_2: addr.company ?? "",
         billing_city: addr.city ?? "",
         billing_pincode: addr.postal_code ?? "",
         billing_state: addr.province ?? "",

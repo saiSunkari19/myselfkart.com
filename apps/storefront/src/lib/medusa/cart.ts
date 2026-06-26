@@ -9,6 +9,11 @@ export type CartAddress = {
   last_name: string
   address_1: string
   address_2?: string
+  // Carries the delivery LANDMARK. Medusa has no landmark column and Shiprocket
+  // has no landmark field, so we reuse the unused `company` address field as the
+  // landmark end-to-end (UI label "Landmark"), and fold it into the Shiprocket
+  // address line on push.
+  company?: string
   city: string
   province?: string
   postal_code: string
