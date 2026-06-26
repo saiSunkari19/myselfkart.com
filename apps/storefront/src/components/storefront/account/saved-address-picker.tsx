@@ -32,7 +32,7 @@ export function SavedAddressPicker({
       <form action={setAddressAction}>
         {addresses.map((a) => {
           const name = [a.first_name, a.last_name].filter(Boolean).join(" ")
-          const line = [a.address_1, a.city, a.postal_code].filter(Boolean).join(", ")
+          const line = [a.address_1, a.address_2, a.city, a.postal_code].filter(Boolean).join(", ")
           return (
             <label
               key={a.id}

@@ -122,13 +122,16 @@ export default async function orderPlacedShiprocketHandler({
         // line carries the full street (a bare house number trips its "junk
         // address" RTO heuristic).
         billing_address: [addr.address_1, addr.address_2].filter(Boolean).join(", "),
-        billing_address_2: addr.address_2 ?? "",
+        // Locality already folded into billing_address above; don't repeat it.
+        billing_address_2: "",
         billing_city: addr.city ?? "",
         billing_pincode: addr.postal_code ?? "",
         billing_state: addr.province ?? "",
         billing_country: country,
         billing_email: order.email,
-        billing_phone: digits(addr.phone),
+        // Last 10 digits → drops a leading 0 or a 91/+91 country code so Shiprocket
+        // gets a clean 10-digit Indian mobile (it rejects/flags otherwise).
+        billing_phone: digits(addr.phone).slice(-10),
         shipping_is_billing: true,
         order_items: items,
         payment_method: "Prepaid",
